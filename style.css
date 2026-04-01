@@ -970,6 +970,112 @@ body {
     }
 }
 
+/* ========================================
+   TEAMS TABLE
+   ======================================== */
+.teams-table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    background: var(--white) !important;
+    font-size: 0.9rem !important;
+}
+
+.teams-table thead {
+    background: var(--primary-color) !important;
+    color: var(--white) !important;
+}
+
+.teams-table th {
+    padding: 12px 8px !important;
+    text-align: left !important;
+    font-weight: 700 !important;
+    white-space: nowrap !important;
+    border-bottom: 2px solid var(--mlb-red) !important;
+}
+
+.teams-table tbody tr {
+    border-bottom: 1px solid var(--border-color) !important;
+    transition: background 0.2s ease !important;
+}
+
+.teams-table tbody tr:hover {
+    background: var(--lighter-bg) !important;
+}
+
+.teams-table tbody tr:nth-child(even) {
+    background: var(--light-bg) !important;
+}
+
+.teams-table tbody tr:nth-child(even):hover {
+    background: var(--lighter-bg) !important;
+}
+
+.teams-table td {
+    padding: 10px 8px !important;
+    text-align: left !important;
+    vertical-align: middle !important;
+}
+
+.team-name-cell {
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+}
+
+.team-mini-logo {
+    width: 40px !important;
+    height: 40px !important;
+    border-radius: 50% !important;
+    overflow: hidden !important;
+    flex-shrink: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: var(--lighter-bg) !important;
+    padding: 4px !important;
+}
+
+.team-mini-logo img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: contain !important;
+}
+
+.team-name-text {
+    font-weight: 600 !important;
+}
+
+/* Responsive Teams Table */
+@media (max-width: 768px) {
+    .teams-table {
+        font-size: 0.75rem !important;
+    }
+    
+    .teams-table th,
+    .teams-table td {
+        padding: 8px 4px !important;
+        font-size: 0.75rem !important;
+    }
+    
+    .team-mini-logo {
+        width: 32px !important;
+        height: 32px !important;
+    }
+    
+    .team-name-cell {
+        gap: 8px !important;
+    }
+    
+    .team-full-name {
+        display: none !important;
+    }
+    
+    .team-abbr-name {
+        display: inline !important;
+        font-weight: 700 !important;
+    }
+}
+
 /* Header - MLB Style */
 .site-header {
     background: var(--white);

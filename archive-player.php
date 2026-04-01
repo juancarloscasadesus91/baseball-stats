@@ -65,6 +65,7 @@ $players = get_posts(array(
                                 $position_name = !empty($positions) ? $positions[0]->name : 'N/A';
                                 $team_id = get_post_meta($player_id, '_player_team', true);
                                 $team_name = $team_id ? get_the_title($team_id) : 'FA';
+                                $team_abbr = $team_id ? strtoupper(substr(get_the_title($team_id), 0, 3)) : 'FA';
                             ?>
                             <tr>
                                 <td data-value="<?php echo esc_attr($player_number ?: 0); ?>"><?php echo esc_html($player_number ?: '-'); ?></td>
@@ -82,7 +83,7 @@ $players = get_posts(array(
                                         <strong><?php echo esc_html($player->post_title); ?></strong>
                                     </div>
                                 </td>
-                                <td data-value="<?php echo esc_attr($team_name); ?>"><?php echo esc_html($team_name); ?></td>
+                                <td data-value="<?php echo esc_attr($team_name); ?>"><?php echo esc_html($team_abbr); ?></td>
                                 <td data-value="<?php echo esc_attr($position_name); ?>"><?php echo esc_html($position_name); ?></td>
                                 <td data-value="<?php echo esc_attr($batting_avg ?: 0); ?>" class="stat-highlight"><?php echo esc_html($batting_avg ?: '.000'); ?></td>
                                 <td data-value="<?php echo esc_attr($games ?: 0); ?>"><?php echo esc_html($games ?: '0'); ?></td>
