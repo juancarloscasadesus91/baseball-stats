@@ -59,66 +59,79 @@ body {
    GAMES ARCHIVE - MLB STYLE GRID
    ======================================== */
 .games-grid {
-    display: grid !important;
-    grid-template-columns: repeat(4, 1fr) !important;
+    display: flex !important;
+    flex-direction: column !important;
     gap: 16px !important;
     margin: 32px 0 !important;
+    max-width: 100% !important;
 }
 
 .game-box {
     background: var(--white) !important;
     border: 1px solid var(--border-color) !important;
     border-radius: 8px !important;
-    padding: 16px !important;
+    padding: 20px !important;
     text-decoration: none !important;
     color: var(--text-color) !important;
     transition: all 0.2s ease !important;
     display: block !important;
+    width: 100% !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1) !important;
 }
 
 .game-box:hover {
-    box-shadow: var(--shadow-md) !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
     transform: translateY(-2px) !important;
     border-color: var(--primary-color) !important;
 }
 
 .game-status {
     text-align: center !important;
-    font-size: 0.75rem !important;
+    font-size: 0.8rem !important;
     font-weight: 700 !important;
-    color: var(--text-light) !important;
-    margin-bottom: 12px !important;
-    padding-bottom: 8px !important;
-    border-bottom: 1px solid var(--border-color) !important;
+    color: var(--white) !important;
+    background: var(--text-light) !important;
+    margin-bottom: 16px !important;
+    padding: 6px 12px !important;
+    border-radius: 4px !important;
+    display: inline-block !important;
 }
 
 .game-teams {
     display: flex !important;
     flex-direction: column !important;
-    gap: 8px !important;
+    gap: 12px !important;
 }
 
 .team-row {
     display: flex !important;
     justify-content: space-between !important;
     align-items: center !important;
-    padding: 8px 0 !important;
+    padding: 12px 0 !important;
+    border-bottom: 1px solid var(--border-color) !important;
+}
+
+.team-row:last-child {
+    border-bottom: none !important;
 }
 
 .team-info {
     display: flex !important;
     align-items: center !important;
-    gap: 8px !important;
+    gap: 12px !important;
     flex: 1 !important;
 }
 
 .team-logo-mini {
-    width: 32px !important;
-    height: 32px !important;
+    width: 48px !important;
+    height: 48px !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
     flex-shrink: 0 !important;
+    background: var(--lighter-bg) !important;
+    border-radius: 50% !important;
+    padding: 4px !important;
 }
 
 .team-logo-mini img {
@@ -129,24 +142,54 @@ body {
 
 .team-name-short {
     font-weight: 600 !important;
-    font-size: 0.95rem !important;
+    font-size: 1.1rem !important;
+    color: var(--text-color) !important;
 }
 
 .team-scores {
     display: flex !important;
-    gap: 12px !important;
+    gap: 16px !important;
     font-weight: 600 !important;
-    font-size: 0.9rem !important;
+    font-size: 1rem !important;
+    align-items: center !important;
 }
 
 .score-r {
     font-weight: 700 !important;
-    font-size: 1.1rem !important;
+    font-size: 1.5rem !important;
     color: var(--primary-color) !important;
+    min-width: 40px !important;
+    text-align: center !important;
 }
 
 .score-h, .score-e {
     color: var(--text-light) !important;
+    font-size: 0.9rem !important;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .game-box {
+        padding: 16px !important;
+    }
+    
+    .team-logo-mini {
+        width: 40px !important;
+        height: 40px !important;
+    }
+    
+    .team-name-short {
+        font-size: 1rem !important;
+    }
+    
+    .score-r {
+        font-size: 1.3rem !important;
+        min-width: 35px !important;
+    }
+    
+    .team-scores {
+        gap: 12px !important;
+    }
 }
 
 /* ========================================
