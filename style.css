@@ -663,6 +663,218 @@ body {
     flex-shrink: 0 !important;
 }
 
+/* ========================================
+   PLAYERS TABLE (SORTABLE)
+   ======================================== */
+.table-responsive {
+    overflow-x: auto !important;
+    margin: 20px 0 !important;
+    -webkit-overflow-scrolling: touch !important;
+}
+
+.players-table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    background: var(--white) !important;
+    font-size: 0.85rem !important;
+    table-layout: auto !important;
+}
+
+.players-table thead {
+    background: var(--primary-color) !important;
+    color: var(--white) !important;
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 10 !important;
+}
+
+.players-table th {
+    padding: 10px 6px !important;
+    text-align: center !important;
+    font-weight: 700 !important;
+    white-space: nowrap !important;
+    border-bottom: 2px solid var(--mlb-red) !important;
+    font-size: 0.8rem !important;
+    vertical-align: middle !important;
+}
+
+.players-table th:nth-child(1) {
+    width: 40px !important;
+    text-align: center !important;
+}
+
+.players-table th:nth-child(2) {
+    width: 180px !important;
+    text-align: left !important;
+}
+
+.players-table th:nth-child(3) {
+    width: 100px !important;
+    text-align: left !important;
+}
+
+.players-table th:nth-child(4) {
+    width: 60px !important;
+}
+
+.players-table th.sortable {
+    cursor: pointer !important;
+    user-select: none !important;
+    transition: background 0.2s ease !important;
+}
+
+.players-table th.sortable:hover {
+    background: var(--mlb-red) !important;
+}
+
+.players-table th.sorted-asc,
+.players-table th.sorted-desc {
+    background: var(--mlb-red) !important;
+}
+
+.players-table .sort-arrow {
+    margin-left: 3px !important;
+    font-size: 0.7rem !important;
+    opacity: 0.6 !important;
+}
+
+.players-table th.sorted-asc .sort-arrow,
+.players-table th.sorted-desc .sort-arrow {
+    opacity: 1 !important;
+}
+
+.players-table tbody tr {
+    border-bottom: 1px solid var(--border-color) !important;
+    transition: background 0.2s ease !important;
+}
+
+.players-table tbody tr:hover {
+    background: var(--lighter-bg) !important;
+}
+
+.players-table tbody tr:nth-child(even) {
+    background: #f9f9f9 !important;
+}
+
+.players-table tbody tr:nth-child(even):hover {
+    background: var(--lighter-bg) !important;
+}
+
+.players-table td {
+    padding: 8px 6px !important;
+    text-align: center !important;
+    vertical-align: middle !important;
+    font-size: 0.85rem !important;
+}
+
+.players-table td:nth-child(1) {
+    text-align: center !important;
+    color: var(--text-light) !important;
+}
+
+.players-table td:nth-child(2) {
+    text-align: left !important;
+}
+
+.players-table td:nth-child(3) {
+    text-align: left !important;
+    font-size: 0.8rem !important;
+}
+
+.players-table td.stat-highlight {
+    font-weight: 700 !important;
+    color: var(--primary-color) !important;
+}
+
+.player-name-cell {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    min-width: 150px !important;
+}
+
+.player-name-cell strong {
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+
+.player-mini-photo {
+    width: 36px !important;
+    height: 36px !important;
+    border-radius: 50% !important;
+    overflow: hidden !important;
+    flex-shrink: 0 !important;
+    border: 2px solid var(--border-color) !important;
+}
+
+.player-mini-photo img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+    display: block !important;
+}
+
+.btn-small {
+    display: inline-block !important;
+    padding: 5px 10px !important;
+    background: var(--primary-color) !important;
+    color: var(--white) !important;
+    text-decoration: none !important;
+    border-radius: 4px !important;
+    font-size: 0.75rem !important;
+    font-weight: 600 !important;
+    transition: background 0.2s ease !important;
+    white-space: nowrap !important;
+}
+
+.btn-small:hover {
+    background: var(--mlb-red) !important;
+}
+
+.table-legend {
+    margin-top: 15px !important;
+    padding: 12px 15px !important;
+    background: var(--lighter-bg) !important;
+    border-left: 4px solid var(--primary-color) !important;
+    font-size: 0.8rem !important;
+    color: var(--text-light) !important;
+    border-radius: 4px !important;
+}
+
+.table-legend p {
+    margin: 0 !important;
+    line-height: 1.6 !important;
+}
+
+/* Responsive table */
+@media (max-width: 768px) {
+    .players-table {
+        font-size: 0.7rem !important;
+    }
+    
+    .players-table th,
+    .players-table td {
+        padding: 6px 3px !important;
+        font-size: 0.7rem !important;
+    }
+    
+    .player-mini-photo {
+        width: 28px !important;
+        height: 28px !important;
+    }
+    
+    .player-name-cell {
+        gap: 5px !important;
+        min-width: 120px !important;
+    }
+    
+    .btn-small {
+        padding: 4px 8px !important;
+        font-size: 0.7rem !important;
+    }
+}
+
 /* Header - MLB Style */
 .site-header {
     background: var(--white);
