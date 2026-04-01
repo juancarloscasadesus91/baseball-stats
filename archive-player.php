@@ -70,11 +70,15 @@ $players = get_posts(array(
                                 <td data-value="<?php echo esc_attr($player_number ?: 0); ?>"><?php echo esc_html($player_number ?: '-'); ?></td>
                                 <td data-value="<?php echo esc_attr($player->post_title); ?>">
                                     <div class="player-name-cell">
-                                        <?php if (has_post_thumbnail($player_id)) : ?>
-                                            <div class="player-mini-photo">
+                                        <div class="player-mini-photo">
+                                            <?php if (has_post_thumbnail($player_id)) : ?>
                                                 <?php echo get_the_post_thumbnail($player_id, 'thumbnail'); ?>
-                                            </div>
-                                        <?php endif; ?>
+                                            <?php else : ?>
+                                                <div class="player-placeholder">
+                                                    <span class="dashicons dashicons-admin-users"></span>
+                                                </div>
+                                            <?php endif; ?>
+                                        </div>
                                         <strong><?php echo esc_html($player->post_title); ?></strong>
                                     </div>
                                 </td>

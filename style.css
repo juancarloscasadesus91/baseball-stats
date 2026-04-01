@@ -815,6 +815,23 @@ body {
     display: block !important;
 }
 
+.player-placeholder {
+    width: 100% !important;
+    height: 100% !important;
+    background: var(--light-bg) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 50% !important;
+}
+
+.player-placeholder .dashicons {
+    font-size: 20px !important;
+    width: 20px !important;
+    height: 20px !important;
+    color: var(--text-light) !important;
+}
+
 .btn-small {
     display: inline-block !important;
     padding: 5px 10px !important;
