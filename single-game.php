@@ -95,7 +95,10 @@ get_header();
                             </div>
                         <?php endif; ?>
                         <div class="team-details">
-                            <h2><?php echo get_the_title($away_team_id); ?></h2>
+                            <h2>
+                                <span class="team-name-full"><?php echo get_the_title($away_team_id); ?></span>
+                                <span class="team-name-abbr"><?php echo strtoupper(substr(get_the_title($away_team_id), 0, 3)); ?></span>
+                            </h2>
                             <span class="team-record">Visitante</span>
                         </div>
                     </div>
@@ -115,7 +118,10 @@ get_header();
                             </div>
                         <?php endif; ?>
                         <div class="team-details">
-                            <h2><?php echo get_the_title($home_team_id); ?></h2>
+                            <h2>
+                                <span class="team-name-full"><?php echo get_the_title($home_team_id); ?></span>
+                                <span class="team-name-abbr"><?php echo strtoupper(substr(get_the_title($home_team_id), 0, 3)); ?></span>
+                            </h2>
                             <span class="team-record">Local</span>
                         </div>
                     </div>
@@ -142,7 +148,10 @@ get_header();
                         </thead>
                         <tbody>
                             <tr class="away-line">
-                                <td class="team-name"><?php echo get_the_title($away_team_id); ?></td>
+                                <td class="team-name">
+                                    <span class="team-full-name"><?php echo get_the_title($away_team_id); ?></span>
+                                    <span class="team-abbr-name"><?php echo strtoupper(substr(get_the_title($away_team_id), 0, 3)); ?></span>
+                                </td>
                                 <?php foreach ($away_innings_array as $inning): ?>
                                     <td><?php echo $inning !== '' ? $inning : '-'; ?></td>
                                 <?php endforeach; ?>
@@ -151,7 +160,10 @@ get_header();
                                 <td class="total"><?php echo $away_errors !== '' ? $away_errors : '-'; ?></td>
                             </tr>
                             <tr class="home-line">
-                                <td class="team-name"><?php echo get_the_title($home_team_id); ?></td>
+                                <td class="team-name">
+                                    <span class="team-full-name"><?php echo get_the_title($home_team_id); ?></span>
+                                    <span class="team-abbr-name"><?php echo strtoupper(substr(get_the_title($home_team_id), 0, 3)); ?></span>
+                                </td>
                                 <?php foreach ($home_innings_array as $inning): ?>
                                     <td><?php echo $inning !== '' ? $inning : '-'; ?></td>
                                 <?php endforeach; ?>
@@ -172,6 +184,7 @@ get_header();
                     
                     <h3><?php echo get_the_title($away_team_id); ?> (Visitante)</h3>
                     <?php if (!empty($away_stats)): ?>
+                        <div class="stats-table-wrapper">
                         <table class="stats-table">
                             <thead>
                                 <tr>
@@ -210,12 +223,14 @@ get_header();
                                 <?php endforeach; ?>
                             </tbody>
                         </table>
+                        </div>
                     <?php else: ?>
                         <p><em>No hay estadísticas disponibles para este equipo.</em></p>
                     <?php endif; ?>
                     
                     <h3><?php echo get_the_title($home_team_id); ?> (Local)</h3>
                     <?php if (!empty($home_stats)): ?>
+                        <div class="stats-table-wrapper">
                         <table class="stats-table">
                             <thead>
                                 <tr>
@@ -254,6 +269,7 @@ get_header();
                                 <?php endforeach; ?>
                             </tbody>
                         </table>
+                        </div>
                     <?php else: ?>
                         <p><em>No hay estadísticas disponibles para este equipo.</em></p>
                     <?php endif; ?>
