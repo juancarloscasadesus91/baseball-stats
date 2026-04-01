@@ -20,7 +20,7 @@ jobs:
           username: ${{ secrets.FTP_USER }}
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./
-          server-dir: /cubanbaseball.iblogger.org/htdocs/wordpress/wp-content/themes/baseball-stats/
+          server-dir: /cubanbaseball.iblogger.org/htdocs/stats/wp-content/themes/baseball-stats/
           protocol: ftp
           port: 21
           security: loose
