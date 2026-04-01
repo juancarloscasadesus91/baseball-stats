@@ -1,0 +1,2573 @@
+/*
+Theme Name: Baseball Stats
+Theme URI: https://example.com/baseball-stats
+Author: Baseball Stats Team
+Author URI: https://example.com
+Description: Sistema completo de gestión de estadísticas de baseball con jerarquía Temporadas→Torneos→Equipos→Jugadores→Partidos. Incluye estadísticas por partido, cálculo automático, tablas de posiciones, 6 shortcodes y diseño profesional inspirado en MLB.
+Version: 1.1.0
+License: GNU General Public License v2 or later
+License URI: http://www.gnu.org/licenses/gpl-2.0.html
+Text Domain: baseball-stats
+Tags: sports, baseball, statistics, custom-post-types, mlb, games, players, teams, tournaments, seasons
+*/
+
+/* Reset y Base */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    /* MLB-inspired colors */
+    --mlb-navy: #002D72;
+    --mlb-red: #D50032;
+    --mlb-blue: #041E42;
+    --mlb-light-blue: #27AAE1;
+    --primary-color: #041E42;
+    --secondary-color: #002D72;
+    --accent-color: #D50032;
+    --text-color: #1a1a1a;
+    --text-light: #666;
+    --light-bg: #f4f4f4;
+    --lighter-bg: #fafafa;
+    --white: #ffffff;
+    --border-color: #e0e0e0;
+    --success-color: #28a745;
+    --warning-color: #ffc107;
+    --danger-color: #dc3545;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+    --shadow-md: 0 4px 6px rgba(0,0,0,0.1);
+    --shadow-lg: 0 10px 20px rgba(0,0,0,0.15);
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+    line-height: 1.6;
+    color: var(--text-color);
+    background-color: var(--lighter-bg);
+    font-size: 16px;
+}
+
+.container {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 0 24px;
+}
+
+/* ========================================
+   GAMES ARCHIVE - MLB STYLE GRID
+   ======================================== */
+.games-grid {
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 16px !important;
+    margin: 32px 0 !important;
+}
+
+.game-box {
+    background: var(--white) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 8px !important;
+    padding: 16px !important;
+    text-decoration: none !important;
+    color: var(--text-color) !important;
+    transition: all 0.2s ease !important;
+    display: block !important;
+}
+
+.game-box:hover {
+    box-shadow: var(--shadow-md) !important;
+    transform: translateY(-2px) !important;
+    border-color: var(--primary-color) !important;
+}
+
+.game-status {
+    text-align: center !important;
+    font-size: 0.75rem !important;
+    font-weight: 700 !important;
+    color: var(--text-light) !important;
+    margin-bottom: 12px !important;
+    padding-bottom: 8px !important;
+    border-bottom: 1px solid var(--border-color) !important;
+}
+
+.game-teams {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+}
+
+.team-row {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    padding: 8px 0 !important;
+}
+
+.team-info {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    flex: 1 !important;
+}
+
+.team-logo-mini {
+    width: 32px !important;
+    height: 32px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-shrink: 0 !important;
+}
+
+.team-logo-mini img {
+    max-width: 100% !important;
+    max-height: 100% !important;
+    object-fit: contain !important;
+}
+
+.team-name-short {
+    font-weight: 600 !important;
+    font-size: 0.95rem !important;
+}
+
+.team-scores {
+    display: flex !important;
+    gap: 12px !important;
+    font-weight: 600 !important;
+    font-size: 0.9rem !important;
+}
+
+.score-r {
+    font-weight: 700 !important;
+    font-size: 1.1rem !important;
+    color: var(--primary-color) !important;
+}
+
+.score-h, .score-e {
+    color: var(--text-light) !important;
+}
+
+/* ========================================
+   SINGLE GAME - MLB STYLE SCOREBOARD
+   ======================================== */
+.game-scoreboard-mlb {
+    margin: 32px 0 !important;
+    background: var(--white) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 8px !important;
+    overflow: hidden !important;
+}
+
+.scoreboard-header {
+    display: grid !important;
+    grid-template-columns: 1fr auto 1fr !important;
+    gap: 24px !important;
+    padding: 24px !important;
+    background: var(--lighter-bg) !important;
+    border-bottom: 2px solid var(--border-color) !important;
+}
+
+.team-header {
+    display: flex !important;
+    align-items: center !important;
+    gap: 16px !important;
+}
+
+.team-header.away {
+    justify-content: flex-start !important;
+}
+
+.team-header.home {
+    justify-content: flex-end !important;
+    flex-direction: row-reverse !important;
+}
+
+.team-logo-large {
+    width: 80px !important;
+    height: 80px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: var(--white) !important;
+    border-radius: 50% !important;
+    padding: 8px !important;
+    box-shadow: var(--shadow-sm) !important;
+}
+
+.team-logo-large img {
+    max-width: 100% !important;
+    max-height: 100% !important;
+    object-fit: contain !important;
+}
+
+.team-details h2 {
+    font-size: 1.5rem !important;
+    margin: 0 !important;
+    color: var(--primary-color) !important;
+}
+
+.team-record {
+    font-size: 0.85rem !important;
+    color: var(--text-light) !important;
+}
+
+.score-display {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+.final-score {
+    display: flex !important;
+    align-items: center !important;
+    gap: 16px !important;
+}
+
+.score-number {
+    font-size: 3.5rem !important;
+    font-weight: 700 !important;
+    color: var(--primary-color) !important;
+    line-height: 1 !important;
+}
+
+.status-label {
+    font-size: 0.85rem !important;
+    font-weight: 700 !important;
+    color: var(--text-light) !important;
+    text-transform: uppercase !important;
+    letter-spacing: 1px !important;
+}
+
+.line-score {
+    padding: 0 !important;
+    overflow-x: auto !important;
+}
+
+.line-score-table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    font-size: 0.9rem !important;
+}
+
+.line-score-table thead th {
+    background: var(--light-bg) !important;
+    padding: 12px 8px !important;
+    text-align: center !important;
+    font-weight: 600 !important;
+    border-bottom: 2px solid var(--border-color) !important;
+    font-size: 0.85rem !important;
+}
+
+.line-score-table tbody td {
+    padding: 12px 8px !important;
+    text-align: center !important;
+    border-bottom: 1px solid var(--border-color) !important;
+}
+
+.line-score-table .team-name {
+    text-align: left !important;
+    font-weight: 600 !important;
+    padding-left: 16px !important;
+}
+
+.line-score-table .total {
+    background: var(--light-bg) !important;
+    font-weight: 700 !important;
+}
+
+.line-score-table tbody tr:hover {
+    background: var(--lighter-bg) !important;
+}
+
+/* ========================================
+   LEADERS LIST WITH PHOTOS
+   ======================================== */
+.leaders-list {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+}
+
+.leader-item {
+    display: flex !important;
+    align-items: center !important;
+    gap: 16px !important;
+    padding: 16px !important;
+    background: var(--white) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 8px !important;
+    text-decoration: none !important;
+    color: var(--text-color) !important;
+    transition: all 0.2s ease !important;
+}
+
+.leader-item:hover {
+    box-shadow: var(--shadow-md) !important;
+    transform: translateX(4px) !important;
+    border-color: var(--primary-color) !important;
+}
+
+.leader-rank {
+    font-size: 1.5rem !important;
+    font-weight: 700 !important;
+    color: var(--primary-color) !important;
+    min-width: 40px !important;
+    text-align: center !important;
+}
+
+.leader-photo {
+    width: 60px !important;
+    height: 60px !important;
+    border-radius: 50% !important;
+    overflow: hidden !important;
+    flex-shrink: 0 !important;
+    background: var(--light-bg) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+.leader-photo img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+}
+
+.leader-photo .no-photo {
+    width: 100% !important;
+    height: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: var(--lighter-bg) !important;
+}
+
+.leader-photo .no-photo .dashicons {
+    font-size: 32px !important;
+    width: 32px !important;
+    height: 32px !important;
+    color: var(--text-light) !important;
+}
+
+.leader-info {
+    flex: 1 !important;
+}
+
+.leader-name {
+    font-size: 1.1rem !important;
+    font-weight: 600 !important;
+    color: var(--text-color) !important;
+    margin-bottom: 4px !important;
+}
+
+.leader-team {
+    font-size: 0.9rem !important;
+    color: var(--text-light) !important;
+}
+
+.leader-stat {
+    text-align: right !important;
+    min-width: 80px !important;
+}
+
+.leader-stat .stat-value {
+    font-size: 1.5rem !important;
+    font-weight: 700 !important;
+    color: var(--primary-color) !important;
+    line-height: 1 !important;
+}
+
+.leader-stat .stat-label {
+    font-size: 0.75rem !important;
+    color: var(--text-light) !important;
+    margin-top: 4px !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+}
+
+.leaders-more {
+    text-align: center !important;
+    margin-top: 20px !important;
+    padding-top: 20px !important;
+    border-top: 1px solid var(--border-color) !important;
+}
+
+.leaders-more .btn {
+    display: inline-block !important;
+    padding: 12px 24px !important;
+    background: var(--primary-color) !important;
+    color: var(--white) !important;
+    text-decoration: none !important;
+    border-radius: 6px !important;
+    font-weight: 600 !important;
+    transition: all 0.2s ease !important;
+}
+
+.leaders-more .btn:hover {
+    background: var(--secondary-color) !important;
+    transform: translateY(-2px) !important;
+    box-shadow: var(--shadow-md) !important;
+}
+
+/* Leaders Page Tabs */
+.leaders-tabs {
+    display: flex !important;
+    gap: 8px !important;
+    margin: 24px 0 !important;
+    flex-wrap: wrap !important;
+    border-bottom: 2px solid var(--border-color) !important;
+    padding-bottom: 0 !important;
+}
+
+.tab-button {
+    padding: 12px 20px !important;
+    background: transparent !important;
+    border: none !important;
+    border-bottom: 3px solid transparent !important;
+    color: var(--text-light) !important;
+    font-weight: 600 !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+    font-size: 0.95rem !important;
+}
+
+.tab-button:hover {
+    color: var(--primary-color) !important;
+    background: var(--lighter-bg) !important;
+}
+
+.tab-button.active {
+    color: var(--primary-color) !important;
+    border-bottom-color: var(--primary-color) !important;
+}
+
+.leaders-section {
+    margin: 32px 0 !important;
+}
+
+.leaders-section h2 {
+    font-size: 1.8rem !important;
+    margin-bottom: 24px !important;
+    color: var(--primary-color) !important;
+}
+
+/* ========================================
+   LEADERS COMPACT (SIDEBAR/WIDGET)
+   ======================================== */
+.leaders-compact {
+    background: var(--white) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 8px !important;
+    padding: 16px !important;
+}
+
+.leaders-compact-title {
+    font-size: 1.1rem !important;
+    font-weight: 700 !important;
+    color: var(--text-color) !important;
+    margin: 0 0 16px 0 !important;
+    padding-bottom: 12px !important;
+    border-bottom: 2px solid var(--primary-color) !important;
+}
+
+.leaders-compact-list {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+}
+
+.leader-compact-item {
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    padding: 8px !important;
+    background: var(--lighter-bg) !important;
+    border-radius: 6px !important;
+    text-decoration: none !important;
+    color: var(--text-color) !important;
+    transition: all 0.2s ease !important;
+}
+
+.leader-compact-item:hover {
+    background: var(--light-bg) !important;
+    transform: translateX(4px) !important;
+}
+
+.leader-compact-rank {
+    font-size: 1.2rem !important;
+    font-weight: 700 !important;
+    color: var(--primary-color) !important;
+    min-width: 24px !important;
+    text-align: center !important;
+}
+
+.leader-compact-photo {
+    width: 40px !important;
+    height: 40px !important;
+    border-radius: 50% !important;
+    overflow: hidden !important;
+    flex-shrink: 0 !important;
+    background: var(--white) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+.leader-compact-photo img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+}
+
+.no-photo-compact {
+    width: 100% !important;
+    height: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: var(--light-bg) !important;
+}
+
+.no-photo-compact .dashicons {
+    font-size: 24px !important;
+    width: 24px !important;
+    height: 24px !important;
+    color: var(--text-light) !important;
+}
+
+.leader-compact-info {
+    flex: 1 !important;
+}
+
+.leader-compact-name {
+    font-size: 0.95rem !important;
+    font-weight: 600 !important;
+    color: var(--text-color) !important;
+    line-height: 1.2 !important;
+}
+
+.leader-compact-team {
+    font-size: 0.75rem !important;
+    color: var(--text-light) !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+}
+
+.leader-compact-stat {
+    font-size: 1.1rem !important;
+    font-weight: 700 !important;
+    color: var(--primary-color) !important;
+    min-width: 50px !important;
+    text-align: right !important;
+}
+
+/* Front Page Stats List */
+.stats-list-item {
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    padding: 8px 12px !important;
+    background: var(--lighter-bg) !important;
+    border-radius: 4px !important;
+    margin-bottom: 1px !important;
+    transition: all 0.2s ease !important;
+    cursor: pointer !important;
+}
+
+.stats-list-item:hover {
+    background: var(--white) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+    transform: translateX(4px) !important;
+}
+
+.stats-list-item .rank {
+    font-size: 1rem !important;
+    font-weight: 700 !important;
+    color: var(--primary-color) !important;
+    min-width: 20px !important;
+    text-align: left !important;
+    flex-shrink: 0 !important;
+}
+
+.stats-list-item .player-photo {
+    width: 40px !important;
+    height: 40px !important;
+    border-radius: 50% !important;
+    overflow: hidden !important;
+    flex-shrink: 0 !important;
+    background: var(--white) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+.stats-list-item .player-info {
+    display: flex !important;
+    align-items: baseline !important;
+    gap: 6px !important;
+    flex: 1 !important;
+    min-width: 0 !important;
+}
+
+.stats-list-item .player-photo img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+}
+
+.stats-list-item .player-photo .no-photo {
+    width: 100% !important;
+    height: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: var(--light-bg) !important;
+}
+
+.stats-list-item .player-photo .no-photo .dashicons {
+    font-size: 24px !important;
+    width: 24px !important;
+    height: 24px !important;
+    color: var(--text-light) !important;
+}
+
+.stats-list-item .player-name-link {
+    text-decoration: none !important;
+    color: var(--text-color) !important;
+    font-weight: 600 !important;
+    font-size: 0.9rem !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+
+.stats-list-item .player-name-link:hover {
+    color: var(--primary-color) !important;
+}
+
+.stats-list-item .team-abbr {
+    font-size: 0.7rem !important;
+    color: var(--text-light) !important;
+    text-transform: uppercase !important;
+    flex-shrink: 0 !important;
+}
+
+.stats-list-item .stat-value {
+    font-size: 1rem !important;
+    font-weight: 700 !important;
+    color: var(--primary-color) !important;
+    min-width: 50px !important;
+    text-align: right !important;
+    flex-shrink: 0 !important;
+}
+
+/* Header - MLB Style */
+.site-header {
+    background: var(--white);
+    color: var(--text-color);
+    padding: 0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    border-bottom: 3px solid var(--mlb-red);
+}
+
+.site-header .container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 24px;
+}
+
+.site-branding {
+    display: flex;
+    align-items: center;
+}
+
+/* Branding Wrapper - Logo + Texto */
+.branding-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+/* Custom Logo Styles */
+.custom-logo-link {
+    display: inline-block;
+    line-height: 0;
+    flex-shrink: 0;
+    max-width: 80px;
+    max-height: 60px;
+}
+
+.custom-logo {
+    max-height: 60px;
+    max-width: 80px;
+    width: auto;
+    height: auto;
+    transition: opacity 0.2s ease;
+    display: block;
+    object-fit: contain;
+}
+
+.custom-logo:hover {
+    opacity: 0.85;
+}
+
+.site-title {
+    font-size: 1.75rem;
+    font-weight: 800;
+    color: var(--primary-color);
+    text-decoration: none;
+    letter-spacing: -0.5px;
+    text-transform: uppercase;
+    line-height: 1.2;
+}
+
+.site-title:hover {
+    color: var(--mlb-red);
+}
+
+/* Navigation - MLB Style */
+.main-navigation ul {
+    list-style: none;
+    display: flex;
+    gap: 0;
+    margin: 0;
+}
+
+.main-navigation li {
+    margin: 0;
+}
+
+.main-navigation a {
+    color: var(--text-color);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.95rem;
+    padding: 12px 20px;
+    display: block;
+    transition: all 0.2s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 3px solid transparent;
+}
+
+.main-navigation a:hover,
+.main-navigation a:focus {
+    color: var(--mlb-red);
+    border-bottom-color: var(--mlb-red);
+    background-color: rgba(213, 0, 50, 0.05);
+}
+
+/* Main Content */
+.site-content {
+    padding: 32px 0;
+    min-height: calc(100vh - 200px);
+    background-color: var(--lighter-bg);
+}
+
+/* Cards - MLB Style */
+.stats-card {
+    background: var(--white);
+    border-radius: 4px;
+    padding: 32px;
+    margin-bottom: 24px;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.2s ease;
+    border: 1px solid var(--border-color);
+}
+
+.stats-card:hover {
+    box-shadow: var(--shadow-md);
+    border-color: var(--mlb-light-blue);
+}
+
+.stats-card h2, .stats-card h3 {
+    color: var(--primary-color);
+    margin-bottom: 20px;
+    font-weight: 700;
+    font-size: 1.5rem;
+    letter-spacing: -0.3px;
+    padding-bottom: 12px;
+    border-bottom: 3px solid var(--mlb-red);
+    display: inline-block;
+}
+
+/* Grid Layouts */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 24px;
+    margin-top: 32px;
+}
+
+.player-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 24px;
+}
+
+/* Player Card - MLB Style */
+.player-card {
+    background: var(--white);
+    border-radius: 4px;
+    padding: 24px;
+    text-align: center;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.2s ease;
+    border: 1px solid var(--border-color);
+    position: relative;
+    overflow: hidden;
+}
+
+.player-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--mlb-navy), var(--mlb-red));
+}
+
+.player-card:hover {
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-4px);
+    border-color: var(--mlb-light-blue);
+}
+
+.player-photo {
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin: 0 auto 16px;
+    border: 4px solid var(--mlb-navy);
+    box-shadow: var(--shadow-md);
+}
+
+.player-name {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--primary-color);
+    margin-bottom: 8px;
+    letter-spacing: -0.3px;
+}
+
+.player-position {
+    color: var(--mlb-red);
+    font-weight: 700;
+    margin-bottom: 12px;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.player-number {
+    font-size: 2.5rem;
+    font-weight: 900;
+    color: var(--mlb-navy);
+    margin-bottom: 12px;
+    line-height: 1;
+}
+
+/* Stats Table - MLB Style */
+.stats-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 24px;
+    background: var(--white);
+    border-radius: 4px;
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border-color);
+    font-size: 0.95rem;
+}
+
+.stats-table thead {
+    background: var(--mlb-navy);
+    color: var(--white);
+}
+
+.stats-table th {
+    padding: 16px 20px;
+    text-align: left;
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.5px;
+    border-bottom: 2px solid var(--mlb-red);
+}
+
+.stats-table td {
+    padding: 14px 20px;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.stats-table tbody tr {
+    transition: background-color 0.15s ease;
+}
+
+.stats-table tbody tr:hover {
+    background-color: rgba(39, 170, 225, 0.05);
+}
+
+.stats-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.stats-table tbody tr:nth-child(even) {
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+.stats-table tbody tr:nth-child(even):hover {
+    background-color: rgba(39, 170, 225, 0.08);
+}
+
+/* Stat Boxes - MLB Style */
+.stat-boxes {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 16px;
+    margin: 24px 0;
+}
+
+.stat-box {
+    background: var(--white);
+    color: var(--text-color);
+    padding: 24px;
+    border-radius: 4px;
+    text-align: center;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border-color);
+    border-top: 4px solid var(--mlb-red);
+    transition: all 0.2s ease;
+}
+
+.stat-box:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+}
+
+.stat-box .stat-label {
+    font-size: 0.75rem;
+    color: var(--text-light);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+.stat-box .stat-value {
+    font-size: 2.25rem;
+    font-weight: 900;
+    color: var(--mlb-navy);
+    line-height: 1;
+}
+
+/* Team Header - MLB Style */
+.team-header {
+    background: var(--white);
+    padding: 40px;
+    border-radius: 4px;
+    margin-bottom: 32px;
+    box-shadow: var(--shadow-md);
+    display: flex;
+    align-items: center;
+    gap: 40px;
+    border: 1px solid var(--border-color);
+    border-left: 6px solid var(--mlb-red);
+}
+
+.team-logo {
+    width: 180px;
+    height: 180px;
+    object-fit: contain;
+    filter: drop-shadow(0 4px 8px rgba(0,0,0,0.1));
+}
+
+.team-info h1 {
+    color: var(--primary-color);
+    font-size: 2.75rem;
+    margin-bottom: 16px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+}
+
+.team-info .team-meta {
+    color: var(--text-light);
+    font-size: 1rem;
+    line-height: 1.8;
+}
+
+.team-info .team-meta p {
+    margin-bottom: 8px;
+}
+
+.team-info .team-meta strong {
+    color: var(--text-color);
+    font-weight: 700;
+}
+
+/* Buttons - MLB Style */
+.btn {
+    display: inline-block;
+    padding: 12px 28px;
+    background: var(--mlb-navy);
+    color: var(--white);
+    text-decoration: none;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    border: 2px solid var(--mlb-navy);
+    cursor: pointer;
+    font-size: 0.95rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    text-align: center;
+}
+
+.btn:hover {
+    background: var(--mlb-red);
+    border-color: var(--mlb-red);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
+}
+
+.btn-secondary {
+    background: var(--white);
+    color: var(--mlb-navy);
+    border-color: var(--mlb-navy);
+}
+
+.btn-secondary:hover {
+    background: var(--mlb-navy);
+    color: var(--white);
+}
+
+/* Forms */
+.baseball-form {
+    background: var(--white);
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 600;
+    color: var(--primary-color);
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    font-size: 1rem;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: var(--primary-color);
+}
+
+/* Footer - MLB Style */
+.site-footer {
+    background: var(--mlb-navy);
+    color: var(--white);
+    padding: 48px 0;
+    text-align: center;
+    margin-top: 64px;
+    border-top: 4px solid var(--mlb-red);
+}
+
+.site-footer p {
+    margin-bottom: 8px;
+    opacity: 0.9;
+}
+
+/* Hero Section */
+.hero-section {
+    background: linear-gradient(135deg, var(--mlb-navy) 0%, var(--mlb-blue) 100%);
+    color: var(--white);
+    padding: 64px 32px;
+    text-align: center;
+    border-radius: 4px;
+    margin-bottom: 32px;
+    box-shadow: var(--shadow-lg);
+}
+
+.hero-section h1 {
+    font-size: 3rem;
+    font-weight: 900;
+    margin-bottom: 16px;
+    letter-spacing: -1px;
+}
+
+.hero-section p {
+    font-size: 1.25rem;
+    margin-bottom: 32px;
+    opacity: 0.95;
+}
+
+/* Responsive - Tablets */
+@media (max-width: 1024px) {
+    .custom-logo {
+        max-height: 50px;
+        max-width: 70px;
+    }
+    
+    .custom-logo-link {
+        max-width: 70px;
+        max-height: 50px;
+    }
+    
+    .site-title {
+        font-size: 1.5rem;
+    }
+}
+
+/* Responsive - Mobile */
+@media (max-width: 768px) {
+    .site-header .container {
+        flex-direction: column;
+        gap: 16px;
+        padding: 12px 16px;
+    }
+    
+    .branding-wrapper {
+        gap: 8px;
+    }
+    
+    .custom-logo-link {
+        max-width: 50px;
+        max-height: 45px;
+    }
+    
+    .custom-logo {
+        max-height: 45px;
+        max-width: 50px;
+    }
+    
+    .site-title {
+        font-size: 1.3rem;
+    }
+    
+    .main-navigation ul {
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 8px;
+    }
+    
+    .main-navigation a {
+        padding: 8px 12px;
+        font-size: 0.85rem;
+    }
+    
+    .stats-grid,
+    .player-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .team-header {
+        flex-direction: column;
+        text-align: center;
+        padding: 24px;
+    }
+    
+    .team-info h1 {
+        font-size: 2rem;
+    }
+    
+    .stat-boxes {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .hero-section h1 {
+        font-size: 2rem;
+    }
+    
+    .hero-section p {
+        font-size: 1rem;
+    }
+}
+
+/* Utility Classes */
+.text-center {
+    text-align: center;
+}
+
+.mt-20 {
+    margin-top: 20px;
+}
+
+.mb-20 {
+    margin-bottom: 20px;
+}
+
+/* Badges - MLB Style */
+.badge {
+    display: inline-block;
+    padding: 6px 12px;
+    background: var(--mlb-red);
+    color: var(--white);
+    border-radius: 3px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 0 4px;
+}
+
+.badge-success {
+    background: var(--success-color);
+}
+
+.badge-warning {
+    background: var(--warning-color);
+    color: var(--text-color);
+}
+
+.badge-danger {
+    background: var(--danger-color);
+}
+
+/* Post Thumbnail */
+.post-thumbnail img,
+.page-thumbnail img {
+    width: 100%;
+    height: auto;
+    border-radius: 4px;
+    box-shadow: var(--shadow-md);
+}
+
+/* Post Meta */
+.post-meta {
+    color: var(--text-light);
+    font-size: 0.875rem;
+    margin-bottom: 20px;
+}
+
+/* Links */
+a {
+    color: var(--mlb-navy);
+    transition: color 0.2s ease;
+}
+
+a:hover {
+    color: var(--mlb-red);
+}
+
+/* Section Titles */
+h1, h2, h3, h4, h5, h6 {
+    font-weight: 700;
+    line-height: 1.2;
+    margin-bottom: 16px;
+}
+
+h1 { font-size: 2.5rem; }
+h2 { font-size: 2rem; }
+h3 { font-size: 1.5rem; }
+h4 { font-size: 1.25rem; }
+h5 { font-size: 1.125rem; }
+h6 { font-size: 1rem; }
+
+/* ========================================
+   MLB STYLE BLOG LAYOUT
+   ======================================== */
+
+/* Main Layout Grid */
+.mlb-layout {
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 32px;
+    margin-top: 24px;
+}
+
+.main-content-area {
+    min-width: 0;
+}
+
+.sidebar-area {
+    position: sticky;
+    top: 100px;
+    height: fit-content;
+}
+
+/* Featured Banner */
+.featured-banner {
+    position: relative;
+    background: var(--mlb-navy);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 32px;
+    box-shadow: var(--shadow-lg);
+    min-height: 450px;
+    display: flex;
+    align-items: flex-end;
+}
+
+.featured-image {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+}
+
+.featured-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.featured-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(to top, rgba(4, 30, 66, 0.95) 0%, rgba(4, 30, 66, 0.4) 60%, transparent 100%);
+}
+
+.featured-content {
+    position: relative;
+    z-index: 2;
+    padding: 40px;
+    color: var(--white);
+}
+
+.featured-label {
+    display: inline-block;
+    background: var(--mlb-red);
+    color: var(--white);
+    padding: 6px 12px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 16px;
+    border-radius: 3px;
+}
+
+.featured-title {
+    font-size: 2.5rem;
+    font-weight: 900;
+    margin-bottom: 16px;
+    line-height: 1.2;
+    letter-spacing: -0.5px;
+}
+
+.featured-title a {
+    color: var(--white);
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.featured-title a:hover {
+    color: var(--mlb-light-blue);
+}
+
+.featured-excerpt {
+    font-size: 1.125rem;
+    line-height: 1.6;
+    margin-bottom: 16px;
+    opacity: 0.95;
+}
+
+.featured-meta {
+    font-size: 0.875rem;
+    opacity: 0.8;
+}
+
+/* News Section */
+.news-section {
+    margin-top: 32px;
+}
+
+.section-title {
+    font-size: 1.75rem;
+    font-weight: 800;
+    color: var(--primary-color);
+    margin-bottom: 24px;
+    padding-bottom: 12px;
+    border-bottom: 3px solid var(--mlb-red);
+    text-transform: uppercase;
+    letter-spacing: -0.3px;
+}
+
+.news-grid {
+    display: grid;
+    gap: 24px;
+}
+
+.news-item {
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    gap: 20px;
+    background: var(--white);
+    border-radius: 4px;
+    overflow: hidden;
+    border: 1px solid var(--border-color);
+    transition: all 0.2s ease;
+}
+
+.news-item:hover {
+    box-shadow: var(--shadow-md);
+    border-color: var(--mlb-light-blue);
+}
+
+.news-thumbnail {
+    width: 200px;
+    height: 140px;
+    overflow: hidden;
+}
+
+.news-thumbnail img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.news-item:hover .news-thumbnail img {
+    transform: scale(1.05);
+}
+
+.news-content {
+    padding: 16px 20px 16px 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.news-title {
+    font-size: 1.125rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+    line-height: 1.3;
+}
+
+.news-title a {
+    color: var(--text-color);
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.news-title a:hover {
+    color: var(--mlb-red);
+}
+
+.news-excerpt {
+    font-size: 0.9rem;
+    color: var(--text-light);
+    line-height: 1.5;
+    margin-bottom: 8px;
+}
+
+.news-meta {
+    font-size: 0.8rem;
+    color: var(--text-light);
+}
+
+/* Sidebar Widgets */
+.sidebar-widget {
+    background: var(--white);
+    border-radius: 4px;
+    padding: 24px;
+    margin-bottom: 24px;
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-sm);
+}
+
+.widget-title {
+    font-size: 1.125rem;
+    font-weight: 800;
+    color: var(--primary-color);
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 3px solid var(--mlb-red);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+/* Stats List */
+.stats-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.stats-list-item {
+    display: grid;
+    grid-template-columns: 30px 1fr auto;
+    gap: 12px;
+    align-items: center;
+    padding: 10px;
+    border-radius: 3px;
+    transition: background-color 0.15s ease;
+}
+
+.stats-list-item:hover {
+    background-color: rgba(39, 170, 225, 0.05);
+}
+
+.stats-list-item .rank {
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: var(--text-light);
+    text-align: center;
+}
+
+.stats-list-item:nth-child(1) .rank,
+.stats-list-item:nth-child(2) .rank,
+.stats-list-item:nth-child(3) .rank {
+    color: var(--mlb-red);
+    font-size: 1rem;
+}
+
+.player-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.player-name-link {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-color);
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.player-name-link:hover {
+    color: var(--mlb-red);
+}
+
+.team-abbr {
+    font-size: 0.75rem;
+    color: var(--text-light);
+    text-transform: uppercase;
+}
+
+.stats-list-item .stat-value {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--mlb-navy);
+}
+
+/* Standings Table in Sidebar */
+.standings-table {
+    overflow-x: auto;
+}
+
+.standings-table table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+}
+
+.standings-table thead {
+    background: var(--mlb-navy);
+    color: var(--white);
+}
+
+.standings-table th {
+    padding: 10px 8px;
+    text-align: left;
+    font-weight: 700;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.standings-table td {
+    padding: 10px 8px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.standings-table tbody tr:hover {
+    background-color: rgba(39, 170, 225, 0.05);
+}
+
+.standings-table .team-name {
+    font-weight: 600;
+}
+
+.standings-table .team-name a {
+    color: var(--text-color);
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.standings-table .team-name a:hover {
+    color: var(--mlb-red);
+}
+
+/* Responsive Layout */
+@media (max-width: 1024px) {
+    .mlb-layout {
+        grid-template-columns: 1fr;
+    }
+    
+    .sidebar-area {
+        position: static;
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 24px;
+    }
+}
+
+@media (max-width: 768px) {
+    .featured-banner {
+        min-height: 350px;
+    }
+    
+    .featured-content {
+        padding: 24px;
+    }
+    
+    .featured-title {
+        font-size: 1.75rem;
+    }
+    
+    .featured-excerpt {
+        font-size: 1rem;
+    }
+    
+    .news-item {
+        grid-template-columns: 1fr;
+    }
+    
+    .news-thumbnail {
+        width: 100%;
+        height: 200px;
+    }
+    
+    .news-content {
+        padding: 16px;
+    }
+    
+    .sidebar-area {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Responsive - Very Small Screens */
+@media (max-width: 480px) {
+    .branding-wrapper {
+        gap: 6px;
+    }
+    
+    .custom-logo-link {
+        max-width: 40px;
+        max-height: 35px;
+    }
+    
+    .custom-logo {
+        max-height: 35px;
+        max-width: 40px;
+    }
+    
+    .site-title {
+        font-size: 1.1rem;
+    }
+}
+
+/* Tournament & Season Styles */
+.tournament-grid, .seasons-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 24px;
+    margin: 24px 0;
+}
+
+.tournament-card, .season-card {
+    background: var(--white);
+    border-radius: 8px;
+    padding: 24px;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.3s ease;
+    border: 1px solid var(--border-color);
+}
+
+.tournament-card:hover, .season-card:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+}
+
+.tournament-card h3, .season-card h3 {
+    color: var(--primary-color);
+    margin-bottom: 12px;
+    font-size: 1.25rem;
+}
+
+.tournament-card h3 a, .season-card h3 a {
+    color: var(--primary-color);
+    text-decoration: none;
+}
+
+.tournament-card h3 a:hover, .season-card h3 a:hover {
+    color: var(--accent-color);
+}
+
+.tournament-logo, .tournament-logo-large {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.tournament-logo img {
+    max-width: 150px;
+    height: auto;
+}
+
+.tournament-logo-large img {
+    max-width: 250px;
+    height: auto;
+}
+
+.tournament-meta, .season-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin: 16px 0;
+    padding: 16px;
+    background: var(--light-bg);
+    border-radius: 6px;
+}
+
+.tournament-meta span, .season-meta span {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.season-year {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--primary-color);
+    margin: 8px 0;
+}
+
+.season-dates, .tournament-dates {
+    color: var(--text-light);
+    font-size: 0.9rem;
+}
+
+/* Game Styles */
+.game-card {
+    background: var(--white);
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 16px;
+    box-shadow: var(--shadow-sm);
+    border-left: 4px solid var(--primary-color);
+}
+
+.game-date {
+    font-size: 0.9rem;
+    color: var(--text-light);
+    margin-bottom: 12px;
+    font-weight: 500;
+}
+
+.game-matchup {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin: 16px 0;
+}
+
+.game-matchup .team {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex: 1;
+    gap: 12px;
+}
+
+.game-matchup .team-name {
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+.game-matchup .team-score {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--primary-color);
+    min-width: 40px;
+    text-align: center;
+}
+
+.game-matchup .vs {
+    font-weight: 700;
+    color: var(--text-light);
+    font-size: 0.9rem;
+}
+
+/* MLB Style Scoreboard */
+.game-scoreboard-mlb {
+    margin: 32px 0;
+    background: var(--white);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.scoreboard-header {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 24px;
+    padding: 24px;
+    background: var(--lighter-bg);
+    border-bottom: 2px solid var(--border-color);
+}
+
+.team-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.team-header.away {
+    justify-content: flex-start;
+}
+
+.team-header.home {
+    justify-content: flex-end;
+    flex-direction: row-reverse;
+}
+
+.team-logo-large {
+    width: 80px;
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--white);
+    border-radius: 50%;
+    padding: 8px;
+    box-shadow: var(--shadow-sm);
+}
+
+.team-logo-large img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.team-details h2 {
+    font-size: 1.5rem;
+    margin: 0;
+    color: var(--primary-color);
+}
+
+.team-record {
+    font-size: 0.85rem;
+    color: var(--text-light);
+}
+
+.score-display {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.final-score {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.score-number {
+    font-size: 3.5rem;
+    font-weight: 700;
+    color: var(--primary-color);
+    line-height: 1;
+}
+
+.status-label {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--text-light);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.line-score {
+    padding: 0;
+    overflow-x: auto;
+}
+
+.line-score-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+.line-score-table thead th {
+    background: var(--light-bg);
+    padding: 12px 8px;
+    text-align: center;
+    font-weight: 600;
+    border-bottom: 2px solid var(--border-color);
+    font-size: 0.85rem;
+}
+
+.line-score-table tbody td {
+    padding: 12px 8px;
+    text-align: center;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.line-score-table .team-name {
+    text-align: left;
+    font-weight: 600;
+    padding-left: 16px;
+}
+
+.line-score-table .total {
+    background: var(--light-bg);
+    font-weight: 700;
+}
+
+.line-score-table tbody tr:hover {
+    background: var(--lighter-bg);
+}
+
+.game-scoreboard {
+    margin: 32px 0;
+}
+
+.scoreboard {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 24px;
+    align-items: center;
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    padding: 32px;
+    border-radius: 12px;
+    color: var(--white);
+}
+
+.team-score {
+    text-align: center;
+}
+
+.team-score .team-info {
+    margin-bottom: 16px;
+}
+
+.team-score .team-logo {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 12px;
+    background: var(--white);
+    border-radius: 50%;
+    padding: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.team-score .team-logo img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.team-score h2 {
+    font-size: 1.5rem;
+    margin-bottom: 8px;
+}
+
+.team-score .team-label {
+    font-size: 0.85rem;
+    opacity: 0.8;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.team-score .score {
+    font-size: 4rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.vs-separator {
+    font-size: 1.5rem;
+    font-weight: 700;
+    opacity: 0.6;
+}
+
+.game-info {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+    padding: 20px;
+    background: var(--light-bg);
+    border-radius: 8px;
+}
+
+.game-info > div {
+    padding: 8px 0;
+}
+
+.game-statistics {
+    margin-top: 40px;
+}
+
+.game-statistics h3 {
+    color: var(--primary-color);
+    margin: 24px 0 16px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--accent-color);
+}
+
+/* Games List */
+.games-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.game-item {
+    display: grid;
+    grid-template-columns: 100px 1fr auto auto;
+    gap: 16px;
+    align-items: center;
+    padding: 16px;
+    background: var(--white);
+    border-radius: 8px;
+    border-left: 4px solid var(--border-color);
+    transition: all 0.2s ease;
+}
+
+.game-item:hover {
+    box-shadow: var(--shadow-sm);
+}
+
+.game-item.win {
+    border-left-color: var(--success-color);
+    background: linear-gradient(90deg, rgba(40, 167, 69, 0.05) 0%, var(--white) 100%);
+}
+
+.game-item.loss {
+    border-left-color: var(--danger-color);
+    background: linear-gradient(90deg, rgba(220, 53, 69, 0.05) 0%, var(--white) 100%);
+}
+
+.game-item .game-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: transparent;
+    padding: 0;
+    margin: 0;
+}
+
+.game-item .location {
+    font-weight: 600;
+    color: var(--text-light);
+}
+
+.game-item .opponent {
+    font-weight: 600;
+}
+
+.game-item .game-score {
+    font-weight: 700;
+    font-size: 1.1rem;
+}
+
+.game-item .game-score .win {
+    color: var(--success-color);
+}
+
+.game-item .game-score .loss {
+    color: var(--danger-color);
+}
+
+/* Tournament Items */
+.tournaments-list {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.tournament-item {
+    background: var(--white);
+    padding: 24px;
+    border-radius: 8px;
+    box-shadow: var(--shadow-sm);
+    border-left: 4px solid var(--primary-color);
+}
+
+.tournament-item h3 {
+    margin-bottom: 12px;
+    color: var(--primary-color);
+}
+
+.tournament-item h3 a {
+    color: var(--primary-color);
+    text-decoration: none;
+}
+
+.tournament-item h3 a:hover {
+    color: var(--accent-color);
+}
+
+.tournament-standings {
+    margin: 24px 0;
+}
+
+/* Recent Games Widget */
+.recent-games {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* Entry Header for Single Pages */
+.entry-header {
+    margin-bottom: 32px;
+    padding-bottom: 24px;
+    border-bottom: 3px solid var(--accent-color);
+}
+
+.entry-header .entry-title {
+    font-size: 2.5rem;
+    color: var(--primary-color);
+    margin-bottom: 16px;
+}
+
+.entry-content {
+    line-height: 1.8;
+}
+
+.entry-content h2 {
+    color: var(--primary-color);
+    margin: 32px 0 16px;
+    font-size: 1.75rem;
+}
+
+.entry-content h3 {
+    color: var(--secondary-color);
+    margin: 24px 0 12px;
+    font-size: 1.35rem;
+}
+
+/* Section Spacing */
+section {
+    margin: 40px 0;
+}
+
+section h2 {
+    color: var(--primary-color);
+    margin-bottom: 24px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid var(--accent-color);
+    font-size: 1.75rem;
+}
+
+/* Button Variants */
+.btn-small {
+    padding: 6px 16px;
+    font-size: 0.875rem;
+}
+
+.btn-large {
+    padding: 14px 32px;
+    font-size: 1.1rem;
+}
+
+/* Utility Classes */
+.text-center {
+    text-align: center;
+}
+
+.text-muted {
+    color: var(--text-light);
+}
+
+.mb-0 { margin-bottom: 0; }
+.mb-1 { margin-bottom: 8px; }
+.mb-2 { margin-bottom: 16px; }
+.mb-3 { margin-bottom: 24px; }
+.mb-4 { margin-bottom: 32px; }
+
+.mt-0 { margin-top: 0; }
+.mt-1 { margin-top: 8px; }
+.mt-2 { margin-top: 16px; }
+.mt-3 { margin-top: 24px; }
+.mt-4 { margin-top: 32px; }
+
+/* Responsive Adjustments for New Components */
+@media (max-width: 768px) {
+    .games-grid {
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 12px;
+    }
+    
+    .leader-item {
+        gap: 12px !important;
+        padding: 12px !important;
+    }
+    
+    .leader-rank {
+        font-size: 1.2rem !important;
+        min-width: 30px !important;
+    }
+    
+    .leader-photo {
+        width: 50px !important;
+        height: 50px !important;
+    }
+    
+    .leader-name {
+        font-size: 1rem !important;
+    }
+    
+    .leader-team {
+        font-size: 0.85rem !important;
+    }
+    
+    .leader-stat .stat-value {
+        font-size: 1.2rem !important;
+    }
+    
+    .leader-stat .stat-label {
+        font-size: 0.7rem !important;
+    }
+    
+    .scoreboard-header {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+    
+    .team-header.home {
+        flex-direction: row;
+    }
+    
+    .score-display {
+        order: -1;
+        padding: 16px 0;
+        border-bottom: 1px solid var(--border-color);
+    }
+    
+    .score-number {
+        font-size: 2.5rem;
+    }
+    
+    .line-score {
+        overflow-x: scroll;
+    }
+    
+    .scoreboard {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+    
+    .vs-separator {
+        transform: rotate(90deg);
+        margin: 8px 0;
+    }
+    
+    .game-item {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+    
+    .tournament-grid, .seasons-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .game-matchup {
+        flex-direction: column;
+        gap: 12px;
+    }
+    
+    .game-matchup .team {
+        width: 100%;
+    }
+}
+
+/* Archive Games Styles - MLB Grid */
+.games-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 16px;
+    margin: 32px 0;
+}
+
+.game-box {
+    background: var(--white);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 16px;
+    text-decoration: none;
+    color: var(--text-color);
+    transition: all 0.2s ease;
+    display: block;
+}
+
+.game-box:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+    border-color: var(--primary-color);
+}
+
+.game-status {
+    text-align: center;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--text-light);
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.game-teams {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.team-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+}
+
+.team-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+}
+
+.team-logo-mini {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.team-logo-mini img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.team-name-short {
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.team-scores {
+    display: flex;
+    gap: 12px;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.score-r {
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: var(--primary-color);
+}
+
+.score-h, .score-e {
+    color: var(--text-light);
+}
+
+.games-archive {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    margin: 32px 0;
+}
+
+.game-tournament-badge {
+    display: inline-block;
+    background: var(--primary-color);
+    color: var(--white);
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-bottom: 12px;
+}
+
+.game-tournament-badge a {
+    color: var(--white);
+    text-decoration: none;
+}
+
+.game-tournament-badge a:hover {
+    opacity: 0.9;
+}
+
+.game-location-badge {
+    display: inline-block;
+    margin-left: 12px;
+    padding: 4px 8px;
+    background: var(--light-bg);
+    border-radius: 4px;
+    font-size: 0.85rem;
+}
+
+.team-logo-small {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--white);
+    border-radius: 50%;
+    padding: 4px;
+    box-shadow: var(--shadow-sm);
+}
+
+.team-logo-small img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.game-matchup .team-score.winner {
+    color: var(--success-color);
+    font-weight: 900;
+}
+
+.game-excerpt {
+    margin: 16px 0;
+    padding: 16px;
+    background: var(--light-bg);
+    border-radius: 6px;
+    font-size: 0.95rem;
+    line-height: 1.6;
+}
+
+.game-actions {
+    display: flex;
+    justify-content: center;
+    margin-top: 16px;
+}
+
+/* Page Header */
+.page-header {
+    margin-bottom: 32px;
+    padding-bottom: 24px;
+    border-bottom: 3px solid var(--accent-color);
+}
+
+.page-title {
+    font-size: 2.5rem;
+    color: var(--primary-color);
+    margin-bottom: 8px;
+}
+
+.archive-description {
+    color: var(--text-light);
+    font-size: 1.1rem;
+}
+
+/* Pagination */
+.pagination {
+    margin: 48px 0 32px;
+    display: flex;
+    justify-content: center;
+}
+
+.pagination .nav-links {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.pagination a,
+.pagination .current {
+    padding: 10px 16px;
+    background: var(--white);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    text-decoration: none;
+    color: var(--text-color);
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.pagination a:hover {
+    background: var(--primary-color);
+    color: var(--white);
+    border-color: var(--primary-color);
+}
+
+.pagination .current {
+    background: var(--primary-color);
+    color: var(--white);
+    border-color: var(--primary-color);
+}
+
+.pagination .dots {
+    padding: 10px 8px;
+    color: var(--text-light);
+}
+
+/* No Content Message */
+.no-content {
+    text-align: center;
+    padding: 64px 24px;
+    background: var(--light-bg);
+    border-radius: 8px;
+    margin: 32px 0;
+}
+
+.no-content p {
+    font-size: 1.1rem;
+    color: var(--text-light);
+}
+
+/* Archive Specific Responsive */
+@media (max-width: 768px) {
+    .game-tournament-badge {
+        font-size: 0.75rem;
+        padding: 4px 8px;
+    }
+    
+    .game-location-badge {
+        display: block;
+        margin: 8px 0 0 0;
+    }
+    
+    .team-logo-small {
+        width: 32px;
+        height: 32px;
+    }
+    
+    .page-title {
+        font-size: 2rem;
+    }
+}
