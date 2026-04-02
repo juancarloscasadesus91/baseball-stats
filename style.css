@@ -1076,6 +1076,268 @@ body {
     }
 }
 
+/* ========================================
+   TOURNAMENT SINGLE PAGE
+   ======================================== */
+.tournament-logo-large {
+    width: 120px !important;
+    height: 120px !important;
+    margin: 0 auto 24px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: var(--lighter-bg) !important;
+    border-radius: 50% !important;
+    padding: 12px !important;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1) !important;
+}
+
+.tournament-logo-large img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: contain !important;
+}
+
+.tournament-standings {
+    margin: 40px 0 !important;
+}
+
+.tournament-standings h2 {
+    color: var(--primary-color) !important;
+    margin-bottom: 24px !important;
+    padding-bottom: 12px !important;
+    border-bottom: 2px solid var(--mlb-red) !important;
+}
+
+.tournament-standings .stats-table {
+    width: 100% !important;
+}
+
+.tournament-standings .team-name-text a {
+    text-decoration: none !important;
+    color: var(--text-color) !important;
+    font-weight: 600 !important;
+}
+
+.tournament-standings .team-name-text a:hover {
+    color: var(--primary-color) !important;
+}
+
+/* Responsive Tournament Standings */
+@media (max-width: 768px) {
+    .tournament-standings .stats-table {
+        font-size: 0.75rem !important;
+    }
+    
+    .tournament-standings .stats-table th,
+    .tournament-standings .stats-table td {
+        padding: 8px 4px !important;
+        font-size: 0.75rem !important;
+    }
+    
+    .tournament-standings .team-mini-logo {
+        width: 32px !important;
+        height: 32px !important;
+    }
+    
+    .tournament-standings .team-name-cell {
+        gap: 8px !important;
+    }
+    
+    .tournament-standings .team-full-name {
+        display: none !important;
+    }
+    
+    .tournament-standings .team-abbr-name {
+        display: inline !important;
+        font-weight: 700 !important;
+    }
+}
+
+/* ========================================
+   TOURNAMENT GAMES GRID
+   ======================================== */
+.tournament-games {
+    margin: 40px 0 !important;
+}
+
+.tournament-games h2 {
+    color: var(--primary-color) !important;
+    margin-bottom: 24px !important;
+    padding-bottom: 12px !important;
+    border-bottom: 2px solid var(--mlb-red) !important;
+}
+
+.tournament-games-grid {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)) !important;
+    gap: 20px !important;
+    margin-top: 24px !important;
+}
+
+.tournament-game-card {
+    background: var(--white) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 8px !important;
+    overflow: hidden !important;
+    transition: all 0.3s ease !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.08) !important;
+}
+
+.tournament-game-card:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+    transform: translateY(-2px) !important;
+}
+
+.game-card-header {
+    background: var(--lighter-bg) !important;
+    padding: 12px 16px !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+    border-bottom: 1px solid var(--border-color) !important;
+}
+
+.game-date-badge {
+    font-size: 0.85rem !important;
+    font-weight: 600 !important;
+    color: var(--primary-color) !important;
+}
+
+.game-location-badge {
+    font-size: 0.75rem !important;
+    color: var(--text-light) !important;
+    background: var(--white) !important;
+    padding: 4px 8px !important;
+    border-radius: 4px !important;
+}
+
+.game-card-teams {
+    padding: 20px 16px !important;
+}
+
+.game-team {
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    padding: 12px 0 !important;
+}
+
+.team-logo-small {
+    width: 48px !important;
+    height: 48px !important;
+    flex-shrink: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: var(--lighter-bg) !important;
+    border-radius: 50% !important;
+    padding: 6px !important;
+}
+
+.team-logo-small img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: contain !important;
+}
+
+.team-info {
+    flex: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 4px !important;
+}
+
+.team-name-full {
+    font-weight: 700 !important;
+    font-size: 1rem !important;
+    color: var(--text-color) !important;
+}
+
+.team-name-abbr {
+    display: none !important;
+}
+
+.team-label {
+    font-size: 0.75rem !important;
+    color: var(--text-light) !important;
+}
+
+.team-score-large {
+    font-size: 2rem !important;
+    font-weight: 700 !important;
+    color: var(--primary-color) !important;
+    min-width: 50px !important;
+    text-align: right !important;
+}
+
+.vs-divider {
+    text-align: center !important;
+    font-size: 0.75rem !important;
+    font-weight: 700 !important;
+    color: var(--text-light) !important;
+    padding: 8px 0 !important;
+    letter-spacing: 1px !important;
+}
+
+.game-card-footer {
+    padding: 12px 16px !important;
+    background: var(--lighter-bg) !important;
+    border-top: 1px solid var(--border-color) !important;
+    text-align: center !important;
+}
+
+.btn-view-game {
+    display: inline-block !important;
+    padding: 8px 20px !important;
+    background: var(--primary-color) !important;
+    color: var(--white) !important;
+    text-decoration: none !important;
+    border-radius: 4px !important;
+    font-weight: 600 !important;
+    font-size: 0.9rem !important;
+    transition: all 0.2s ease !important;
+}
+
+.btn-view-game:hover {
+    background: var(--mlb-red) !important;
+    transform: translateX(4px) !important;
+}
+
+/* Responsive Tournament Games */
+@media (max-width: 768px) {
+    .tournament-games-grid {
+        grid-template-columns: 1fr !important;
+        gap: 16px !important;
+    }
+    
+    .team-name-full {
+        display: none !important;
+    }
+    
+    .team-name-abbr {
+        display: inline !important;
+        font-weight: 700 !important;
+        font-size: 1rem !important;
+    }
+    
+    .team-logo-small {
+        width: 40px !important;
+        height: 40px !important;
+    }
+    
+    .team-score-large {
+        font-size: 1.5rem !important;
+    }
+    
+    .game-card-header {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+    }
+}
+
 /* Header - MLB Style */
 .site-header {
     background: var(--white);
