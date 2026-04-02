@@ -743,21 +743,21 @@ function baseball_add_game_meta_boxes() {
     );
     
     add_meta_box(
-        'game_stats',
-        'Estadísticas del Partido',
-        'baseball_game_stats_callback',
-        'game',
-        'normal',
-        'high'
-    );
-    
-    add_meta_box(
         'game_pitchers',
         'Pitchers del Partido',
         'baseball_game_pitchers_callback',
         'game',
         'normal',
         'high'
+    );
+    
+    add_meta_box(
+        'game_stats',
+        'Estadísticas del Partido',
+        'baseball_game_stats_callback',
+        'game',
+        'normal',
+        'default'
     );
 }
 add_action('add_meta_boxes', 'baseball_add_game_meta_boxes');
@@ -1450,42 +1450,49 @@ function baseball_game_pitchers_callback($post) {
         <button type="button" class="button add-pitcher-btn" onclick="addHomePitcher()">+ Agregar Pitcher Local</button>
     </div>
     
-    <script>
-    const allPlayers = <?php echo json_encode(array_map(function($p) { return ['id' => $p->ID, 'title' => $p->post_title]; }, $all_players)); ?>;
-    
-    function createPitcherRow(players) {
-        let options = '<option value="">Seleccionar Pitcher</option>';
-        players.forEach(p => {
-            options += `<option value="${p.id}">${p.title}</option>`;
-        });
+    <script type="text/javascript">
+    (function() {
+        const allPlayers = <?php echo json_encode(array_map(function($p) { return ['id' => $p->ID, 'title' => $p->post_title]; }, $all_players)); ?>;
         
-        return `
-            <div class="pitcher-row">
-                <select name="TEAM_pitcher_id[]" required>${options}</select>
-                <input type="number" name="TEAM_pitcher_ip[]" step="0.1" min="0" placeholder="0.0">
-                <input type="number" name="TEAM_pitcher_h[]" min="0" placeholder="0">
-                <input type="number" name="TEAM_pitcher_r[]" min="0" placeholder="0">
-                <input type="number" name="TEAM_pitcher_er[]" min="0" placeholder="0">
-                <input type="number" name="TEAM_pitcher_bb[]" min="0" placeholder="0">
-                <input type="number" name="TEAM_pitcher_so[]" min="0" placeholder="0">
-                <select name="TEAM_pitcher_decision[]">
-                    <option value="">-</option>
-                    <option value="W">W</option>
-                    <option value="L">L</option>
-                    <option value="S">S</option>
-                </select>
-                <button type="button" class="remove-pitcher" onclick="this.parentElement.remove()">×</button>
-            </div>
-        `;
-    }
-    
-    function addAwayPitcher() {
-        document.getElementById('away-pitchers-container').insertAdjacentHTML('beforeend', createPitcherRow(allPlayers).replace(/TEAM/g, 'away'));
-    }
-    
-    function addHomePitcher() {
-        document.getElementById('home-pitchers-container').insertAdjacentHTML('beforeend', createPitcherRow(allPlayers).replace(/TEAM/g, 'home'));
-    }
+        function createPitcherRow(players) {
+            let options = '<option value="">Seleccionar Pitcher</option>';
+            players.forEach(p => {
+                options += '<option value="' + p.id + '">' + p.title + '</option>';
+            });
+            
+            return '<div class="pitcher-row">' +
+                '<select name="TEAM_pitcher_id[]" required>' + options + '</select>' +
+                '<input type="number" name="TEAM_pitcher_ip[]" step="0.1" min="0" placeholder="0.0">' +
+                '<input type="number" name="TEAM_pitcher_h[]" min="0" placeholder="0">' +
+                '<input type="number" name="TEAM_pitcher_r[]" min="0" placeholder="0">' +
+                '<input type="number" name="TEAM_pitcher_er[]" min="0" placeholder="0">' +
+                '<input type="number" name="TEAM_pitcher_bb[]" min="0" placeholder="0">' +
+                '<input type="number" name="TEAM_pitcher_so[]" min="0" placeholder="0">' +
+                '<select name="TEAM_pitcher_decision[]">' +
+                    '<option value="">-</option>' +
+                    '<option value="W">W</option>' +
+                    '<option value="L">L</option>' +
+                    '<option value="S">S</option>' +
+                '</select>' +
+                '<button type="button" class="remove-pitcher" onclick="this.parentElement.remove()">×</button>' +
+            '</div>';
+        }
+        
+        // Make functions global
+        window.addAwayPitcher = function() {
+            var container = document.getElementById('away-pitchers-container');
+            if (container) {
+                container.insertAdjacentHTML('beforeend', createPitcherRow(allPlayers).replace(/TEAM/g, 'away'));
+            }
+        };
+        
+        window.addHomePitcher = function() {
+            var container = document.getElementById('home-pitchers-container');
+            if (container) {
+                container.insertAdjacentHTML('beforeend', createPitcherRow(allPlayers).replace(/TEAM/g, 'home'));
+            }
+        };
+    })();
     </script>
     <?php
 }
