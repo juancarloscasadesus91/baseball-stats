@@ -14,8 +14,55 @@ get_header(); ?>
             $founded_year = get_post_meta($team_id, '_founded_year', true);
             $stadium = get_post_meta($team_id, '_stadium', true);
             $city = get_post_meta($team_id, '_city', true);
-            $wins = get_post_meta($team_id, '_team_wins', true) ?: 0;
-            $losses = get_post_meta($team_id, '_team_losses', true) ?: 0;
+            
+            // Calculate wins and losses from ALL games
+            $all_games = get_posts(array(
+                'post_type' => 'game',
+                'posts_per_page' => -1,
+                'meta_query' => array(
+                    'relation' => 'OR',
+                    array(
+                        'key' => '_game_home_team',
+                        'value' => $team_id,
+                        'compare' => '='
+                    ),
+                    array(
+                        'key' => '_game_away_team',
+                        'value' => $team_id,
+                        'compare' => '='
+                    )
+                )
+            ));
+            
+            $wins = 0;
+            $losses = 0;
+            
+            foreach ($all_games as $game) {
+                $home_team = get_post_meta($game->ID, '_game_home_team', true);
+                $away_team = get_post_meta($game->ID, '_game_away_team', true);
+                $home_score = get_post_meta($game->ID, '_game_home_score', true);
+                $away_score = get_post_meta($game->ID, '_game_away_score', true);
+                
+                // Only count if scores are set
+                if ($home_score !== '' && $away_score !== '') {
+                    if ($home_team == $team_id) {
+                        // Team is home
+                        if ($home_score > $away_score) {
+                            $wins++;
+                        } else if ($home_score < $away_score) {
+                            $losses++;
+                        }
+                    } else if ($away_team == $team_id) {
+                        // Team is away
+                        if ($away_score > $home_score) {
+                            $wins++;
+                        } else if ($away_score < $home_score) {
+                            $losses++;
+                        }
+                    }
+                }
+            }
+            
             $total_games = $wins + $losses;
             $win_pct = $total_games > 0 ? number_format(($wins / $total_games) * 100, 1) : '0.0';
         ?>
@@ -42,7 +89,7 @@ get_header(); ?>
         </div>
 
         <div class="stats-card">
-            <h2>Récord de la Temporada</h2>
+            <h2>Labor de por Vida</h2>
             <div class="stat-boxes">
                 <div class="stat-box">
                     <div class="stat-label">Victorias</div>
@@ -51,6 +98,10 @@ get_header(); ?>
                 <div class="stat-box">
                     <div class="stat-label">Derrotas</div>
                     <div class="stat-value"><?php echo esc_html($losses); ?></div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Partidos Jugados</div>
+                    <div class="stat-value"><?php echo esc_html($total_games); ?></div>
                 </div>
                 <div class="stat-box">
                     <div class="stat-label">% Victorias</div>

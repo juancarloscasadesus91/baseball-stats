@@ -2316,6 +2316,127 @@ h6 { font-size: 1rem; }
     letter-spacing: 0.3px;
 }
 
+/* Leaders Widget Tabs */
+.leaders-main-tabs {
+    display: flex;
+    gap: 0;
+    margin-bottom: 16px;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.main-tab {
+    flex: 1;
+    padding: 12px 16px;
+    background: transparent;
+    border: none;
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: var(--text-light);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
+}
+
+.main-tab:hover {
+    color: var(--primary-color);
+}
+
+.main-tab.active {
+    color: var(--primary-color);
+    border-bottom-color: var(--mlb-red);
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+.leaders-filter-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.filter-tab {
+    padding: 6px 12px;
+    background: var(--lighter-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-weight: 600;
+    font-size: 0.8rem;
+    color: var(--text-color);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.filter-tab:hover {
+    background: var(--light-bg);
+    border-color: var(--primary-color);
+}
+
+.filter-tab.active {
+    background: var(--primary-color);
+    color: var(--white);
+    border-color: var(--primary-color);
+}
+
+.stats-list-container {
+    min-height: 400px;
+}
+
+.loading {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-light);
+    font-style: italic;
+}
+
+.leaders-view-more {
+    text-align: center;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border-color);
+}
+
+.btn-view-more {
+    display: inline-block;
+    padding: 10px 24px;
+    background: var(--primary-color);
+    color: var(--white) !important;
+    text-decoration: none !important;
+    border-radius: 4px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+}
+
+.btn-view-more:hover {
+    background: var(--mlb-red) !important;
+    color: var(--white) !important;
+    text-decoration: none !important;
+    transform: translateX(4px);
+}
+
+.no-leaders-data {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-light);
+}
+
+.no-leaders-data p {
+    margin: 8px 0;
+}
+
+.no-leaders-data small {
+    font-size: 0.85rem;
+    color: var(--text-light);
+}
+
 /* Stats List */
 .stats-list {
     display: flex;
@@ -2325,12 +2446,45 @@ h6 { font-size: 1rem; }
 
 .stats-list-item {
     display: grid;
-    grid-template-columns: 30px 1fr auto;
+    grid-template-columns: 30px 40px 1fr auto;
     gap: 12px;
     align-items: center;
     padding: 10px;
     border-radius: 3px;
     transition: background-color 0.15s ease;
+}
+
+.stats-list-item .player-photo {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--lighter-bg);
+}
+
+.stats-list-item .player-photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.stats-list-item .no-photo {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--light-bg);
+    color: var(--text-light);
+}
+
+.stats-list-item .no-photo .dashicons {
+    font-size: 24px;
+    width: 24px;
+    height: 24px;
 }
 
 .stats-list-item:hover {
@@ -2867,6 +3021,178 @@ h6 { font-size: 1rem; }
     margin: 24px 0 16px;
     padding-bottom: 8px;
     border-bottom: 2px solid var(--accent-color);
+}
+
+/* Game Stats Tabs */
+.game-stats-tabs {
+    display: flex;
+    gap: 0;
+    margin: 24px 0 0 0;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.team-tab {
+    flex: 1;
+    padding: 14px 20px;
+    background: transparent;
+    border: none;
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: var(--text-light);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.team-tab:hover {
+    color: var(--primary-color);
+    background: var(--lighter-bg);
+}
+
+.team-tab.active {
+    color: var(--primary-color);
+    border-bottom-color: var(--mlb-red);
+    background: var(--lighter-bg);
+}
+
+.team-tab-logo {
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    overflow: hidden;
+    background: var(--lighter-bg);
+    padding: 4px;
+}
+
+.team-tab-logo img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.team-tab-text {
+    display: flex;
+    align-items: center;
+}
+
+.team-tab-abbr {
+    display: none;
+}
+
+.team-stats-content {
+    display: none;
+    padding: 20px 0;
+}
+
+.team-stats-content.active {
+    display: block;
+}
+
+.stats-type-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+}
+
+.stats-type-tab {
+    padding: 8px 20px;
+    background: var(--lighter-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--text-color);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.stats-type-tab:hover {
+    background: var(--light-bg);
+    border-color: var(--primary-color);
+}
+
+.stats-type-tab.active {
+    background: var(--primary-color);
+    color: var(--white);
+    border-color: var(--primary-color);
+}
+
+.stats-type-content {
+    display: none;
+}
+
+.stats-type-content.active {
+    display: block;
+}
+
+/* Responsive Game Stats Tabs */
+@media (max-width: 768px) {
+    .game-stats-tabs {
+        flex-direction: row;
+        gap: 0;
+    }
+    
+    .team-tab {
+        padding: 12px 16px;
+        font-size: 0.85rem;
+        border-bottom: 3px solid transparent;
+        margin-bottom: -2px;
+        gap: 8px;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .team-tab.active {
+        border-bottom-color: var(--mlb-red);
+        border-left: none;
+    }
+    
+    .team-tab-logo {
+        width: 32px;
+        height: 32px;
+        margin-bottom: 4px;
+    }
+    
+    .team-tab-text {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+    
+    .team-tab-full {
+        display: none;
+    }
+    
+    .team-tab-abbr {
+        display: inline;
+        font-weight: 700;
+        font-size: 0.85rem;
+    }
+    
+    .stats-type-tabs {
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+    
+    .stats-type-tab {
+        padding: 6px 12px;
+        font-size: 0.8rem;
+        flex: 1;
+        min-width: 100px;
+    }
+    
+    .team-stats-content {
+        padding: 16px 0;
+    }
 }
 
 /* Games List */

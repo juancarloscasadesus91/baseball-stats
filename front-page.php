@@ -93,144 +93,47 @@ get_header(); ?>
 
             <!-- Sidebar -->
             <aside class="sidebar-area">
-                <!-- Batting Leaders -->
-                <div class="sidebar-widget">
-                    <h3 class="widget-title">Líderes en Bateo</h3>
-                    <?php
-                    $top_batters = get_posts(array(
-                        'post_type' => 'player',
-                        'posts_per_page' => 10,
-                        'meta_key' => '_batting_avg',
-                        'orderby' => 'meta_value_num',
-                        'order' => 'DESC',
-                    ));
-
-                    if ($top_batters) : ?>
-                        <div class="stats-list">
-                            <?php 
-                            $rank = 1;
-                            foreach ($top_batters as $player) : 
-                                $batting_avg = get_post_meta($player->ID, '_batting_avg', true);
-                                $team_id = get_post_meta($player->ID, '_player_team', true);
-                                $team_name = $team_id ? get_the_title($team_id) : '';
-                            ?>
-                            <div class="stats-list-item">
-                                <span class="rank"><?php echo $rank++; ?></span>
-                                <div class="player-photo">
-                                    <?php if (has_post_thumbnail($player->ID)) : ?>
-                                        <?php echo get_the_post_thumbnail($player->ID, 'thumbnail'); ?>
-                                    <?php else : ?>
-                                        <div class="no-photo">
-                                            <span class="dashicons dashicons-admin-users"></span>
-                                        </div>
-                                    <?php endif; ?>
-                                </div>
-                                <div class="player-info">
-                                    <a href="<?php echo get_permalink($player->ID); ?>" class="player-name-link">
-                                        <?php echo esc_html($player->post_title); ?>
-                                    </a>
-                                    <?php if ($team_name) : ?>
-                                        <span class="team-abbr"><?php echo esc_html(strtoupper(substr($team_name, 0, 3))); ?></span>
-                                    <?php endif; ?>
-                                </div>
-                                <span class="stat-value"><?php echo esc_html($batting_avg ?: '.000'); ?></span>
-                            </div>
-                            <?php endforeach; ?>
+                <!-- Leaders Widget with Tabs -->
+                <div class="sidebar-widget leaders-widget">
+                    <h3 class="widget-title">Líderes</h3>
+                    
+                    <!-- Main Tabs: Bateo / Pitcheo -->
+                    <div class="leaders-main-tabs">
+                        <button class="main-tab active" data-tab="bateo">BATEO</button>
+                        <button class="main-tab" data-tab="pitcheo">PITCHEO</button>
+                    </div>
+                    
+                    <!-- Bateo Content -->
+                    <div class="tab-content active" id="bateo-content">
+                        <!-- Bateo Filter Tabs -->
+                        <div class="leaders-filter-tabs">
+                            <button class="filter-tab active" data-stat="avg">AVG</button>
+                            <button class="filter-tab" data-stat="hr">HR</button>
+                            <button class="filter-tab" data-stat="hits">H</button>
+                            <button class="filter-tab" data-stat="so">K</button>
+                            <button class="filter-tab" data-stat="bb">BB</button>
+                            <button class="filter-tab" data-stat="sb">SB</button>
                         </div>
-                    <?php endif; ?>
-                </div>
-
-                <!-- Fielding Leaders (Stolen Bases) -->
-                <div class="sidebar-widget">
-                    <h3 class="widget-title">Líderes en Fildeo (SB)</h3>
-                    <?php
-                    $fielding_leaders = get_posts(array(
-                        'post_type' => 'player',
-                        'posts_per_page' => 10,
-                        'meta_key' => '_stolen_bases',
-                        'orderby' => 'meta_value_num',
-                        'order' => 'DESC',
-                    ));
-
-                    if ($fielding_leaders) : ?>
-                        <div class="stats-list">
-                            <?php 
-                            $rank = 1;
-                            foreach ($fielding_leaders as $player) : 
-                                $stolen_bases = get_post_meta($player->ID, '_stolen_bases', true);
-                                $team_id = get_post_meta($player->ID, '_player_team', true);
-                                $team_name = $team_id ? get_the_title($team_id) : '';
-                            ?>
-                            <div class="stats-list-item">
-                                <span class="rank"><?php echo $rank++; ?></span>
-                                <div class="player-photo">
-                                    <?php if (has_post_thumbnail($player->ID)) : ?>
-                                        <?php echo get_the_post_thumbnail($player->ID, 'thumbnail'); ?>
-                                    <?php else : ?>
-                                        <div class="no-photo">
-                                            <span class="dashicons dashicons-admin-users"></span>
-                                        </div>
-                                    <?php endif; ?>
-                                </div>
-                                <div class="player-info">
-                                    <a href="<?php echo get_permalink($player->ID); ?>" class="player-name-link">
-                                        <?php echo esc_html($player->post_title); ?>
-                                    </a>
-                                    <?php if ($team_name) : ?>
-                                        <span class="team-abbr"><?php echo esc_html(strtoupper(substr($team_name, 0, 3))); ?></span>
-                                    <?php endif; ?>
-                                </div>
-                                <span class="stat-value"><?php echo esc_html($stolen_bases ?: '0'); ?></span>
-                            </div>
-                            <?php endforeach; ?>
+                        
+                        <div id="bateo-stats-container" class="stats-list-container">
+                            <!-- Stats will be loaded here via JavaScript -->
                         </div>
-                    <?php endif; ?>
-                </div>
-
-                <!-- Pitching Leaders -->
-                <div class="sidebar-widget">
-                    <h3 class="widget-title">Líderes en Pitcheo (ERA)</h3>
-                    <?php
-                    $pitching_leaders = get_posts(array(
-                        'post_type' => 'player',
-                        'posts_per_page' => 10,
-                        'meta_key' => '_era',
-                        'orderby' => 'meta_value_num',
-                        'order' => 'ASC',
-                        'meta_query' => array(
-                            array(
-                                'key' => '_era',
-                                'value' => '0',
-                                'compare' => '>',
-                                'type' => 'DECIMAL'
-                            )
-                        )
-                    ));
-
-                    if ($pitching_leaders) : ?>
-                        <div class="stats-list">
-                            <?php 
-                            $rank = 1;
-                            foreach ($pitching_leaders as $player) : 
-                                $era = get_post_meta($player->ID, '_era', true);
-                                $team_id = get_post_meta($player->ID, '_player_team', true);
-                                $team_name = $team_id ? get_the_title($team_id) : '';
-                            ?>
-                            <div class="stats-list-item">
-                                <span class="rank"><?php echo $rank++; ?></span>
-                                <div class="player-info">
-                                    <a href="<?php echo get_permalink($player->ID); ?>" class="player-name-link">
-                                        <?php echo esc_html($player->post_title); ?>
-                                    </a>
-                                    <?php if ($team_name) : ?>
-                                        <span class="team-abbr"><?php echo esc_html(substr($team_name, 0, 3)); ?></span>
-                                    <?php endif; ?>
-                                </div>
-                                <span class="stat-value"><?php echo esc_html($era ?: '0.00'); ?></span>
-                            </div>
-                            <?php endforeach; ?>
+                    </div>
+                    
+                    <!-- Pitcheo Content -->
+                    <div class="tab-content" id="pitcheo-content">
+                        <!-- Pitcheo Filter Tabs -->
+                        <div class="leaders-filter-tabs">
+                            <button class="filter-tab active" data-stat="era">ERA</button>
+                            <button class="filter-tab" data-stat="wins">W</button>
+                            <button class="filter-tab" data-stat="so">K</button>
+                            <button class="filter-tab" data-stat="ip">IP</button>
                         </div>
-                    <?php endif; ?>
+                        
+                        <div id="pitcheo-stats-container" class="stats-list-container">
+                            <!-- Stats will be loaded here via JavaScript -->
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Team Standings -->
@@ -295,5 +198,84 @@ get_header(); ?>
         </div>
     </div>
 </main>
+
+<script>
+jQuery(document).ready(function($) {
+    // Leaders data mapping
+    const leaderStats = {
+        bateo: {
+            avg: { meta: '_batting_avg', order: 'DESC', label: 'AVG', default: '.000' },
+            hr: { meta: '_home_runs', order: 'DESC', label: 'HR', default: '0' },
+            hits: { meta: '_hits', order: 'DESC', label: 'H', default: '0' },
+            so: { meta: '_strikeouts', order: 'DESC', label: 'K', default: '0' },
+            bb: { meta: '_walks', order: 'DESC', label: 'BB', default: '0' },
+            sb: { meta: '_stolen_bases', order: 'DESC', label: 'SB', default: '0' }
+        },
+        pitcheo: {
+            era: { meta: '_era', order: 'ASC', label: 'ERA', default: '0.00' },
+            wins: { meta: '_pitching_wins', order: 'DESC', label: 'W', default: '0' },
+            so: { meta: '_pitching_strikeouts', order: 'DESC', label: 'K', default: '0' },
+            ip: { meta: '_innings_pitched', order: 'DESC', label: 'IP', default: '0.0' }
+        }
+    };
+    
+    // Main tab switching
+    $('.main-tab').on('click', function() {
+        const tab = $(this).data('tab');
+        $('.main-tab').removeClass('active');
+        $(this).addClass('active');
+        $('.tab-content').removeClass('active');
+        $('#' + tab + '-content').addClass('active');
+        
+        // Load default stat for this tab
+        const defaultStat = $('#' + tab + '-content .filter-tab.active').data('stat');
+        loadLeaders(tab, defaultStat);
+    });
+    
+    // Filter tab switching
+    $('.filter-tab').on('click', function() {
+        const stat = $(this).data('stat');
+        const tab = $(this).closest('.tab-content').attr('id').replace('-content', '');
+        
+        $(this).siblings().removeClass('active');
+        $(this).addClass('active');
+        
+        loadLeaders(tab, stat);
+    });
+    
+    // Load leaders function
+    function loadLeaders(category, stat) {
+        const container = $('#' + category + '-stats-container');
+        const statConfig = leaderStats[category][stat];
+        
+        container.html('<div class="loading">Cargando...</div>');
+        
+        $.ajax({
+            url: '<?php echo admin_url('admin-ajax.php'); ?>',
+            type: 'POST',
+            data: {
+                action: 'get_leaders',
+                category: category,
+                stat: stat,
+                meta_key: statConfig.meta,
+                order: statConfig.order
+            },
+            success: function(response) {
+                if (response.success) {
+                    container.html(response.data.html);
+                } else {
+                    container.html('<p>No hay datos disponibles</p>');
+                }
+            },
+            error: function() {
+                container.html('<p>Error al cargar los datos</p>');
+            }
+        });
+    }
+    
+    // Load initial data (AVG for Bateo)
+    loadLeaders('bateo', 'avg');
+});
+</script>
 
 <?php get_footer(); ?>

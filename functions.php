@@ -750,6 +750,15 @@ function baseball_add_game_meta_boxes() {
         'normal',
         'high'
     );
+    
+    add_meta_box(
+        'game_pitchers',
+        'Pitchers del Partido',
+        'baseball_game_pitchers_callback',
+        'game',
+        'normal',
+        'high'
+    );
 }
 add_action('add_meta_boxes', 'baseball_add_game_meta_boxes');
 
@@ -1263,8 +1272,220 @@ function baseball_save_game_info($post_id) {
         // Update player cumulative stats
         baseball_update_player_cumulative_stats($post_id);
     }
+    
+    // Save pitchers data
+    if (isset($_POST['baseball_game_pitchers_nonce']) && wp_verify_nonce($_POST['baseball_game_pitchers_nonce'], 'baseball_save_game_pitchers')) {
+        // Save away pitchers
+        $away_pitchers = array();
+        if (isset($_POST['away_pitcher_id']) && is_array($_POST['away_pitcher_id'])) {
+            foreach ($_POST['away_pitcher_id'] as $index => $player_id) {
+                if (!empty($player_id)) {
+                    $away_pitchers[] = array(
+                        'player_id' => intval($player_id),
+                        'ip' => floatval($_POST['away_pitcher_ip'][$index] ?? 0),
+                        'h' => intval($_POST['away_pitcher_h'][$index] ?? 0),
+                        'r' => intval($_POST['away_pitcher_r'][$index] ?? 0),
+                        'er' => intval($_POST['away_pitcher_er'][$index] ?? 0),
+                        'bb' => intval($_POST['away_pitcher_bb'][$index] ?? 0),
+                        'so' => intval($_POST['away_pitcher_so'][$index] ?? 0),
+                        'decision' => sanitize_text_field($_POST['away_pitcher_decision'][$index] ?? '')
+                    );
+                }
+            }
+        }
+        update_post_meta($post_id, '_game_away_pitchers', $away_pitchers);
+        
+        // Save home pitchers
+        $home_pitchers = array();
+        if (isset($_POST['home_pitcher_id']) && is_array($_POST['home_pitcher_id'])) {
+            foreach ($_POST['home_pitcher_id'] as $index => $player_id) {
+                if (!empty($player_id)) {
+                    $home_pitchers[] = array(
+                        'player_id' => intval($player_id),
+                        'ip' => floatval($_POST['home_pitcher_ip'][$index] ?? 0),
+                        'h' => intval($_POST['home_pitcher_h'][$index] ?? 0),
+                        'r' => intval($_POST['home_pitcher_r'][$index] ?? 0),
+                        'er' => intval($_POST['home_pitcher_er'][$index] ?? 0),
+                        'bb' => intval($_POST['home_pitcher_bb'][$index] ?? 0),
+                        'so' => intval($_POST['home_pitcher_so'][$index] ?? 0),
+                        'decision' => sanitize_text_field($_POST['home_pitcher_decision'][$index] ?? '')
+                    );
+                }
+            }
+        }
+        update_post_meta($post_id, '_game_home_pitchers', $home_pitchers);
+        
+        // Update pitcher cumulative stats
+        baseball_update_pitcher_cumulative_stats($post_id, array_merge($away_pitchers, $home_pitchers));
+    }
 }
 add_action('save_post_game', 'baseball_save_game_info');
+
+/**
+ * Game Pitchers Meta Box Callback
+ */
+function baseball_game_pitchers_callback($post) {
+    wp_nonce_field('baseball_save_game_pitchers', 'baseball_game_pitchers_nonce');
+    
+    $home_team_id = get_post_meta($post->ID, '_game_home_team', true);
+    $away_team_id = get_post_meta($post->ID, '_game_away_team', true);
+    
+    // Get saved pitchers data
+    $home_pitchers = get_post_meta($post->ID, '_game_home_pitchers', true) ?: array();
+    $away_pitchers = get_post_meta($post->ID, '_game_away_pitchers', true) ?: array();
+    
+    // Get all players
+    $all_players = get_posts(array(
+        'post_type' => 'player',
+        'posts_per_page' => -1,
+        'orderby' => 'title',
+        'order' => 'ASC'
+    ));
+    
+    ?>
+    <style>
+        .pitchers-section { margin-bottom: 30px; }
+        .pitchers-section h3 { margin-bottom: 15px; color: #0073aa; }
+        .pitcher-row { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 50px; gap: 10px; margin-bottom: 10px; align-items: center; padding: 10px; background: #f9f9f9; border-radius: 4px; }
+        .pitcher-row label { font-weight: 600; font-size: 11px; text-transform: uppercase; color: #666; }
+        .pitcher-row input, .pitcher-row select { width: 100%; padding: 5px; }
+        .pitcher-row.header { background: #0073aa; color: white; font-weight: bold; }
+        .pitcher-row.header label { color: white; }
+        .add-pitcher-btn { margin-top: 10px; }
+        .remove-pitcher { background: #dc3545; color: white; border: none; padding: 5px 10px; cursor: pointer; border-radius: 3px; }
+    </style>
+    
+    <div class="pitchers-section">
+        <h3>Pitchers Visitante (<?php echo $away_team_id ? get_the_title($away_team_id) : 'Seleccionar equipo'; ?>)</h3>
+        <div class="pitcher-row header">
+            <label>Pitcher</label>
+            <label>IP</label>
+            <label>H</label>
+            <label>R</label>
+            <label>ER</label>
+            <label>BB</label>
+            <label>K</label>
+            <label>W/L/S</label>
+            <label></label>
+        </div>
+        <div id="away-pitchers-container">
+            <?php if (!empty($away_pitchers)): ?>
+                <?php foreach ($away_pitchers as $index => $pitcher): ?>
+                    <div class="pitcher-row">
+                        <select name="away_pitcher_id[]" required>
+                            <option value="">Seleccionar Pitcher</option>
+                            <?php foreach ($all_players as $player): ?>
+                                <option value="<?php echo $player->ID; ?>" <?php selected($pitcher['player_id'], $player->ID); ?>>
+                                    <?php echo esc_html($player->post_title); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                        <input type="number" name="away_pitcher_ip[]" value="<?php echo esc_attr($pitcher['ip']); ?>" step="0.1" min="0" placeholder="0.0">
+                        <input type="number" name="away_pitcher_h[]" value="<?php echo esc_attr($pitcher['h']); ?>" min="0" placeholder="0">
+                        <input type="number" name="away_pitcher_r[]" value="<?php echo esc_attr($pitcher['r']); ?>" min="0" placeholder="0">
+                        <input type="number" name="away_pitcher_er[]" value="<?php echo esc_attr($pitcher['er']); ?>" min="0" placeholder="0">
+                        <input type="number" name="away_pitcher_bb[]" value="<?php echo esc_attr($pitcher['bb']); ?>" min="0" placeholder="0">
+                        <input type="number" name="away_pitcher_so[]" value="<?php echo esc_attr($pitcher['so']); ?>" min="0" placeholder="0">
+                        <select name="away_pitcher_decision[]">
+                            <option value="">-</option>
+                            <option value="W" <?php selected($pitcher['decision'], 'W'); ?>>W</option>
+                            <option value="L" <?php selected($pitcher['decision'], 'L'); ?>>L</option>
+                            <option value="S" <?php selected($pitcher['decision'], 'S'); ?>>S</option>
+                        </select>
+                        <button type="button" class="remove-pitcher" onclick="this.parentElement.remove()">×</button>
+                    </div>
+                <?php endforeach; ?>
+            <?php endif; ?>
+        </div>
+        <button type="button" class="button add-pitcher-btn" onclick="addAwayPitcher()">+ Agregar Pitcher Visitante</button>
+    </div>
+    
+    <hr style="margin: 30px 0;">
+    
+    <div class="pitchers-section">
+        <h3>Pitchers Local (<?php echo $home_team_id ? get_the_title($home_team_id) : 'Seleccionar equipo'; ?>)</h3>
+        <div class="pitcher-row header">
+            <label>Pitcher</label>
+            <label>IP</label>
+            <label>H</label>
+            <label>R</label>
+            <label>ER</label>
+            <label>BB</label>
+            <label>K</label>
+            <label>W/L/S</label>
+            <label></label>
+        </div>
+        <div id="home-pitchers-container">
+            <?php if (!empty($home_pitchers)): ?>
+                <?php foreach ($home_pitchers as $index => $pitcher): ?>
+                    <div class="pitcher-row">
+                        <select name="home_pitcher_id[]" required>
+                            <option value="">Seleccionar Pitcher</option>
+                            <?php foreach ($all_players as $player): ?>
+                                <option value="<?php echo $player->ID; ?>" <?php selected($pitcher['player_id'], $player->ID); ?>>
+                                    <?php echo esc_html($player->post_title); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                        <input type="number" name="home_pitcher_ip[]" value="<?php echo esc_attr($pitcher['ip']); ?>" step="0.1" min="0" placeholder="0.0">
+                        <input type="number" name="home_pitcher_h[]" value="<?php echo esc_attr($pitcher['h']); ?>" min="0" placeholder="0">
+                        <input type="number" name="home_pitcher_r[]" value="<?php echo esc_attr($pitcher['r']); ?>" min="0" placeholder="0">
+                        <input type="number" name="home_pitcher_er[]" value="<?php echo esc_attr($pitcher['er']); ?>" min="0" placeholder="0">
+                        <input type="number" name="home_pitcher_bb[]" value="<?php echo esc_attr($pitcher['bb']); ?>" min="0" placeholder="0">
+                        <input type="number" name="home_pitcher_so[]" value="<?php echo esc_attr($pitcher['so']); ?>" min="0" placeholder="0">
+                        <select name="home_pitcher_decision[]">
+                            <option value="">-</option>
+                            <option value="W" <?php selected($pitcher['decision'], 'W'); ?>>W</option>
+                            <option value="L" <?php selected($pitcher['decision'], 'L'); ?>>L</option>
+                            <option value="S" <?php selected($pitcher['decision'], 'S'); ?>>S</option>
+                        </select>
+                        <button type="button" class="remove-pitcher" onclick="this.parentElement.remove()">×</button>
+                    </div>
+                <?php endforeach; ?>
+            <?php endif; ?>
+        </div>
+        <button type="button" class="button add-pitcher-btn" onclick="addHomePitcher()">+ Agregar Pitcher Local</button>
+    </div>
+    
+    <script>
+    const allPlayers = <?php echo json_encode(array_map(function($p) { return ['id' => $p->ID, 'title' => $p->post_title]; }, $all_players)); ?>;
+    
+    function createPitcherRow(players) {
+        let options = '<option value="">Seleccionar Pitcher</option>';
+        players.forEach(p => {
+            options += `<option value="${p.id}">${p.title}</option>`;
+        });
+        
+        return `
+            <div class="pitcher-row">
+                <select name="TEAM_pitcher_id[]" required>${options}</select>
+                <input type="number" name="TEAM_pitcher_ip[]" step="0.1" min="0" placeholder="0.0">
+                <input type="number" name="TEAM_pitcher_h[]" min="0" placeholder="0">
+                <input type="number" name="TEAM_pitcher_r[]" min="0" placeholder="0">
+                <input type="number" name="TEAM_pitcher_er[]" min="0" placeholder="0">
+                <input type="number" name="TEAM_pitcher_bb[]" min="0" placeholder="0">
+                <input type="number" name="TEAM_pitcher_so[]" min="0" placeholder="0">
+                <select name="TEAM_pitcher_decision[]">
+                    <option value="">-</option>
+                    <option value="W">W</option>
+                    <option value="L">L</option>
+                    <option value="S">S</option>
+                </select>
+                <button type="button" class="remove-pitcher" onclick="this.parentElement.remove()">×</button>
+            </div>
+        `;
+    }
+    
+    function addAwayPitcher() {
+        document.getElementById('away-pitchers-container').insertAdjacentHTML('beforeend', createPitcherRow(allPlayers).replace(/TEAM/g, 'away'));
+    }
+    
+    function addHomePitcher() {
+        document.getElementById('home-pitchers-container').insertAdjacentHTML('beforeend', createPitcherRow(allPlayers).replace(/TEAM/g, 'home'));
+    }
+    </script>
+    <?php
+}
 
 /**
  * Update Player Cumulative Statistics
@@ -1308,6 +1529,73 @@ function baseball_update_player_cumulative_stats($game_id) {
         if ($stats->total_ab > 0) {
             $avg = number_format($stats->total_hits / $stats->total_ab, 3);
             update_post_meta($player_id, '_batting_avg', $avg);
+        }
+    }
+}
+
+/**
+ * Update Pitcher Cumulative Statistics
+ */
+function baseball_update_pitcher_cumulative_stats($game_id, $pitchers_data) {
+    // Get all unique pitcher IDs from this game
+    $pitcher_ids = array_unique(array_column($pitchers_data, 'player_id'));
+    
+    foreach ($pitcher_ids as $pitcher_id) {
+        // Get all games where this pitcher has pitched
+        $all_games = get_posts(array(
+            'post_type' => 'game',
+            'posts_per_page' => -1,
+            'post_status' => 'publish'
+        ));
+        
+        $total_ip = 0;
+        $total_h = 0;
+        $total_r = 0;
+        $total_er = 0;
+        $total_bb = 0;
+        $total_so = 0;
+        $total_wins = 0;
+        $total_losses = 0;
+        $total_saves = 0;
+        
+        foreach ($all_games as $game) {
+            $home_pitchers = get_post_meta($game->ID, '_game_home_pitchers', true) ?: array();
+            $away_pitchers = get_post_meta($game->ID, '_game_away_pitchers', true) ?: array();
+            $all_pitchers = array_merge($home_pitchers, $away_pitchers);
+            
+            foreach ($all_pitchers as $pitcher) {
+                if ($pitcher['player_id'] == $pitcher_id) {
+                    $total_ip += floatval($pitcher['ip']);
+                    $total_h += intval($pitcher['h']);
+                    $total_r += intval($pitcher['r']);
+                    $total_er += intval($pitcher['er']);
+                    $total_bb += intval($pitcher['bb']);
+                    $total_so += intval($pitcher['so']);
+                    
+                    if ($pitcher['decision'] === 'W') $total_wins++;
+                    if ($pitcher['decision'] === 'L') $total_losses++;
+                    if ($pitcher['decision'] === 'S') $total_saves++;
+                }
+            }
+        }
+        
+        // Update pitcher meta
+        update_post_meta($pitcher_id, '_innings_pitched', number_format($total_ip, 1));
+        update_post_meta($pitcher_id, '_pitching_hits', $total_h);
+        update_post_meta($pitcher_id, '_pitching_runs', $total_r);
+        update_post_meta($pitcher_id, '_pitching_earned_runs', $total_er);
+        update_post_meta($pitcher_id, '_pitching_walks', $total_bb);
+        update_post_meta($pitcher_id, '_pitching_strikeouts', $total_so);
+        update_post_meta($pitcher_id, '_pitching_wins', $total_wins);
+        update_post_meta($pitcher_id, '_pitching_losses', $total_losses);
+        update_post_meta($pitcher_id, '_pitching_saves', $total_saves);
+        
+        // Calculate ERA
+        if ($total_ip > 0) {
+            $era = ($total_er * 9) / $total_ip;
+            update_post_meta($pitcher_id, '_era', number_format($era, 2));
+        } else {
+            update_post_meta($pitcher_id, '_era', '0.00');
         }
     }
 }
@@ -1941,3 +2229,120 @@ function baseball_customize_register($wp_customize) {
     $wp_customize->get_control('custom_logo')->priority = 5;
 }
 add_action('customize_register', 'baseball_customize_register');
+
+/**
+ * AJAX Handler for Leaders Widget
+ */
+function baseball_get_leaders_ajax() {
+    $category = isset($_POST['category']) ? sanitize_text_field($_POST['category']) : 'bateo';
+    $stat = isset($_POST['stat']) ? sanitize_text_field($_POST['stat']) : 'avg';
+    $meta_key = isset($_POST['meta_key']) ? sanitize_text_field($_POST['meta_key']) : '_batting_avg';
+    $order = isset($_POST['order']) ? sanitize_text_field($_POST['order']) : 'DESC';
+    
+    // Get players
+    $args = array(
+        'post_type' => 'player',
+        'posts_per_page' => 6,
+        'meta_key' => $meta_key,
+        'orderby' => 'meta_value_num',
+        'order' => $order,
+    );
+    
+    // Special handling for pitching stats - only show players with pitching data
+    if ($category === 'pitcheo') {
+        if ($stat === 'era') {
+            // For ERA, show players with innings pitched > 0
+            $args['meta_query'] = array(
+                array(
+                    'key' => '_innings_pitched',
+                    'value' => '0',
+                    'compare' => '>',
+                    'type' => 'DECIMAL'
+                )
+            );
+        } else {
+            // For other pitching stats, show players with values > 0
+            $args['meta_query'] = array(
+                array(
+                    'key' => $meta_key,
+                    'value' => '0',
+                    'compare' => '>',
+                    'type' => 'NUMERIC'
+                )
+            );
+        }
+    }
+    
+    $players = get_posts($args);
+    
+    if (!$players) {
+        ob_start();
+        ?>
+        <div class="no-leaders-data">
+            <p><em>No hay jugadores con estadísticas de <?php echo $category === 'pitcheo' ? 'pitcheo' : 'bateo'; ?> disponibles.</em></p>
+            <p><small>Asegúrate de haber registrado partidos con estadísticas de <?php echo $category === 'pitcheo' ? 'pitchers' : 'bateadores'; ?>.</small></p>
+        </div>
+        <?php
+        $html = ob_get_clean();
+        wp_send_json_success(array('html' => $html));
+        return;
+    }
+    
+    // Build HTML
+    ob_start();
+    ?>
+    <div class="stats-list">
+        <?php 
+        $rank = 1;
+        foreach ($players as $player) : 
+            $stat_value = get_post_meta($player->ID, $meta_key, true);
+            $team_id = get_post_meta($player->ID, '_player_team', true);
+            $team_name = $team_id ? get_the_title($team_id) : '';
+            $team_abbr = $team_name ? strtoupper(substr($team_name, 0, 3)) : '';
+            
+            // Format stat value
+            if ($stat === 'avg') {
+                $display_value = $stat_value ?: '.000';
+            } elseif ($stat === 'era') {
+                $display_value = $stat_value ? number_format($stat_value, 2) : '0.00';
+            } elseif ($stat === 'ip') {
+                $display_value = $stat_value ? number_format($stat_value, 1) : '0.0';
+            } else {
+                $display_value = $stat_value ?: '0';
+            }
+        ?>
+        <div class="stats-list-item">
+            <span class="rank"><?php echo $rank++; ?></span>
+            <div class="player-photo">
+                <?php if (has_post_thumbnail($player->ID)) : ?>
+                    <?php echo get_the_post_thumbnail($player->ID, 'thumbnail'); ?>
+                <?php else : ?>
+                    <div class="no-photo">
+                        <span class="dashicons dashicons-admin-users"></span>
+                    </div>
+                <?php endif; ?>
+            </div>
+            <div class="player-info">
+                <a href="<?php echo get_permalink($player->ID); ?>" class="player-name-link">
+                    <?php echo esc_html($player->post_title); ?>
+                </a>
+                <?php if ($team_abbr) : ?>
+                    <span class="team-abbr"><?php echo esc_html($team_abbr); ?></span>
+                <?php endif; ?>
+            </div>
+            <span class="stat-value"><?php echo esc_html($display_value); ?></span>
+        </div>
+        <?php endforeach; ?>
+    </div>
+    <div class="leaders-view-more">
+        <a href="<?php echo get_post_type_archive_link('player'); ?>" class="btn-view-more">
+            Ver más →
+        </a>
+    </div>
+    <?php
+    $html = ob_get_clean();
+    
+    wp_send_json_success(array('html' => $html));
+}
+add_action('wp_ajax_get_leaders', 'baseball_get_leaders_ajax');
+add_action('wp_ajax_nopriv_get_leaders', 'baseball_get_leaders_ajax');

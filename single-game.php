@@ -178,103 +178,312 @@ get_header();
             
             <?php the_content(); ?>
             
-            <?php if (!empty($away_stats) || !empty($home_stats)): ?>
+            <?php 
+            // Get pitchers data
+            $away_pitchers = get_post_meta(get_the_ID(), '_game_away_pitchers', true) ?: array();
+            $home_pitchers = get_post_meta(get_the_ID(), '_game_home_pitchers', true) ?: array();
+            ?>
+            
+            <?php if (!empty($away_stats) || !empty($home_stats) || !empty($away_pitchers) || !empty($home_pitchers)): ?>
                 <section class="game-statistics">
                     <h2>Estadísticas del Partido</h2>
                     
-                    <h3><?php echo get_the_title($away_team_id); ?> (Visitante)</h3>
-                    <?php if (!empty($away_stats)): ?>
-                        <div class="stats-table-wrapper">
-                        <table class="stats-table">
-                            <thead>
-                                <tr>
-                                    <th>Jugador</th>
-                                    <th>AB</th>
-                                    <th>H</th>
-                                    <th>AVG</th>
-                                    <th>HR</th>
-                                    <th>RBI</th>
-                                    <th>BB</th>
-                                    <th>SO</th>
-                                    <th>SB</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php foreach ($away_stats as $stat): 
-                                    $avg = $stat->at_bats > 0 ? number_format($stat->hits / $stat->at_bats, 3) : '.000';
-                                ?>
-                                <tr>
-                                    <td>
-                                        <strong>
-                                            <a href="<?php echo get_permalink($stat->player_id); ?>">
-                                                <?php echo get_the_title($stat->player_id); ?>
-                                            </a>
-                                        </strong>
-                                    </td>
-                                    <td><?php echo $stat->at_bats; ?></td>
-                                    <td><?php echo $stat->hits; ?></td>
-                                    <td><?php echo $avg; ?></td>
-                                    <td><?php echo $stat->home_runs; ?></td>
-                                    <td><?php echo $stat->rbis; ?></td>
-                                    <td><?php echo $stat->walks; ?></td>
-                                    <td><?php echo $stat->strikeouts; ?></td>
-                                    <td><?php echo $stat->stolen_bases; ?></td>
-                                </tr>
-                                <?php endforeach; ?>
-                            </tbody>
-                        </table>
-                        </div>
-                    <?php else: ?>
-                        <p><em>No hay estadísticas disponibles para este equipo.</em></p>
-                    <?php endif; ?>
+                    <!-- Team Tabs -->
+                    <div class="game-stats-tabs">
+                        <button class="team-tab active" data-team="away">
+                            <?php if (has_post_thumbnail($away_team_id)): ?>
+                                <span class="team-tab-logo">
+                                    <?php echo get_the_post_thumbnail($away_team_id, 'thumbnail'); ?>
+                                </span>
+                            <?php endif; ?>
+                            <span class="team-tab-text">
+                                <span class="team-tab-full"><?php echo get_the_title($away_team_id); ?> (Visitante)</span>
+                                <span class="team-tab-abbr"><?php echo strtoupper(substr(get_the_title($away_team_id), 0, 3)); ?></span>
+                            </span>
+                        </button>
+                        <button class="team-tab" data-team="home">
+                            <?php if (has_post_thumbnail($home_team_id)): ?>
+                                <span class="team-tab-logo">
+                                    <?php echo get_the_post_thumbnail($home_team_id, 'thumbnail'); ?>
+                                </span>
+                            <?php endif; ?>
+                            <span class="team-tab-text">
+                                <span class="team-tab-full"><?php echo get_the_title($home_team_id); ?> (Local)</span>
+                                <span class="team-tab-abbr"><?php echo strtoupper(substr(get_the_title($home_team_id), 0, 3)); ?></span>
+                            </span>
+                        </button>
+                    </div>
                     
-                    <h3><?php echo get_the_title($home_team_id); ?> (Local)</h3>
-                    <?php if (!empty($home_stats)): ?>
-                        <div class="stats-table-wrapper">
-                        <table class="stats-table">
-                            <thead>
-                                <tr>
-                                    <th>Jugador</th>
-                                    <th>AB</th>
-                                    <th>H</th>
-                                    <th>AVG</th>
-                                    <th>HR</th>
-                                    <th>RBI</th>
-                                    <th>BB</th>
-                                    <th>SO</th>
-                                    <th>SB</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php foreach ($home_stats as $stat): 
-                                    $avg = $stat->at_bats > 0 ? number_format($stat->hits / $stat->at_bats, 3) : '.000';
-                                ?>
-                                <tr>
-                                    <td>
-                                        <strong>
-                                            <a href="<?php echo get_permalink($stat->player_id); ?>">
-                                                <?php echo get_the_title($stat->player_id); ?>
-                                            </a>
-                                        </strong>
-                                    </td>
-                                    <td><?php echo $stat->at_bats; ?></td>
-                                    <td><?php echo $stat->hits; ?></td>
-                                    <td><?php echo $avg; ?></td>
-                                    <td><?php echo $stat->home_runs; ?></td>
-                                    <td><?php echo $stat->rbis; ?></td>
-                                    <td><?php echo $stat->walks; ?></td>
-                                    <td><?php echo $stat->strikeouts; ?></td>
-                                    <td><?php echo $stat->stolen_bases; ?></td>
-                                </tr>
-                                <?php endforeach; ?>
-                            </tbody>
-                        </table>
+                    <!-- Away Team Content -->
+                    <div class="team-stats-content active" id="away-stats">
+                        <!-- Sub-tabs: Bateo / Pitcheo -->
+                        <div class="stats-type-tabs">
+                            <button class="stats-type-tab active" data-type="batting">Bateo</button>
+                            <button class="stats-type-tab" data-type="pitching">Pitcheo</button>
                         </div>
-                    <?php else: ?>
-                        <p><em>No hay estadísticas disponibles para este equipo.</em></p>
-                    <?php endif; ?>
+                        
+                        <!-- Batting Stats -->
+                        <div class="stats-type-content active" id="away-batting">
+                            <?php if (!empty($away_stats)): ?>
+                                <div class="stats-table-wrapper">
+                                    <table class="stats-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Jugador</th>
+                                                <th>AB</th>
+                                                <th>H</th>
+                                                <th>AVG</th>
+                                                <th>HR</th>
+                                                <th>RBI</th>
+                                                <th>BB</th>
+                                                <th>SO</th>
+                                                <th>SB</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <?php foreach ($away_stats as $stat): 
+                                                $avg = $stat->at_bats > 0 ? number_format($stat->hits / $stat->at_bats, 3) : '.000';
+                                            ?>
+                                            <tr>
+                                                <td>
+                                                    <div class="player-name-cell">
+                                                        <div class="player-mini-photo">
+                                                            <?php if (has_post_thumbnail($stat->player_id)) : ?>
+                                                                <?php echo get_the_post_thumbnail($stat->player_id, 'thumbnail'); ?>
+                                                            <?php else : ?>
+                                                                <div class="player-placeholder">
+                                                                    <span class="dashicons dashicons-admin-users"></span>
+                                                                </div>
+                                                            <?php endif; ?>
+                                                        </div>
+                                                        <strong>
+                                                            <a href="<?php echo get_permalink($stat->player_id); ?>">
+                                                                <?php echo get_the_title($stat->player_id); ?>
+                                                            </a>
+                                                        </strong>
+                                                    </div>
+                                                </td>
+                                                <td><?php echo $stat->at_bats; ?></td>
+                                                <td><?php echo $stat->hits; ?></td>
+                                                <td><?php echo $avg; ?></td>
+                                                <td><?php echo $stat->home_runs; ?></td>
+                                                <td><?php echo $stat->rbis; ?></td>
+                                                <td><?php echo $stat->walks; ?></td>
+                                                <td><?php echo $stat->strikeouts; ?></td>
+                                                <td><?php echo $stat->stolen_bases; ?></td>
+                                            </tr>
+                                            <?php endforeach; ?>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            <?php else: ?>
+                                <p><em>No hay estadísticas de bateo disponibles.</em></p>
+                            <?php endif; ?>
+                        </div>
+                        
+                        <!-- Pitching Stats -->
+                        <div class="stats-type-content" id="away-pitching">
+                            <?php if (!empty($away_pitchers)): ?>
+                                <div class="stats-table-wrapper">
+                                    <table class="stats-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Pitcher</th>
+                                                <th>IP</th>
+                                                <th>H</th>
+                                                <th>R</th>
+                                                <th>ER</th>
+                                                <th>BB</th>
+                                                <th>SO</th>
+                                                <th>Dec</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <?php foreach ($away_pitchers as $pitcher): ?>
+                                            <tr>
+                                                <td>
+                                                    <div class="player-name-cell">
+                                                        <div class="player-mini-photo">
+                                                            <?php if (has_post_thumbnail($pitcher['player_id'])) : ?>
+                                                                <?php echo get_the_post_thumbnail($pitcher['player_id'], 'thumbnail'); ?>
+                                                            <?php else : ?>
+                                                                <div class="player-placeholder">
+                                                                    <span class="dashicons dashicons-admin-users"></span>
+                                                                </div>
+                                                            <?php endif; ?>
+                                                        </div>
+                                                        <strong>
+                                                            <a href="<?php echo get_permalink($pitcher['player_id']); ?>">
+                                                                <?php echo get_the_title($pitcher['player_id']); ?>
+                                                            </a>
+                                                        </strong>
+                                                    </div>
+                                                </td>
+                                                <td><?php echo number_format($pitcher['ip'], 1); ?></td>
+                                                <td><?php echo $pitcher['h']; ?></td>
+                                                <td><?php echo $pitcher['r']; ?></td>
+                                                <td><?php echo $pitcher['er']; ?></td>
+                                                <td><?php echo $pitcher['bb']; ?></td>
+                                                <td><?php echo $pitcher['so']; ?></td>
+                                                <td><strong><?php echo $pitcher['decision'] ?: '-'; ?></strong></td>
+                                            </tr>
+                                            <?php endforeach; ?>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            <?php else: ?>
+                                <p><em>No hay estadísticas de pitcheo disponibles.</em></p>
+                            <?php endif; ?>
+                        </div>
+                    </div>
                     
-                    <p><em>AB = Turnos al Bate, H = Hits, AVG = Promedio, HR = Home Runs, RBI = Carreras Impulsadas, BB = Bases por Bolas, SO = Ponches, SB = Bases Robadas</em></p>
+                    <!-- Home Team Content -->
+                    <div class="team-stats-content" id="home-stats">
+                        <!-- Sub-tabs: Bateo / Pitcheo -->
+                        <div class="stats-type-tabs">
+                            <button class="stats-type-tab active" data-type="batting">Bateo</button>
+                            <button class="stats-type-tab" data-type="pitching">Pitcheo</button>
+                        </div>
+                        
+                        <!-- Batting Stats -->
+                        <div class="stats-type-content active" id="home-batting">
+                            <?php if (!empty($home_stats)): ?>
+                                <div class="stats-table-wrapper">
+                                    <table class="stats-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Jugador</th>
+                                                <th>AB</th>
+                                                <th>H</th>
+                                                <th>AVG</th>
+                                                <th>HR</th>
+                                                <th>RBI</th>
+                                                <th>BB</th>
+                                                <th>SO</th>
+                                                <th>SB</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <?php foreach ($home_stats as $stat): 
+                                                $avg = $stat->at_bats > 0 ? number_format($stat->hits / $stat->at_bats, 3) : '.000';
+                                            ?>
+                                            <tr>
+                                                <td>
+                                                    <div class="player-name-cell">
+                                                        <div class="player-mini-photo">
+                                                            <?php if (has_post_thumbnail($stat->player_id)) : ?>
+                                                                <?php echo get_the_post_thumbnail($stat->player_id, 'thumbnail'); ?>
+                                                            <?php else : ?>
+                                                                <div class="player-placeholder">
+                                                                    <span class="dashicons dashicons-admin-users"></span>
+                                                                </div>
+                                                            <?php endif; ?>
+                                                        </div>
+                                                        <strong>
+                                                            <a href="<?php echo get_permalink($stat->player_id); ?>">
+                                                                <?php echo get_the_title($stat->player_id); ?>
+                                                            </a>
+                                                        </strong>
+                                                    </div>
+                                                </td>
+                                                <td><?php echo $stat->at_bats; ?></td>
+                                                <td><?php echo $stat->hits; ?></td>
+                                                <td><?php echo $avg; ?></td>
+                                                <td><?php echo $stat->home_runs; ?></td>
+                                                <td><?php echo $stat->rbis; ?></td>
+                                                <td><?php echo $stat->walks; ?></td>
+                                                <td><?php echo $stat->strikeouts; ?></td>
+                                                <td><?php echo $stat->stolen_bases; ?></td>
+                                            </tr>
+                                            <?php endforeach; ?>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            <?php else: ?>
+                                <p><em>No hay estadísticas de bateo disponibles.</em></p>
+                            <?php endif; ?>
+                        </div>
+                        
+                        <!-- Pitching Stats -->
+                        <div class="stats-type-content" id="home-pitching">
+                            <?php if (!empty($home_pitchers)): ?>
+                                <div class="stats-table-wrapper">
+                                    <table class="stats-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Pitcher</th>
+                                                <th>IP</th>
+                                                <th>H</th>
+                                                <th>R</th>
+                                                <th>ER</th>
+                                                <th>BB</th>
+                                                <th>SO</th>
+                                                <th>Dec</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <?php foreach ($home_pitchers as $pitcher): ?>
+                                            <tr>
+                                                <td>
+                                                    <div class="player-name-cell">
+                                                        <div class="player-mini-photo">
+                                                            <?php if (has_post_thumbnail($pitcher['player_id'])) : ?>
+                                                                <?php echo get_the_post_thumbnail($pitcher['player_id'], 'thumbnail'); ?>
+                                                            <?php else : ?>
+                                                                <div class="player-placeholder">
+                                                                    <span class="dashicons dashicons-admin-users"></span>
+                                                                </div>
+                                                            <?php endif; ?>
+                                                        </div>
+                                                        <strong>
+                                                            <a href="<?php echo get_permalink($pitcher['player_id']); ?>">
+                                                                <?php echo get_the_title($pitcher['player_id']); ?>
+                                                            </a>
+                                                        </strong>
+                                                    </div>
+                                                </td>
+                                                <td><?php echo number_format($pitcher['ip'], 1); ?></td>
+                                                <td><?php echo $pitcher['h']; ?></td>
+                                                <td><?php echo $pitcher['r']; ?></td>
+                                                <td><?php echo $pitcher['er']; ?></td>
+                                                <td><?php echo $pitcher['bb']; ?></td>
+                                                <td><?php echo $pitcher['so']; ?></td>
+                                                <td><strong><?php echo $pitcher['decision'] ?: '-'; ?></strong></td>
+                                            </tr>
+                                            <?php endforeach; ?>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            <?php else: ?>
+                                <p><em>No hay estadísticas de pitcheo disponibles.</em></p>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                    
+                    <script>
+                    jQuery(document).ready(function($) {
+                        // Team tabs
+                        $('.team-tab').on('click', function() {
+                            const team = $(this).data('team');
+                            $('.team-tab').removeClass('active');
+                            $(this).addClass('active');
+                            $('.team-stats-content').removeClass('active');
+                            $('#' + team + '-stats').addClass('active');
+                        });
+                        
+                        // Stats type tabs
+                        $('.stats-type-tab').on('click', function() {
+                            const type = $(this).data('type');
+                            const parent = $(this).closest('.team-stats-content');
+                            const teamId = parent.attr('id').replace('-stats', '');
+                            
+                            parent.find('.stats-type-tab').removeClass('active');
+                            $(this).addClass('active');
+                            parent.find('.stats-type-content').removeClass('active');
+                            parent.find('#' + teamId + '-' + type).addClass('active');
+                        });
+                    });
+                    </script>
                 </section>
             <?php endif; ?>
         </div>
