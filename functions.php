@@ -1316,7 +1316,10 @@ function baseball_save_game_info($post_id) {
         update_post_meta($post_id, '_game_home_pitchers', $home_pitchers);
         
         // Update pitcher cumulative stats
-        baseball_update_pitcher_cumulative_stats($post_id, array_merge($away_pitchers, $home_pitchers));
+        $all_pitchers_data = array_merge($away_pitchers, $home_pitchers);
+        if (!empty($all_pitchers_data)) {
+            baseball_update_pitcher_cumulative_stats($post_id, $all_pitchers_data);
+        }
     }
 }
 add_action('save_post_game', 'baseball_save_game_info');
@@ -1523,6 +1526,8 @@ function baseball_update_player_cumulative_stats($game_id) {
         update_post_meta($player_id, '_hits', $stats->total_hits);
         update_post_meta($player_id, '_home_runs', $stats->total_hr);
         update_post_meta($player_id, '_rbis', $stats->total_rbi);
+        update_post_meta($player_id, '_walks', $stats->total_bb);
+        update_post_meta($player_id, '_strikeouts', $stats->total_so);
         update_post_meta($player_id, '_stolen_bases', $stats->total_sb);
         
         // Calculate batting average
