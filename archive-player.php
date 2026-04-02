@@ -24,7 +24,14 @@ $players = get_posts(array(
         </div>
 
         <?php if ($players) : ?>
-            <div class="stats-card">
+            <!-- Tabs -->
+            <div class="players-tabs">
+                <button class="players-tab active" data-tab="batting">Bateo</button>
+                <button class="players-tab" data-tab="pitching">Pitcheo</button>
+            </div>
+            
+            <!-- Batting Stats -->
+            <div class="stats-card players-tab-content active" id="batting-stats">
                 <div class="table-responsive">
                     <table class="players-table sortable-table" id="players-stats-table">
                         <thead>
@@ -109,6 +116,103 @@ $players = get_posts(array(
                 </div>
             </div>
             
+            <!-- Pitching Stats -->
+            <div class="stats-card players-tab-content" id="pitching-stats">
+                <div class="table-responsive">
+                    <table class="players-table sortable-table" id="pitchers-stats-table">
+                        <thead>
+                            <tr>
+                                <th data-sort="number">#</th>
+                                <th data-sort="name">Jugador</th>
+                                <th data-sort="team">Equipo</th>
+                                <th data-sort="era" class="sortable">ERA <span class="sort-arrow">↕</span></th>
+                                <th data-sort="wins" class="sortable">W <span class="sort-arrow">↕</span></th>
+                                <th data-sort="losses" class="sortable">L <span class="sort-arrow">↕</span></th>
+                                <th data-sort="saves" class="sortable">SV <span class="sort-arrow">↕</span></th>
+                                <th data-sort="ip" class="sortable">IP <span class="sort-arrow">↕</span></th>
+                                <th data-sort="hits" class="sortable">H <span class="sort-arrow">↕</span></th>
+                                <th data-sort="runs" class="sortable">R <span class="sort-arrow">↕</span></th>
+                                <th data-sort="er" class="sortable">ER <span class="sort-arrow">↕</span></th>
+                                <th data-sort="bb" class="sortable">BB <span class="sort-arrow">↕</span></th>
+                                <th data-sort="so" class="sortable">SO <span class="sort-arrow">↕</span></th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($players as $player) : 
+                                $player_id = $player->ID;
+                                $player_number = get_post_meta($player_id, '_player_number', true);
+                                $ip = get_post_meta($player_id, '_innings_pitched', true);
+                                
+                                // Only show players with pitching stats
+                                if (!$ip || floatval($ip) == 0) continue;
+                                
+                                $era = get_post_meta($player_id, '_era', true);
+                                $wins = get_post_meta($player_id, '_pitching_wins', true);
+                                $losses = get_post_meta($player_id, '_pitching_losses', true);
+                                $saves = get_post_meta($player_id, '_pitching_saves', true);
+                                $hits = get_post_meta($player_id, '_pitching_hits', true);
+                                $runs = get_post_meta($player_id, '_pitching_runs', true);
+                                $er = get_post_meta($player_id, '_pitching_earned_runs', true);
+                                $bb = get_post_meta($player_id, '_pitching_walks', true);
+                                $so = get_post_meta($player_id, '_pitching_strikeouts', true);
+                                
+                                // Calculate ERA if not set
+                                if (empty($era) || floatval($era) == 0) {
+                                    if (floatval($ip) > 0) {
+                                        $era = number_format((floatval($er) * 9) / floatval($ip), 2);
+                                    } else {
+                                        $era = '0.00';
+                                    }
+                                } else {
+                                    $era = number_format(floatval($era), 2);
+                                }
+                                
+                                $team_id = get_post_meta($player_id, '_player_team', true);
+                                $team_name = $team_id ? get_the_title($team_id) : 'FA';
+                                $team_abbr = $team_id ? strtoupper(substr(get_the_title($team_id), 0, 3)) : 'FA';
+                            ?>
+                            <tr>
+                                <td data-value="<?php echo esc_attr($player_number ?: 0); ?>"><?php echo esc_html($player_number ?: '-'); ?></td>
+                                <td data-value="<?php echo esc_attr($player->post_title); ?>">
+                                    <div class="player-name-cell">
+                                        <div class="player-mini-photo">
+                                            <?php if (has_post_thumbnail($player_id)) : ?>
+                                                <?php echo get_the_post_thumbnail($player_id, 'thumbnail'); ?>
+                                            <?php else : ?>
+                                                <div class="player-placeholder">
+                                                    <span class="dashicons dashicons-admin-users"></span>
+                                                </div>
+                                            <?php endif; ?>
+                                        </div>
+                                        <strong><?php echo esc_html($player->post_title); ?></strong>
+                                    </div>
+                                </td>
+                                <td data-value="<?php echo esc_attr($team_name); ?>"><?php echo esc_html($team_abbr); ?></td>
+                                <td data-value="<?php echo esc_attr($era); ?>" class="stat-highlight"><?php echo esc_html($era); ?></td>
+                                <td data-value="<?php echo esc_attr($wins ?: 0); ?>" class="stat-highlight"><?php echo esc_html($wins ?: '0'); ?></td>
+                                <td data-value="<?php echo esc_attr($losses ?: 0); ?>"><?php echo esc_html($losses ?: '0'); ?></td>
+                                <td data-value="<?php echo esc_attr($saves ?: 0); ?>" class="stat-highlight"><?php echo esc_html($saves ?: '0'); ?></td>
+                                <td data-value="<?php echo esc_attr($ip ?: 0); ?>"><?php echo number_format(floatval($ip), 1); ?></td>
+                                <td data-value="<?php echo esc_attr($hits ?: 0); ?>"><?php echo esc_html($hits ?: '0'); ?></td>
+                                <td data-value="<?php echo esc_attr($runs ?: 0); ?>"><?php echo esc_html($runs ?: '0'); ?></td>
+                                <td data-value="<?php echo esc_attr($er ?: 0); ?>"><?php echo esc_html($er ?: '0'); ?></td>
+                                <td data-value="<?php echo esc_attr($bb ?: 0); ?>"><?php echo esc_html($bb ?: '0'); ?></td>
+                                <td data-value="<?php echo esc_attr($so ?: 0); ?>" class="stat-highlight"><?php echo esc_html($so ?: '0'); ?></td>
+                                <td>
+                                    <a href="<?php echo get_permalink($player_id); ?>" class="btn-small">Ver</a>
+                                </td>
+                            </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="table-legend">
+                    <p><strong>Leyenda:</strong> ERA = Efectividad, W = Victorias, L = Derrotas, SV = Salvados, IP = Innings Lanzados, H = Hits Permitidos, R = Carreras Permitidas, ER = Carreras Limpias, BB = Bases por Bolas, SO = Ponches</p>
+                </div>
+            </div>
+            
         <?php else : ?>
             <div class="stats-card">
                 <h2>No hay jugadores registrados</h2>
@@ -120,6 +224,25 @@ $players = get_posts(array(
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Tab switching
+    const tabs = document.querySelectorAll('.players-tab');
+    const tabContents = document.querySelectorAll('.players-tab-content');
+    
+    tabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+            const tabName = this.getAttribute('data-tab');
+            
+            // Remove active class from all tabs and contents
+            tabs.forEach(t => t.classList.remove('active'));
+            tabContents.forEach(c => c.classList.remove('active'));
+            
+            // Add active class to clicked tab and corresponding content
+            this.classList.add('active');
+            document.getElementById(tabName + '-stats').classList.add('active');
+        });
+    });
+    
+    // Sorting for batting table
     const table = document.getElementById('players-stats-table');
     if (!table) return;
     

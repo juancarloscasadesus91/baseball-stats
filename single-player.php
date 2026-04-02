@@ -19,10 +19,27 @@ get_header(); ?>
             $hits = get_post_meta($player_id, '_hits', true);
             $at_bats = get_post_meta($player_id, '_at_bats', true);
             $stolen_bases = get_post_meta($player_id, '_stolen_bases', true);
-            $era = get_post_meta($player_id, '_era', true);
-            $wins = get_post_meta($player_id, '_wins', true);
-            $losses = get_post_meta($player_id, '_losses', true);
+            $walks = get_post_meta($player_id, '_walks', true);
             $strikeouts = get_post_meta($player_id, '_strikeouts', true);
+            
+            // Pitching stats
+            $ip = get_post_meta($player_id, '_innings_pitched', true);
+            $era = get_post_meta($player_id, '_era', true);
+            $wins = get_post_meta($player_id, '_pitching_wins', true);
+            $losses = get_post_meta($player_id, '_pitching_losses', true);
+            $saves = get_post_meta($player_id, '_pitching_saves', true);
+            $pitching_hits = get_post_meta($player_id, '_pitching_hits', true);
+            $pitching_er = get_post_meta($player_id, '_pitching_earned_runs', true);
+            $pitching_bb = get_post_meta($player_id, '_pitching_walks', true);
+            $pitching_so = get_post_meta($player_id, '_pitching_strikeouts', true);
+            
+            // Calculate ERA if not set
+            if ((empty($era) || floatval($era) == 0) && floatval($ip) > 0) {
+                $era = number_format((floatval($pitching_er) * 9) / floatval($ip), 2);
+            } else {
+                $era = $era ? number_format(floatval($era), 2) : '0.00';
+            }
+            
             $positions = wp_get_post_terms($player_id, 'position');
             $position_name = !empty($positions) ? $positions[0]->name : 'N/A';
             $team_name = $team_id ? get_the_title($team_id) : 'Agente Libre';
@@ -70,13 +87,25 @@ get_header(); ?>
                     <div class="stat-label">Bases Robadas (SB)</div>
                     <div class="stat-value"><?php echo esc_html($stolen_bases ?: '0'); ?></div>
                 </div>
+                <div class="stat-box">
+                    <div class="stat-label">Bases por Bolas (BB)</div>
+                    <div class="stat-value"><?php echo esc_html($walks ?: '0'); ?></div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Ponches (SO)</div>
+                    <div class="stat-value"><?php echo esc_html($strikeouts ?: '0'); ?></div>
+                </div>
             </div>
         </div>
 
-        <?php if ($wins || $losses || $era || $strikeouts) : ?>
+        <?php if ($ip && floatval($ip) > 0) : ?>
         <div class="stats-card">
             <h2>Estadísticas de Pitcheo</h2>
             <div class="stat-boxes">
+                <div class="stat-box">
+                    <div class="stat-label">Efectividad (ERA)</div>
+                    <div class="stat-value"><?php echo esc_html($era); ?></div>
+                </div>
                 <div class="stat-box">
                     <div class="stat-label">Victorias (W)</div>
                     <div class="stat-value"><?php echo esc_html($wins ?: '0'); ?></div>
@@ -86,12 +115,28 @@ get_header(); ?>
                     <div class="stat-value"><?php echo esc_html($losses ?: '0'); ?></div>
                 </div>
                 <div class="stat-box">
-                    <div class="stat-label">Efectividad (ERA)</div>
-                    <div class="stat-value"><?php echo esc_html($era ?: '0.00'); ?></div>
+                    <div class="stat-label">Salvados (SV)</div>
+                    <div class="stat-value"><?php echo esc_html($saves ?: '0'); ?></div>
                 </div>
                 <div class="stat-box">
-                    <div class="stat-label">Ponches (K)</div>
-                    <div class="stat-value"><?php echo esc_html($strikeouts ?: '0'); ?></div>
+                    <div class="stat-label">Innings Lanzados (IP)</div>
+                    <div class="stat-value"><?php echo number_format(floatval($ip), 1); ?></div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Hits Permitidos (H)</div>
+                    <div class="stat-value"><?php echo esc_html($pitching_hits ?: '0'); ?></div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Carreras Limpias (ER)</div>
+                    <div class="stat-value"><?php echo esc_html($pitching_er ?: '0'); ?></div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Bases por Bolas (BB)</div>
+                    <div class="stat-value"><?php echo esc_html($pitching_bb ?: '0'); ?></div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Ponches (SO)</div>
+                    <div class="stat-value"><?php echo esc_html($pitching_so ?: '0'); ?></div>
                 </div>
             </div>
         </div>
