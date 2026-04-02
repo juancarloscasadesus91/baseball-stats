@@ -1591,23 +1591,24 @@ function baseball_update_pitcher_cumulative_stats($game_id, $pitchers_data) {
             }
         }
         
-        // Update pitcher meta
-        update_post_meta($pitcher_id, '_innings_pitched', number_format($total_ip, 1));
-        update_post_meta($pitcher_id, '_pitching_hits', $total_h);
-        update_post_meta($pitcher_id, '_pitching_runs', $total_r);
-        update_post_meta($pitcher_id, '_pitching_earned_runs', $total_er);
-        update_post_meta($pitcher_id, '_pitching_walks', $total_bb);
-        update_post_meta($pitcher_id, '_pitching_strikeouts', $total_so);
-        update_post_meta($pitcher_id, '_pitching_wins', $total_wins);
-        update_post_meta($pitcher_id, '_pitching_losses', $total_losses);
-        update_post_meta($pitcher_id, '_pitching_saves', $total_saves);
+        // Update pitcher meta - ensure all values are properly typed
+        update_post_meta($pitcher_id, '_innings_pitched', floatval($total_ip));
+        update_post_meta($pitcher_id, '_pitching_hits', intval($total_h));
+        update_post_meta($pitcher_id, '_pitching_runs', intval($total_r));
+        update_post_meta($pitcher_id, '_pitching_earned_runs', intval($total_er));
+        update_post_meta($pitcher_id, '_pitching_walks', intval($total_bb));
+        update_post_meta($pitcher_id, '_pitching_strikeouts', intval($total_so));
+        update_post_meta($pitcher_id, '_pitching_wins', intval($total_wins));
+        update_post_meta($pitcher_id, '_pitching_losses', intval($total_losses));
+        update_post_meta($pitcher_id, '_pitching_saves', intval($total_saves));
         
-        // Calculate ERA
+        // Calculate ERA (Earned Run Average)
+        // Formula: (Earned Runs × 9) / Innings Pitched
         if ($total_ip > 0) {
-            $era = ($total_er * 9) / $total_ip;
-            update_post_meta($pitcher_id, '_era', number_format($era, 2));
+            $era = floatval(($total_er * 9) / $total_ip);
+            update_post_meta($pitcher_id, '_era', $era);
         } else {
-            update_post_meta($pitcher_id, '_era', '0.00');
+            update_post_meta($pitcher_id, '_era', 0);
         }
     }
 }
@@ -2314,13 +2315,22 @@ function baseball_get_leaders_ajax() {
             
             // Format stat value
             if ($stat === 'avg') {
-                $display_value = $stat_value ?: '.000';
+                $display_value = $stat_value ? number_format(floatval($stat_value), 3) : '.000';
             } elseif ($stat === 'era') {
-                $display_value = $stat_value ? number_format($stat_value, 2) : '0.00';
+                // Always calculate ERA from IP and ER to ensure accuracy
+                $ip = floatval(get_post_meta($player->ID, '_innings_pitched', true));
+                $er = floatval(get_post_meta($player->ID, '_pitching_earned_runs', true));
+                
+                if ($ip > 0) {
+                    $calculated_era = ($er * 9) / $ip;
+                    $display_value = number_format($calculated_era, 2);
+                } else {
+                    $display_value = '0.00';
+                }
             } elseif ($stat === 'ip') {
-                $display_value = $stat_value ? number_format($stat_value, 1) : '0.0';
+                $display_value = number_format(floatval($stat_value), 1);
             } else {
-                $display_value = $stat_value ?: '0';
+                $display_value = intval($stat_value);
             }
         ?>
         <div class="stats-list-item">
