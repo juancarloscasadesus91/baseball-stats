@@ -487,21 +487,6 @@ get_header();
                 </section>
             <?php endif; ?>
             
-            <!-- Scorecard Section -->
-            <?php
-            $scorecard_image = get_post_meta(get_the_ID(), '_game_scorecard_image', true);
-            if ($scorecard_image) : ?>
-            <section class="game-scorecard">
-                <h2>Anotación Oficial</h2>
-                <div class="scorecard-image-container">
-                    <img src="<?php echo esc_url($scorecard_image); ?>" alt="Anotación Oficial del Partido" class="scorecard-image">
-                    <a href="<?php echo esc_url($scorecard_image); ?>" target="_blank" class="btn scorecard-download">
-                        Ver en Tamaño Completo
-                    </a>
-                </div>
-            </section>
-            <?php endif; ?>
-            
             <!-- Highlights Section -->
             <section class="game-highlights">
                 <h2>Highlights del Partido</h2>
@@ -601,6 +586,21 @@ get_header();
                     <p>No hay highlights disponibles para este partido.</p>
                 <?php endif; ?>
             </section>
+            
+            <!-- Scorecard Section -->
+            <?php
+            $scorecard_image = get_post_meta(get_the_ID(), '_game_scorecard_image', true);
+            if ($scorecard_image) : ?>
+            <section class="game-scorecard">
+                <h2>Anotación Oficial</h2>
+                <div class="scorecard-image-container">
+                    <img src="<?php echo esc_url($scorecard_image); ?>" alt="Anotación Oficial del Partido" class="scorecard-image">
+                    <a href="<?php echo esc_url($scorecard_image); ?>" target="_blank" class="btn scorecard-download">
+                        Ver en Tamaño Completo
+                    </a>
+                </div>
+            </section>
+            <?php endif; ?>
         </div>
     </article>
 
