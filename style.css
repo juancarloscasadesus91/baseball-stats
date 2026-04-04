@@ -55,6 +55,11 @@ body {
     padding: 0 24px;
 }
 
+.site-content {
+    padding: 40px 0;
+    min-height: calc(100vh - 200px);
+}
+
 /* ========================================
    GAMES ARCHIVE - MLB STYLE GRID
    ======================================== */
@@ -2709,6 +2714,9 @@ h6 { font-size: 1rem; }
     box-shadow: var(--shadow-sm);
     transition: all 0.3s ease;
     border: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
 }
 
 .tournament-card:hover, .season-card:hover {
@@ -2718,8 +2726,11 @@ h6 { font-size: 1rem; }
 
 .tournament-card h3, .season-card h3 {
     color: var(--primary-color);
-    margin-bottom: 12px;
+    margin-bottom: 16px;
     font-size: 1.25rem;
+    border-bottom: 3px solid var(--mlb-red);
+    padding-bottom: 8px;
+    width: 100%;
 }
 
 .tournament-card h3 a, .season-card h3 a {
@@ -2731,6 +2742,11 @@ h6 { font-size: 1rem; }
     color: var(--accent-color);
 }
 
+.tournament-card .btn, .season-card .btn {
+    margin-top: auto;
+    width: auto;
+}
+
 .tournament-logo, .tournament-logo-large {
     text-align: center;
     margin-bottom: 20px;
@@ -2739,6 +2755,12 @@ h6 { font-size: 1rem; }
 .tournament-logo img {
     max-width: 150px;
     height: auto;
+}
+
+.tournament-dates {
+    color: var(--text-light);
+    font-size: 0.9rem;
+    margin-bottom: 16px;
 }
 
 .tournament-logo-large img {

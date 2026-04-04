@@ -15,23 +15,27 @@ get_header(); ?>
         </div>
 
         <?php if (have_posts()) : ?>
-            <div class="stats-grid">
+            <div class="seasons-grid">
                 <?php while (have_posts()) : the_post(); 
                     $season_id = get_the_ID();
                     $year = get_post_meta($season_id, '_season_year', true);
                     $start_date = get_post_meta($season_id, '_season_start_date', true);
                     $end_date = get_post_meta($season_id, '_season_end_date', true);
                 ?>
-                <div class="stats-card">
-                    <h2><?php the_title(); ?></h2>
+                <div class="season-card">
+                    <h3>
+                        <a href="<?php the_permalink(); ?>">
+                            <?php the_title(); ?>
+                        </a>
+                    </h3>
                     <?php if ($year) : ?>
                         <p><strong>Año:</strong> <?php echo esc_html($year); ?></p>
                     <?php endif; ?>
-                    <?php if ($start_date) : ?>
-                        <p><strong>Inicio:</strong> <?php echo date('d/m/Y', strtotime($start_date)); ?></p>
-                    <?php endif; ?>
-                    <?php if ($end_date) : ?>
-                        <p><strong>Fin:</strong> <?php echo date('d/m/Y', strtotime($end_date)); ?></p>
+                    <?php if ($start_date && $end_date) : ?>
+                        <p class="tournament-dates">
+                            <?php echo date('d/m/Y', strtotime($start_date)); ?> - 
+                            <?php echo date('d/m/Y', strtotime($end_date)); ?>
+                        </p>
                     <?php endif; ?>
                     <?php if (get_the_excerpt()) : ?>
                         <p><?php the_excerpt(); ?></p>
