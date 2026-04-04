@@ -759,6 +759,24 @@ function baseball_add_game_meta_boxes() {
         'normal',
         'default'
     );
+    
+    add_meta_box(
+        'game_highlights',
+        'Highlights del Partido',
+        'baseball_game_highlights_callback',
+        'game',
+        'normal',
+        'default'
+    );
+    
+    add_meta_box(
+        'game_scorecard',
+        'Anotación Oficial',
+        'baseball_game_scorecard_callback',
+        'game',
+        'normal',
+        'default'
+    );
 }
 add_action('add_meta_boxes', 'baseball_add_game_meta_boxes');
 
@@ -1185,6 +1203,180 @@ function baseball_game_stats_callback($post) {
     <?php
 }
 
+/**
+ * Game Highlights Meta Box Callback
+ */
+function baseball_game_highlights_callback($post) {
+    wp_nonce_field('baseball_save_game_highlights', 'baseball_game_highlights_nonce');
+    $highlights = get_post_meta($post->ID, '_game_highlights', true) ?: array();
+    ?>
+    <div id="highlights-container">
+        <?php if (!empty($highlights) && is_array($highlights)) : ?>
+            <?php foreach ($highlights as $index => $highlight) : ?>
+                <div class="highlight-row" style="margin-bottom: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 4px;">
+                    <h4>Highlight #<?php echo $index + 1; ?></h4>
+                    <p>
+                        <label><strong>Título:</strong></label><br>
+                        <input type="text" name="highlight_title[]" value="<?php echo esc_attr($highlight['title'] ?? ''); ?>" style="width: 100%;">
+                    </p>
+                    <p>
+                        <label><strong>URL del Video/Imagen:</strong></label><br>
+                        <input type="url" name="highlight_url[]" value="<?php echo esc_url($highlight['url'] ?? ''); ?>" class="highlight-url-input" style="width: calc(100% - 150px);" placeholder="YouTube, Instagram, Facebook, Twitter o archivo">
+                        <button type="button" class="button upload-media-button" style="margin-left: 10px;">Subir Archivo</button>
+                        <small style="display: block; margin-top: 5px; color: #666;">
+                            Soporta: YouTube, Instagram, Facebook, Twitter/X, videos (.mp4, .webm) e imágenes (.jpg, .png, .gif)
+                        </small>
+                    </p>
+                    <p>
+                        <label><strong>Descripción:</strong></label><br>
+                        <textarea name="highlight_description[]" rows="3" style="width: 100%;"><?php echo esc_textarea($highlight['description'] ?? ''); ?></textarea>
+                    </p>
+                    <button type="button" class="button remove-highlight">Eliminar Highlight</button>
+                </div>
+            <?php endforeach; ?>
+        <?php endif; ?>
+    </div>
+    <button type="button" class="button button-primary" id="add-highlight">Agregar Highlight</button>
+    
+    <script>
+    jQuery(document).ready(function($) {
+        var highlightIndex = <?php echo count($highlights); ?>;
+        
+        // Add new highlight
+        $('#add-highlight').on('click', function() {
+            highlightIndex++;
+            var html = '<div class="highlight-row" style="margin-bottom: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 4px;">' +
+                '<h4>Highlight #' + highlightIndex + '</h4>' +
+                '<p><label><strong>Título:</strong></label><br>' +
+                '<input type="text" name="highlight_title[]" style="width: 100%;"></p>' +
+                '<p><label><strong>URL del Video/Imagen:</strong></label><br>' +
+                '<input type="url" name="highlight_url[]" class="highlight-url-input" style="width: calc(100% - 150px);" placeholder="YouTube, Instagram, Facebook, Twitter o archivo">' +
+                '<button type="button" class="button upload-media-button" style="margin-left: 10px;">Subir Archivo</button>' +
+                '<small style="display: block; margin-top: 5px; color: #666;">Soporta: YouTube, Instagram, Facebook, Twitter/X, videos (.mp4, .webm) e imágenes (.jpg, .png, .gif)</small></p>' +
+                '<p><label><strong>Descripción:</strong></label><br>' +
+                '<textarea name="highlight_description[]" rows="3" style="width: 100%;"></textarea></p>' +
+                '<button type="button" class="button remove-highlight">Eliminar Highlight</button>' +
+                '</div>';
+            $('#highlights-container').append(html);
+        });
+        
+        // Remove highlight
+        $(document).on('click', '.remove-highlight', function() {
+            $(this).closest('.highlight-row').remove();
+        });
+        
+        // Upload media button
+        var mediaUploader;
+        $(document).on('click', '.upload-media-button', function(e) {
+            e.preventDefault();
+            var button = $(this);
+            var inputField = button.siblings('.highlight-url-input');
+            
+            // If the uploader object has already been created, reopen the dialog
+            if (mediaUploader) {
+                mediaUploader.open();
+                return;
+            }
+            
+            // Extend the wp.media object
+            mediaUploader = wp.media({
+                title: 'Seleccionar Video o Imagen',
+                button: {
+                    text: 'Usar este archivo'
+                },
+                library: {
+                    type: ['video', 'image']
+                },
+                multiple: false
+            });
+            
+            // When a file is selected, run a callback
+            mediaUploader.on('select', function() {
+                var attachment = mediaUploader.state().get('selection').first().toJSON();
+                inputField.val(attachment.url);
+            });
+            
+            // Open the uploader dialog
+            mediaUploader.open();
+        });
+    });
+    </script>
+    <?php
+}
+
+/**
+ * Game Scorecard Meta Box Callback
+ */
+function baseball_game_scorecard_callback($post) {
+    wp_nonce_field('baseball_save_game_scorecard', 'baseball_game_scorecard_nonce');
+    $scorecard_image = get_post_meta($post->ID, '_game_scorecard_image', true);
+    ?>
+    <div style="margin-bottom: 20px;">
+        <p>
+            <label><strong>Imagen de la Anotación Oficial:</strong></label><br>
+            <input type="hidden" id="scorecard-image-url" name="scorecard_image" value="<?php echo esc_url($scorecard_image); ?>">
+            <button type="button" class="button button-primary" id="upload-scorecard-button">
+                <?php echo $scorecard_image ? 'Cambiar Imagen' : 'Subir Imagen'; ?>
+            </button>
+            <button type="button" class="button" id="remove-scorecard-button" style="<?php echo !$scorecard_image ? 'display:none;' : ''; ?>">
+                Eliminar Imagen
+            </button>
+        </p>
+        <div id="scorecard-preview" style="margin-top: 15px; <?php echo !$scorecard_image ? 'display:none;' : ''; ?>">
+            <img src="<?php echo esc_url($scorecard_image); ?>" style="max-width: 100%; height: auto; border: 1px solid #ddd; border-radius: 4px;">
+        </div>
+        <p style="margin-top: 10px; color: #666;">
+            <small>Sube una imagen de la anotación oficial del partido (scorecard). Formatos soportados: JPG, PNG, PDF.</small>
+        </p>
+    </div>
+    
+    <script>
+    jQuery(document).ready(function($) {
+        var scorecardUploader;
+        
+        $('#upload-scorecard-button').on('click', function(e) {
+            e.preventDefault();
+            
+            if (scorecardUploader) {
+                scorecardUploader.open();
+                return;
+            }
+            
+            scorecardUploader = wp.media({
+                title: 'Seleccionar Anotación Oficial',
+                button: {
+                    text: 'Usar esta imagen'
+                },
+                library: {
+                    type: ['image']
+                },
+                multiple: false
+            });
+            
+            scorecardUploader.on('select', function() {
+                var attachment = scorecardUploader.state().get('selection').first().toJSON();
+                $('#scorecard-image-url').val(attachment.url);
+                $('#scorecard-preview img').attr('src', attachment.url);
+                $('#scorecard-preview').show();
+                $('#remove-scorecard-button').show();
+                $('#upload-scorecard-button').text('Cambiar Imagen');
+            });
+            
+            scorecardUploader.open();
+        });
+        
+        $('#remove-scorecard-button').on('click', function(e) {
+            e.preventDefault();
+            $('#scorecard-image-url').val('');
+            $('#scorecard-preview').hide();
+            $(this).hide();
+            $('#upload-scorecard-button').text('Subir Imagen');
+        });
+    });
+    </script>
+    <?php
+}
+
 function baseball_save_game_info($post_id) {
     if (!isset($_POST['baseball_game_info_nonce']) || !wp_verify_nonce($_POST['baseball_game_info_nonce'], 'baseball_save_game_info')) {
         return;
@@ -1323,6 +1515,68 @@ function baseball_save_game_info($post_id) {
     }
 }
 add_action('save_post_game', 'baseball_save_game_info');
+
+/**
+ * Save Game Highlights
+ */
+function baseball_save_game_highlights($post_id) {
+    if (!isset($_POST['baseball_game_highlights_nonce']) || !wp_verify_nonce($_POST['baseball_game_highlights_nonce'], 'baseball_save_game_highlights')) {
+        return;
+    }
+
+    if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
+        return;
+    }
+
+    if (!current_user_can('edit_post', $post_id)) {
+        return;
+    }
+
+    $highlights = array();
+    
+    if (isset($_POST['highlight_title']) && is_array($_POST['highlight_title'])) {
+        foreach ($_POST['highlight_title'] as $index => $title) {
+            $url = isset($_POST['highlight_url'][$index]) ? esc_url_raw($_POST['highlight_url'][$index]) : '';
+            $description = isset($_POST['highlight_description'][$index]) ? sanitize_textarea_field($_POST['highlight_description'][$index]) : '';
+            
+            // Only save if there's at least a URL
+            if (!empty($url)) {
+                $highlights[] = array(
+                    'title' => sanitize_text_field($title),
+                    'url' => $url,
+                    'description' => $description
+                );
+            }
+        }
+    }
+    
+    update_post_meta($post_id, '_game_highlights', $highlights);
+}
+add_action('save_post_game', 'baseball_save_game_highlights');
+
+/**
+ * Save Game Scorecard
+ */
+function baseball_save_game_scorecard($post_id) {
+    if (!isset($_POST['baseball_game_scorecard_nonce']) || !wp_verify_nonce($_POST['baseball_game_scorecard_nonce'], 'baseball_save_game_scorecard')) {
+        return;
+    }
+
+    if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
+        return;
+    }
+
+    if (!current_user_can('edit_post', $post_id)) {
+        return;
+    }
+
+    if (isset($_POST['scorecard_image'])) {
+        update_post_meta($post_id, '_game_scorecard_image', esc_url_raw($_POST['scorecard_image']));
+    } else {
+        delete_post_meta($post_id, '_game_scorecard_image');
+    }
+}
+add_action('save_post_game', 'baseball_save_game_scorecard');
 
 /**
  * Game Pitchers Meta Box Callback
@@ -1611,6 +1865,51 @@ function baseball_update_pitcher_cumulative_stats($game_id, $pitchers_data) {
             update_post_meta($pitcher_id, '_era', 0);
         }
     }
+}
+
+/**
+ * Get Team Record (W-L)
+ */
+function baseball_get_team_record($team_id) {
+    if (!$team_id) return '0-0';
+    
+    $games = get_posts(array(
+        'post_type' => 'game',
+        'posts_per_page' => -1,
+        'meta_query' => array(
+            'relation' => 'OR',
+            array(
+                'key' => '_game_home_team',
+                'value' => $team_id,
+            ),
+            array(
+                'key' => '_game_away_team',
+                'value' => $team_id,
+            )
+        )
+    ));
+    
+    $wins = 0;
+    $losses = 0;
+    
+    foreach ($games as $game) {
+        $home_team = get_post_meta($game->ID, '_game_home_team', true);
+        $away_team = get_post_meta($game->ID, '_game_away_team', true);
+        $home_score = get_post_meta($game->ID, '_game_home_score', true);
+        $away_score = get_post_meta($game->ID, '_game_away_score', true);
+        
+        if ($home_score === '' || $away_score === '') continue;
+        
+        if ($home_team == $team_id) {
+            if ($home_score > $away_score) $wins++;
+            else if ($home_score < $away_score) $losses++;
+        } else if ($away_team == $team_id) {
+            if ($away_score > $home_score) $wins++;
+            else if ($away_score < $home_score) $losses++;
+        }
+    }
+    
+    return $wins . '-' . $losses;
 }
 
 /**

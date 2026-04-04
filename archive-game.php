@@ -34,8 +34,20 @@ get_header();
                     
                     $is_final = true; // Puedes agregar lógica para determinar si el partido finalizó
                 ?>
+                    <?php
+                    // Calculate team records
+                    $away_record = baseball_get_team_record($away_team_id);
+                    $home_record = baseball_get_team_record($home_team_id);
+                    ?>
                     <a href="<?php the_permalink(); ?>" class="game-box">
-                        <div class="game-status">FINAL</div>
+                        <div class="game-header">
+                            <div class="game-status">F</div>
+                            <div class="game-rhe-labels">
+                                <span>R</span>
+                                <span>H</span>
+                                <span>E</span>
+                            </div>
+                        </div>
                         
                         <div class="game-teams">
                             <div class="team-row">
@@ -45,12 +57,15 @@ get_header();
                                             <?php echo get_the_post_thumbnail($away_team_id, 'thumbnail'); ?>
                                         </div>
                                     <?php endif; ?>
-                                    <span class="team-name-short"><?php echo get_the_title($away_team_id); ?></span>
+                                    <div class="team-details">
+                                        <span class="team-name-short"><?php echo get_the_title($away_team_id); ?></span>
+                                        <span class="team-record">(<?php echo $away_record; ?>)</span>
+                                    </div>
                                 </div>
                                 <div class="team-scores">
                                     <span class="score-r"><?php echo $away_score !== '' ? $away_score : '0'; ?></span>
-                                    <span class="score-h"><?php echo $away_hits !== '' ? $away_hits : '-'; ?></span>
-                                    <span class="score-e"><?php echo $away_errors !== '' ? $away_errors : '-'; ?></span>
+                                    <span class="score-h"><?php echo $away_hits !== '' ? $away_hits : '0'; ?></span>
+                                    <span class="score-e"><?php echo $away_errors !== '' ? $away_errors : '0'; ?></span>
                                 </div>
                             </div>
                             
@@ -61,12 +76,15 @@ get_header();
                                             <?php echo get_the_post_thumbnail($home_team_id, 'thumbnail'); ?>
                                         </div>
                                     <?php endif; ?>
-                                    <span class="team-name-short"><?php echo get_the_title($home_team_id); ?></span>
+                                    <div class="team-details">
+                                        <span class="team-name-short"><?php echo get_the_title($home_team_id); ?></span>
+                                        <span class="team-record">(<?php echo $home_record; ?>)</span>
+                                    </div>
                                 </div>
                                 <div class="team-scores">
                                     <span class="score-r"><?php echo $home_score !== '' ? $home_score : '0'; ?></span>
-                                    <span class="score-h"><?php echo $home_hits !== '' ? $home_hits : '-'; ?></span>
-                                    <span class="score-e"><?php echo $home_errors !== '' ? $home_errors : '-'; ?></span>
+                                    <span class="score-h"><?php echo $home_hits !== '' ? $home_hits : '0'; ?></span>
+                                    <span class="score-e"><?php echo $home_errors !== '' ? $home_errors : '0'; ?></span>
                                 </div>
                             </div>
                         </div>

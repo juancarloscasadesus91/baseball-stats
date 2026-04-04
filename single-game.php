@@ -486,6 +486,121 @@ get_header();
                     </script>
                 </section>
             <?php endif; ?>
+            
+            <!-- Scorecard Section -->
+            <?php
+            $scorecard_image = get_post_meta(get_the_ID(), '_game_scorecard_image', true);
+            if ($scorecard_image) : ?>
+            <section class="game-scorecard">
+                <h2>Anotación Oficial</h2>
+                <div class="scorecard-image-container">
+                    <img src="<?php echo esc_url($scorecard_image); ?>" alt="Anotación Oficial del Partido" class="scorecard-image">
+                    <a href="<?php echo esc_url($scorecard_image); ?>" target="_blank" class="btn scorecard-download">
+                        Ver en Tamaño Completo
+                    </a>
+                </div>
+            </section>
+            <?php endif; ?>
+            
+            <!-- Highlights Section -->
+            <section class="game-highlights">
+                <h2>Highlights del Partido</h2>
+                <?php
+                $highlights = get_post_meta(get_the_ID(), '_game_highlights', true);
+                if ($highlights && is_array($highlights) && count($highlights) > 0) : ?>
+                    <div class="highlights-grid">
+                        <?php foreach ($highlights as $index => $highlight) : ?>
+                            <div class="highlight-item">
+                                <div class="highlight-video">
+                                    <?php if (!empty($highlight['url'])) : ?>
+                                        <?php if (strpos($highlight['url'], 'youtube.com') !== false || strpos($highlight['url'], 'youtu.be') !== false) : ?>
+                                            <?php
+                                            // Extract YouTube video ID
+                                            preg_match('/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/ ]{11})/', $highlight['url'], $matches);
+                                            $video_id = $matches[1] ?? '';
+                                            ?>
+                                            <?php if ($video_id) : ?>
+                                                <iframe width="100%" height="200" src="https://www.youtube.com/embed/<?php echo esc_attr($video_id); ?>" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                                            <?php endif; ?>
+                                        <?php elseif (strpos($highlight['url'], 'instagram.com') !== false) : ?>
+                                            <?php
+                                            // Instagram - use thumbnail and link
+                                            $instagram_url = rtrim($highlight['url'], '/');
+                                            // Try to get thumbnail from Instagram oEmbed API
+                                            $oembed_url = 'https://graph.instagram.com/oembed?url=' . urlencode($instagram_url);
+                                            $oembed_data = @file_get_contents($oembed_url);
+                                            $thumbnail_url = '';
+                                            
+                                            if ($oembed_data) {
+                                                $oembed_json = json_decode($oembed_data, true);
+                                                $thumbnail_url = $oembed_json['thumbnail_url'] ?? '';
+                                            }
+                                            ?>
+                                            <div class="instagram-embed-wrapper">
+                                                <?php if ($thumbnail_url) : ?>
+                                                    <img src="<?php echo esc_url($thumbnail_url); ?>" alt="Instagram post" style="width: 100%; height: auto;">
+                                                <?php else : ?>
+                                                    <div style="background: linear-gradient(45deg, #f09433 0%,#e6683c 25%,#dc2743 50%,#cc2366 75%,#bc1888 100%); padding: 60px 20px; text-align: center;">
+                                                        <svg style="width: 80px; height: 80px; fill: white; margin-bottom: 20px;" viewBox="0 0 24 24">
+                                                            <path d="M7.8,2H16.2C19.4,2 22,4.6 22,7.8V16.2A5.8,5.8 0 0,1 16.2,22H7.8C4.6,22 2,19.4 2,16.2V7.8A5.8,5.8 0 0,1 7.8,2M7.6,4A3.6,3.6 0 0,0 4,7.6V16.4C4,18.39 5.61,20 7.6,20H16.4A3.6,3.6 0 0,0 20,16.4V7.6C20,5.61 18.39,4 16.4,4H7.6M17.25,5.5A1.25,1.25 0 0,1 18.5,6.75A1.25,1.25 0 0,1 17.25,8A1.25,1.25 0 0,1 16,6.75A1.25,1.25 0 0,1 17.25,5.5M12,7A5,5 0 0,1 17,12A5,5 0 0,1 12,17A5,5 0 0,1 7,12A5,5 0 0,1 12,7M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9Z"/>
+                                                        </svg>
+                                                        <p style="color: white; font-size: 18px; margin: 0;">Video de Instagram</p>
+                                                    </div>
+                                                <?php endif; ?>
+                                                <a href="<?php echo esc_url($instagram_url); ?>" target="_blank" class="instagram-link-overlay">
+                                                    <span>Ver en Instagram</span>
+                                                </a>
+                                            </div>
+                                        <?php elseif (strpos($highlight['url'], 'facebook.com') !== false || strpos($highlight['url'], 'fb.watch') !== false) : ?>
+                                            <?php
+                                            // Facebook video embed
+                                            $fb_url = urlencode($highlight['url']);
+                                            ?>
+                                            <iframe src="https://www.facebook.com/plugins/video.php?href=<?php echo $fb_url; ?>&show_text=false&width=560" width="100%" height="315" style="border:none;overflow:hidden" scrolling="no" frameborder="0" allowfullscreen="true" allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"></iframe>
+                                        <?php elseif (strpos($highlight['url'], 'twitter.com') !== false || strpos($highlight['url'], 'x.com') !== false) : ?>
+                                            <?php
+                                            // Twitter/X video - use blockquote for now
+                                            ?>
+                                            <blockquote class="twitter-tweet" data-width="100%">
+                                                <a href="<?php echo esc_url($highlight['url']); ?>">Ver en Twitter/X</a>
+                                            </blockquote>
+                                            <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+                                        <?php else : ?>
+                                            <?php
+                                            // Check if it's an image or video
+                                            $file_extension = strtolower(pathinfo($highlight['url'], PATHINFO_EXTENSION));
+                                            $image_extensions = array('jpg', 'jpeg', 'png', 'gif', 'webp', 'svg');
+                                            $video_extensions = array('mp4', 'webm', 'ogg', 'mov');
+                                            ?>
+                                            <?php if (in_array($file_extension, $image_extensions)) : ?>
+                                                <img src="<?php echo esc_url($highlight['url']); ?>" alt="<?php echo esc_attr($highlight['title'] ?? 'Highlight'); ?>" style="width: 100%; height: auto; display: block;">
+                                            <?php elseif (in_array($file_extension, $video_extensions)) : ?>
+                                                <video controls width="100%" style="display: block;">
+                                                    <source src="<?php echo esc_url($highlight['url']); ?>" type="video/<?php echo $file_extension === 'mov' ? 'mp4' : $file_extension; ?>">
+                                                    Tu navegador no soporta el elemento de video.
+                                                </video>
+                                            <?php else : ?>
+                                                <div style="padding: 40px; text-align: center; background: #f5f5f5;">
+                                                    <p>Formato de archivo no soportado</p>
+                                                    <a href="<?php echo esc_url($highlight['url']); ?>" target="_blank" class="btn">Abrir archivo</a>
+                                                </div>
+                                            <?php endif; ?>
+                                        <?php endif; ?>
+                                    <?php endif; ?>
+                                </div>
+                                <?php if (!empty($highlight['title'])) : ?>
+                                    <h4><?php echo esc_html($highlight['title']); ?></h4>
+                                <?php endif; ?>
+                                <?php if (!empty($highlight['description'])) : ?>
+                                    <p><?php echo esc_html($highlight['description']); ?></p>
+                                <?php endif; ?>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                <?php else : ?>
+                    <p>No hay highlights disponibles para este partido.</p>
+                <?php endif; ?>
+            </section>
         </div>
     </article>
 
