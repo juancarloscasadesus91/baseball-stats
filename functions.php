@@ -2667,3 +2667,145 @@ function baseball_get_leaders_ajax() {
 }
 add_action('wp_ajax_get_leaders', 'baseball_get_leaders_ajax');
 add_action('wp_ajax_nopriv_get_leaders', 'baseball_get_leaders_ajax');
+
+/**
+ * Clean up game stats when a game is deleted
+ * This prevents orphaned statistics from remaining in the database
+ */
+function baseball_cleanup_game_stats_on_delete($post_id) {
+    // Only run for game post type
+    if (get_post_type($post_id) !== 'game') {
+        return;
+    }
+    
+    global $wpdb;
+    $table_name = $wpdb->prefix . 'baseball_game_stats';
+    
+    // Get all players affected by this game before deleting
+    $affected_players = $wpdb->get_col($wpdb->prepare(
+        "SELECT DISTINCT player_id FROM $table_name WHERE game_id = %d",
+        $post_id
+    ));
+    
+    // Delete game stats from the table
+    $wpdb->delete($table_name, array('game_id' => $post_id), array('%d'));
+    
+    // Recalculate cumulative stats for affected players
+    foreach ($affected_players as $player_id) {
+        baseball_recalculate_single_player_stats($player_id);
+    }
+    
+    // Also recalculate pitcher stats for affected pitchers
+    $home_pitchers = get_post_meta($post_id, '_game_home_pitchers', true) ?: array();
+    $away_pitchers = get_post_meta($post_id, '_game_away_pitchers', true) ?: array();
+    $all_pitchers = array_merge($home_pitchers, $away_pitchers);
+    
+    foreach ($all_pitchers as $pitcher) {
+        if (isset($pitcher['player_id'])) {
+            baseball_recalculate_single_pitcher_stats($pitcher['player_id']);
+        }
+    }
+}
+add_action('before_delete_post', 'baseball_cleanup_game_stats_on_delete');
+
+/**
+ * Recalculate stats for a single player based on all their games
+ */
+function baseball_recalculate_single_player_stats($player_id) {
+    global $wpdb;
+    $table_name = $wpdb->prefix . 'baseball_game_stats';
+    
+    // Calculate cumulative stats for this player
+    $stats = $wpdb->get_row($wpdb->prepare(
+        "SELECT 
+            SUM(at_bats) as total_ab,
+            SUM(hits) as total_hits,
+            SUM(home_runs) as total_hr,
+            SUM(rbis) as total_rbi,
+            SUM(walks) as total_bb,
+            SUM(strikeouts) as total_so,
+            SUM(stolen_bases) as total_sb
+        FROM $table_name 
+        WHERE player_id = %d",
+        $player_id
+    ));
+    
+    // Update player meta (use 0 if no stats found)
+    update_post_meta($player_id, '_at_bats', $stats->total_ab ?: 0);
+    update_post_meta($player_id, '_hits', $stats->total_hits ?: 0);
+    update_post_meta($player_id, '_home_runs', $stats->total_hr ?: 0);
+    update_post_meta($player_id, '_rbis', $stats->total_rbi ?: 0);
+    update_post_meta($player_id, '_walks', $stats->total_bb ?: 0);
+    update_post_meta($player_id, '_strikeouts', $stats->total_so ?: 0);
+    update_post_meta($player_id, '_stolen_bases', $stats->total_sb ?: 0);
+    
+    // Calculate batting average
+    if ($stats->total_ab > 0) {
+        $avg = number_format($stats->total_hits / $stats->total_ab, 3);
+        update_post_meta($player_id, '_batting_avg', $avg);
+    } else {
+        update_post_meta($player_id, '_batting_avg', '.000');
+    }
+}
+
+/**
+ * Recalculate pitcher stats for a single pitcher based on all their games
+ */
+function baseball_recalculate_single_pitcher_stats($pitcher_id) {
+    // Get all games where this pitcher has pitched
+    $all_games = get_posts(array(
+        'post_type' => 'game',
+        'posts_per_page' => -1,
+        'post_status' => 'publish'
+    ));
+    
+    $total_ip = 0;
+    $total_h = 0;
+    $total_r = 0;
+    $total_er = 0;
+    $total_bb = 0;
+    $total_so = 0;
+    $total_wins = 0;
+    $total_losses = 0;
+    $total_saves = 0;
+    
+    foreach ($all_games as $game) {
+        $home_pitchers = get_post_meta($game->ID, '_game_home_pitchers', true) ?: array();
+        $away_pitchers = get_post_meta($game->ID, '_game_away_pitchers', true) ?: array();
+        $all_pitchers = array_merge($home_pitchers, $away_pitchers);
+        
+        foreach ($all_pitchers as $pitcher) {
+            if ($pitcher['player_id'] == $pitcher_id) {
+                $total_ip += floatval($pitcher['ip']);
+                $total_h += intval($pitcher['h']);
+                $total_r += intval($pitcher['r']);
+                $total_er += intval($pitcher['er']);
+                $total_bb += intval($pitcher['bb']);
+                $total_so += intval($pitcher['so']);
+                
+                if ($pitcher['decision'] === 'W') $total_wins++;
+                if ($pitcher['decision'] === 'L') $total_losses++;
+                if ($pitcher['decision'] === 'S') $total_saves++;
+            }
+        }
+    }
+    
+    // Update pitcher meta
+    update_post_meta($pitcher_id, '_innings_pitched', floatval($total_ip));
+    update_post_meta($pitcher_id, '_pitching_hits', intval($total_h));
+    update_post_meta($pitcher_id, '_pitching_runs', intval($total_r));
+    update_post_meta($pitcher_id, '_pitching_earned_runs', intval($total_er));
+    update_post_meta($pitcher_id, '_pitching_walks', intval($total_bb));
+    update_post_meta($pitcher_id, '_pitching_strikeouts', intval($total_so));
+    update_post_meta($pitcher_id, '_pitching_wins', intval($total_wins));
+    update_post_meta($pitcher_id, '_pitching_losses', intval($total_losses));
+    update_post_meta($pitcher_id, '_pitching_saves', intval($total_saves));
+    
+    // Calculate ERA
+    if ($total_ip > 0) {
+        $era = floatval(($total_er * 9) / $total_ip);
+        update_post_meta($pitcher_id, '_era', $era);
+    } else {
+        update_post_meta($pitcher_id, '_era', 0);
+    }
+}
