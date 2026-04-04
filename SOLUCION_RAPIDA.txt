@@ -1,0 +1,129 @@
+═══════════════════════════════════════════════════════════════════
+  🔄 SOLUCIÓN RÁPIDA - RESETEAR ESTADÍSTICAS
+═══════════════════════════════════════════════════════════════════
+
+PROBLEMA:
+---------
+Borraste 2 juegos pero las estadísticas de los jugadores siguen 
+apareciendo. Esto pasa porque las estadísticas acumuladas quedan 
+guardadas en los jugadores y NO se borran automáticamente.
+
+
+SOLUCIÓN INMEDIATA (3 PASOS):
+------------------------------
+
+1. Abre tu navegador y ve a:
+   
+   http://tu-sitio.com/wp-content/themes/baseball-stats/reset-stats.php
+   
+   (Reemplaza "tu-sitio.com" con tu dominio real)
+
+
+2. Haz clic en el botón: "♻️ Recalcular Estadísticas"
+
+
+3. Escribe "SI" (en mayúsculas) y confirma
+
+
+¡LISTO! Las estadísticas se resetearán y recalcularán basándose 
+SOLO en los juegos que existen actualmente.
+
+
+═══════════════════════════════════════════════════════════════════
+
+¿DÓNDE SE GUARDAN LAS ESTADÍSTICAS?
+------------------------------------
+
+1. Tabla: wp_baseball_game_stats
+   → Estadísticas por jugador por partido
+
+2. Post Meta de Jugadores
+   → Estadísticas TOTALES/ACUMULADAS (estas son las que ves)
+
+3. Post Meta de Partidos
+   → Datos de pitcheo y detalles del juego
+
+
+Cuando borras un juego:
+✅ Se borra el juego
+✅ Se borra de wp_baseball_game_stats
+❌ NO se borran las estadísticas acumuladas de jugadores
+
+
+═══════════════════════════════════════════════════════════════════
+
+MEJORA IMPLEMENTADA:
+---------------------
+
+Ahora el sistema está mejorado. A partir de ahora, cuando borres 
+un juego, las estadísticas de los jugadores se actualizarán 
+AUTOMÁTICAMENTE.
+
+Código agregado en functions.php:
+- baseball_cleanup_game_stats_on_delete()
+- baseball_recalculate_single_player_stats()
+- baseball_recalculate_single_pitcher_stats()
+
+
+═══════════════════════════════════════════════════════════════════
+
+OPCIONES DEL SCRIPT DE RESETEO:
+--------------------------------
+
+1. Resetear Estadísticas de Jugadores
+   → Limpia solo las estadísticas acumuladas
+
+2. Limpiar Tabla de Estadísticas de Juegos
+   → Limpia wp_baseball_game_stats
+
+3. Resetear TODO
+   → Limpia todo el sistema
+
+4. Recalcular Estadísticas ⭐ (LA QUE NECESITAS)
+   → Recalcula basándose en juegos existentes
+
+
+═══════════════════════════════════════════════════════════════════
+
+ARCHIVOS CREADOS:
+-----------------
+
+✅ reset-stats.php
+   → Script con interfaz visual para resetear
+
+✅ RESETEAR_ESTADISTICAS.md
+   → Documentación completa
+
+✅ SOLUCION_RAPIDA.txt
+   → Este archivo (guía rápida)
+
+✅ functions.php (mejorado)
+   → Ahora limpia automáticamente al borrar juegos
+
+
+═══════════════════════════════════════════════════════════════════
+
+PARA EL FUTURO:
+---------------
+
+Ya no necesitarás hacer nada manualmente. Cuando borres un juego,
+el sistema automáticamente:
+
+1. Borrará las estadísticas de ese juego
+2. Recalculará las estadísticas de los jugadores afectados
+3. Todo quedará sincronizado
+
+
+═══════════════════════════════════════════════════════════════════
+
+¿NECESITAS AYUDA?
+-----------------
+
+Lee la documentación completa en:
+RESETEAR_ESTADISTICAS.md
+
+
+═══════════════════════════════════════════════════════════════════
+Creado: 2026-04-04
+Versión: 1.0
+═══════════════════════════════════════════════════════════════════
