@@ -135,32 +135,165 @@ get_header(); ?>
         if ($players) : ?>
         <div class="stats-card">
             <h2>Roster del Equipo</h2>
-            <div class="player-grid">
-                <?php foreach ($players as $player) : 
-                    $player_number = get_post_meta($player->ID, '_player_number', true);
-                    $batting_avg = get_post_meta($player->ID, '_batting_avg', true);
-                    $home_runs = get_post_meta($player->ID, '_home_runs', true);
-                    $positions = wp_get_post_terms($player->ID, 'position');
-                    $position_name = !empty($positions) ? $positions[0]->name : 'N/A';
-                ?>
-                <div class="player-card">
-                    <?php echo get_the_post_thumbnail($player->ID, 'player-thumbnail', array('class' => 'player-photo')); ?>
-                    <div class="player-number">#<?php echo esc_html($player_number); ?></div>
-                    <h3 class="player-name"><?php echo esc_html($player->post_title); ?></h3>
-                    <div class="player-position"><?php echo esc_html($position_name); ?></div>
-                    <div class="stat-boxes">
-                        <div class="stat-box">
-                            <div class="stat-label">AVG</div>
-                            <div class="stat-value"><?php echo esc_html($batting_avg ?: '.000'); ?></div>
-                        </div>
-                        <div class="stat-box">
-                            <div class="stat-label">HR</div>
-                            <div class="stat-value"><?php echo esc_html($home_runs ?: '0'); ?></div>
-                        </div>
-                    </div>
-                    <a href="<?php echo get_permalink($player->ID); ?>" class="btn" style="margin-top: 15px;">Ver Perfil</a>
+            
+            <!-- Tabs -->
+            <div class="players-tabs">
+                <button class="players-tab active" data-tab="batting">Bateo</button>
+                <button class="players-tab" data-tab="pitching">Pitcheo</button>
+            </div>
+            
+            <!-- Batting Stats -->
+            <div class="players-tab-content active" id="batting-stats">
+                <div class="table-responsive">
+                    <table class="players-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Jugador</th>
+                                <th>Pos</th>
+                                <th>AVG</th>
+                                <th>AB</th>
+                                <th>H</th>
+                                <th>HR</th>
+                                <th>RBI</th>
+                                <th>BB</th>
+                                <th>SO</th>
+                                <th>SB</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($players as $player) : 
+                                $player_id = $player->ID;
+                                $player_number = get_post_meta($player_id, '_player_number', true);
+                                $batting_avg = get_post_meta($player_id, '_batting_avg', true);
+                                $at_bats = get_post_meta($player_id, '_at_bats', true);
+                                $hits = get_post_meta($player_id, '_hits', true);
+                                $home_runs = get_post_meta($player_id, '_home_runs', true);
+                                $rbis = get_post_meta($player_id, '_rbis', true);
+                                $walks = get_post_meta($player_id, '_walks', true);
+                                $strikeouts = get_post_meta($player_id, '_strikeouts', true);
+                                $stolen_bases = get_post_meta($player_id, '_stolen_bases', true);
+                                $positions = wp_get_post_terms($player_id, 'position');
+                                $position_name = !empty($positions) ? $positions[0]->name : 'N/A';
+                            ?>
+                            <tr>
+                                <td><?php echo esc_html($player_number ?: '-'); ?></td>
+                                <td>
+                                    <div class="player-name-cell">
+                                        <div class="player-mini-photo">
+                                            <?php if (has_post_thumbnail($player_id)) : ?>
+                                                <?php echo get_the_post_thumbnail($player_id, 'thumbnail'); ?>
+                                            <?php else : ?>
+                                                <div class="player-placeholder">
+                                                    <span class="dashicons dashicons-admin-users"></span>
+                                                </div>
+                                            <?php endif; ?>
+                                        </div>
+                                        <strong><?php echo esc_html($player->post_title); ?></strong>
+                                    </div>
+                                </td>
+                                <td><?php echo esc_html($position_name); ?></td>
+                                <td class="stat-highlight"><?php echo esc_html($batting_avg ?: '.000'); ?></td>
+                                <td><?php echo esc_html($at_bats ?: '0'); ?></td>
+                                <td><?php echo esc_html($hits ?: '0'); ?></td>
+                                <td class="stat-highlight"><?php echo esc_html($home_runs ?: '0'); ?></td>
+                                <td class="stat-highlight"><?php echo esc_html($rbis ?: '0'); ?></td>
+                                <td><?php echo esc_html($walks ?: '0'); ?></td>
+                                <td><?php echo esc_html($strikeouts ?: '0'); ?></td>
+                                <td class="stat-highlight"><?php echo esc_html($stolen_bases ?: '0'); ?></td>
+                                <td>
+                                    <a href="<?php echo get_permalink($player_id); ?>" class="btn-small">Ver</a>
+                                </td>
+                            </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
                 </div>
-                <?php endforeach; ?>
+            </div>
+            
+            <!-- Pitching Stats -->
+            <div class="players-tab-content" id="pitching-stats">
+                <div class="table-responsive">
+                    <table class="players-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Jugador</th>
+                                <th>ERA</th>
+                                <th>W</th>
+                                <th>L</th>
+                                <th>SV</th>
+                                <th>IP</th>
+                                <th>H</th>
+                                <th>ER</th>
+                                <th>BB</th>
+                                <th>SO</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($players as $player) : 
+                                $player_id = $player->ID;
+                                $ip = get_post_meta($player_id, '_innings_pitched', true);
+                                
+                                // Only show players with pitching stats
+                                if (!$ip || floatval($ip) == 0) continue;
+                                
+                                $player_number = get_post_meta($player_id, '_player_number', true);
+                                $era = get_post_meta($player_id, '_era', true);
+                                $wins = get_post_meta($player_id, '_pitching_wins', true);
+                                $losses = get_post_meta($player_id, '_pitching_losses', true);
+                                $saves = get_post_meta($player_id, '_pitching_saves', true);
+                                $hits = get_post_meta($player_id, '_pitching_hits', true);
+                                $er = get_post_meta($player_id, '_pitching_earned_runs', true);
+                                $bb = get_post_meta($player_id, '_pitching_walks', true);
+                                $so = get_post_meta($player_id, '_pitching_strikeouts', true);
+                                
+                                // Calculate ERA if not set
+                                if (empty($era) || floatval($era) == 0) {
+                                    if (floatval($ip) > 0) {
+                                        $era = number_format((floatval($er) * 9) / floatval($ip), 2);
+                                    } else {
+                                        $era = '0.00';
+                                    }
+                                } else {
+                                    $era = number_format(floatval($era), 2);
+                                }
+                            ?>
+                            <tr>
+                                <td><?php echo esc_html($player_number ?: '-'); ?></td>
+                                <td>
+                                    <div class="player-name-cell">
+                                        <div class="player-mini-photo">
+                                            <?php if (has_post_thumbnail($player_id)) : ?>
+                                                <?php echo get_the_post_thumbnail($player_id, 'thumbnail'); ?>
+                                            <?php else : ?>
+                                                <div class="player-placeholder">
+                                                    <span class="dashicons dashicons-admin-users"></span>
+                                                </div>
+                                            <?php endif; ?>
+                                        </div>
+                                        <strong><?php echo esc_html($player->post_title); ?></strong>
+                                    </div>
+                                </td>
+                                <td class="stat-highlight"><?php echo esc_html($era); ?></td>
+                                <td class="stat-highlight"><?php echo esc_html($wins ?: '0'); ?></td>
+                                <td><?php echo esc_html($losses ?: '0'); ?></td>
+                                <td class="stat-highlight"><?php echo esc_html($saves ?: '0'); ?></td>
+                                <td><?php echo number_format(floatval($ip), 1); ?></td>
+                                <td><?php echo esc_html($hits ?: '0'); ?></td>
+                                <td><?php echo esc_html($er ?: '0'); ?></td>
+                                <td><?php echo esc_html($bb ?: '0'); ?></td>
+                                <td class="stat-highlight"><?php echo esc_html($so ?: '0'); ?></td>
+                                <td>
+                                    <a href="<?php echo get_permalink($player_id); ?>" class="btn-small">Ver</a>
+                                </td>
+                            </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
         <?php endif; ?>
@@ -288,5 +421,27 @@ get_header(); ?>
         <?php endwhile; ?>
     </div>
 </main>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Tab switching
+    const tabs = document.querySelectorAll('.players-tab');
+    const tabContents = document.querySelectorAll('.players-tab-content');
+    
+    tabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+            const tabName = this.getAttribute('data-tab');
+            
+            // Remove active class from all tabs and contents
+            tabs.forEach(t => t.classList.remove('active'));
+            tabContents.forEach(c => c.classList.remove('active'));
+            
+            // Add active class to clicked tab and corresponding content
+            this.classList.add('active');
+            document.getElementById(tabName + '-stats').classList.add('active');
+        });
+    });
+});
+</script>
 
 <?php get_footer(); ?>
