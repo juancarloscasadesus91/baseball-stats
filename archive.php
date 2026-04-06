@@ -1,6 +1,6 @@
 <?php
 /**
- * Front Page Template - MLB Style Blog Layout
+ * Archive Template - All News/Posts
  *
  * @package Baseball_Stats
  */
@@ -9,100 +9,66 @@ get_header(); ?>
 
 <main class="site-content">
     <div class="container">
+        <div class="archive-header">
+            <h1 class="archive-title">Todas las Noticias</h1>
+            <p class="archive-description">Mantente al día con todas las últimas noticias del béisbol</p>
+        </div>
+
         <!-- MLB Style Layout: Main Content + Sidebar -->
         <div class="mlb-layout">
             <!-- Main Content Area -->
             <div class="main-content-area">
-                <!-- Featured Banner -->
-                <?php
-                $featured_posts = get_posts(array(
-                    'post_type' => 'post',
-                    'posts_per_page' => 1,
-                    'meta_key' => '_featured_post',
-                    'meta_value' => '1',
-                ));
-                
-                if (empty($featured_posts)) {
-                    $featured_posts = get_posts(array(
-                        'post_type' => 'post',
-                        'posts_per_page' => 1,
-                    ));
-                }
-                
-                if ($featured_posts) :
-                    $featured = $featured_posts[0];
-                ?>
-                <div class="featured-banner">
-                    <?php if (has_post_thumbnail($featured->ID)) : ?>
-                        <div class="featured-image">
-                            <?php echo get_the_post_thumbnail($featured->ID, 'large'); ?>
-                            <div class="featured-overlay"></div>
-                        </div>
-                    <?php endif; ?>
-                    <div class="featured-content">
-                        <span class="featured-label">DESTACADO</span>
-                        <h1 class="featured-title">
-                            <a href="<?php echo get_permalink($featured->ID); ?>">
-                                <?php echo esc_html($featured->post_title); ?>
-                            </a>
-                        </h1>
-                        <p class="featured-excerpt"><?php echo wp_trim_words($featured->post_excerpt ?: $featured->post_content, 30); ?></p>
-                        <div class="featured-meta">
-                            <span><?php echo get_the_date('', $featured->ID); ?></span>
-                        </div>
-                    </div>
-                </div>
-                <?php endif; ?>
-
-                <!-- Recent News/Posts -->
-                <div class="news-section">
-                    <h2 class="section-title">Últimas Noticias</h2>
-                    <?php
-                    // Exclude featured post from recent posts
-                    $exclude_ids = array();
-                    if (isset($featured) && $featured) {
-                        $exclude_ids[] = $featured->ID;
-                    }
-                    
-                    $recent_posts = get_posts(array(
-                        'post_type' => 'post',
-                        'posts_per_page' => 3,
-                        'post__not_in' => $exclude_ids,
-                    ));
-
-                    if ($recent_posts) : ?>
-                        <div class="news-grid">
-                            <?php foreach ($recent_posts as $post) : setup_postdata($post); ?>
-                            <article class="news-item">
+                <?php if (have_posts()) : ?>
+                    <div class="news-archive-grid">
+                        <?php while (have_posts()) : the_post(); ?>
+                            <article class="news-archive-item">
                                 <?php if (has_post_thumbnail()) : ?>
-                                    <div class="news-thumbnail">
+                                    <div class="news-archive-thumbnail">
                                         <a href="<?php the_permalink(); ?>">
                                             <?php the_post_thumbnail('medium'); ?>
                                         </a>
                                     </div>
                                 <?php endif; ?>
-                                <div class="news-content">
-                                    <h3 class="news-title">
+                                <div class="news-archive-content">
+                                    <h2 class="news-archive-title">
                                         <a href="<?php the_permalink(); ?>"><?php the_title(); ?></a>
-                                    </h3>
-                                    <p class="news-excerpt"><?php echo wp_trim_words(get_the_excerpt(), 20); ?></p>
-                                    <div class="news-meta">
-                                        <span><?php echo get_the_date(); ?></span>
+                                    </h2>
+                                    <div class="news-archive-meta">
+                                        <span class="news-date"><?php echo get_the_date(); ?></span>
+                                        <?php
+                                        $categories = get_the_category();
+                                        if ($categories) :
+                                            foreach ($categories as $category) :
+                                        ?>
+                                            <span class="news-category"><?php echo esc_html($category->name); ?></span>
+                                        <?php
+                                            endforeach;
+                                        endif;
+                                        ?>
                                     </div>
+                                    <p class="news-archive-excerpt"><?php echo wp_trim_words(get_the_excerpt(), 30); ?></p>
+                                    <a href="<?php the_permalink(); ?>" class="read-more-link">Leer más →</a>
                                 </div>
                             </article>
-                            <?php endforeach; wp_reset_postdata(); ?>
-                        </div>
-                        <div class="news-view-more">
-                            <?php
-                            // Link to Noticias page
-                            $noticias_page = get_page_by_path('noticias');
-                            $noticias_url = $noticias_page ? get_permalink($noticias_page->ID) : home_url('/noticias/');
-                            ?>
-                            <a href="<?php echo esc_url($noticias_url); ?>" class="btn-view-more-news">Ver más noticias</a>
-                        </div>
-                    <?php endif; ?>
-                </div>
+                        <?php endwhile; ?>
+                    </div>
+
+                    <!-- Pagination -->
+                    <div class="archive-pagination">
+                        <?php
+                        the_posts_pagination(array(
+                            'mid_size' => 2,
+                            'prev_text' => '← Anterior',
+                            'next_text' => 'Siguiente →',
+                        ));
+                        ?>
+                    </div>
+
+                <?php else : ?>
+                    <div class="no-posts">
+                        <p>No hay noticias disponibles en este momento.</p>
+                    </div>
+                <?php endif; ?>
             </div>
 
             <!-- Sidebar -->
@@ -124,10 +90,7 @@ get_header(); ?>
                             <button class="filter-tab active" data-stat="avg">AVG</button>
                             <button class="filter-tab" data-stat="hr">HR</button>
                             <button class="filter-tab" data-stat="hits">H</button>
-                            <button class="filter-tab" data-stat="doubles">2B</button>
-                            <button class="filter-tab" data-stat="triples">3B</button>
                             <button class="filter-tab" data-stat="bb">BB</button>
-                            <button class="filter-tab" data-stat="errors">E</button>
                         </div>
                         
                         <div id="bateo-stats-container" class="stats-list-container">
@@ -222,10 +185,7 @@ jQuery(document).ready(function($) {
             avg: { meta: '_batting_avg', order: 'DESC', label: 'AVG', default: '.000' },
             hr: { meta: '_home_runs', order: 'DESC', label: 'HR', default: '0' },
             hits: { meta: '_hits', order: 'DESC', label: 'H', default: '0' },
-            doubles: { meta: '_doubles', order: 'DESC', label: '2B', default: '0' },
-            triples: { meta: '_triples', order: 'DESC', label: '3B', default: '0' },
-            bb: { meta: '_walks', order: 'DESC', label: 'BB', default: '0' },
-            errors: { meta: '_errors', order: 'DESC', label: 'E', default: '0' }
+            bb: { meta: '_walks', order: 'DESC', label: 'BB', default: '0' }
         },
         pitcheo: {
             era: { meta: '_era', order: 'ASC', label: 'ERA', default: '0.00' },

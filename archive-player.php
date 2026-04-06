@@ -49,7 +49,9 @@ $players = get_posts(array(
                                 <th data-sort="runs" class="sortable">R <span class="sort-arrow">↕</span></th>
                                 <th data-sort="bb" class="sortable">BB <span class="sort-arrow">↕</span></th>
                                 <th data-sort="so" class="sortable">SO <span class="sort-arrow">↕</span></th>
-                                <th data-sort="sb" class="sortable">SB <span class="sort-arrow">↕</span></th>
+                                <th data-sort="doubles" class="sortable">2B <span class="sort-arrow">↕</span></th>
+                                <th data-sort="triples" class="sortable">3B <span class="sort-arrow">↕</span></th>
+                                <th data-sort="errors" class="sortable">E <span class="sort-arrow">↕</span></th>
                                 <th>Acciones</th>
                             </tr>
                         </thead>
@@ -66,7 +68,9 @@ $players = get_posts(array(
                                 $runs = get_post_meta($player_id, '_runs', true);
                                 $walks = get_post_meta($player_id, '_walks', true);
                                 $strikeouts = get_post_meta($player_id, '_strikeouts', true);
-                                $stolen_bases = get_post_meta($player_id, '_stolen_bases', true);
+                                $doubles = get_post_meta($player_id, '_doubles', true);
+                                $triples = get_post_meta($player_id, '_triples', true);
+                                $errors = get_post_meta($player_id, '_errors', true);
                                 
                                 $positions = wp_get_post_terms($player_id, 'position');
                                 $position_name = !empty($positions) ? $positions[0]->name : 'N/A';
@@ -101,7 +105,9 @@ $players = get_posts(array(
                                 <td data-value="<?php echo esc_attr($runs ?: 0); ?>"><?php echo esc_html($runs ?: '0'); ?></td>
                                 <td data-value="<?php echo esc_attr($walks ?: 0); ?>"><?php echo esc_html($walks ?: '0'); ?></td>
                                 <td data-value="<?php echo esc_attr($strikeouts ?: 0); ?>"><?php echo esc_html($strikeouts ?: '0'); ?></td>
-                                <td data-value="<?php echo esc_attr($stolen_bases ?: 0); ?>" class="stat-highlight"><?php echo esc_html($stolen_bases ?: '0'); ?></td>
+                                <td data-value="<?php echo esc_attr($doubles ?: 0); ?>" class="stat-highlight"><?php echo esc_html($doubles ?: '0'); ?></td>
+                                <td data-value="<?php echo esc_attr($triples ?: 0); ?>" class="stat-highlight"><?php echo esc_html($triples ?: '0'); ?></td>
+                                <td data-value="<?php echo esc_attr($errors ?: 0); ?>" class="stat-highlight"><?php echo esc_html($errors ?: '0'); ?></td>
                                 <td>
                                     <a href="<?php echo get_permalink($player_id); ?>" class="btn-small">Ver</a>
                                 </td>
@@ -112,7 +118,7 @@ $players = get_posts(array(
                 </div>
                 
                 <div class="table-legend">
-                    <p><strong>Leyenda:</strong> # = Número, Pos = Posición, AVG = Promedio de Bateo, J = Juegos, AB = Turnos al Bate, H = Hits, HR = Home Runs, RBI = Carreras Impulsadas, R = Carreras, BB = Bases por Bolas, SO = Ponches, SB = Bases Robadas</p>
+                    <p><strong>Leyenda:</strong> # = Número, Pos = Posición, AVG = Promedio de Bateo, J = Juegos, AB = Turnos al Bate, H = Hits, HR = Home Runs, RBI = Carreras Impulsadas, R = Carreras, BB = Bases por Bolas, SO = Ponches, 2B = Dobles, 3B = Triples, E = Errores</p>
                 </div>
             </div>
             

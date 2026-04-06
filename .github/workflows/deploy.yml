@@ -1,5 +1,5 @@
 
-name: Deploy to InfinityFree
+name: Deploy to Multiple Servers
 
 on:
   push:
@@ -7,7 +7,8 @@ on:
       - main  # Trigger deployment only on main branch
 
 jobs:
-  ftp-deploy:
+  deploy-server-1:
+    name: Deploy to Server 1 (InfinityFree)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -21,6 +22,35 @@ jobs:
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./
           server-dir: /cubanbaseball.iblogger.org/htdocs/stats/wp-content/themes/baseball-stats/
+          protocol: ftp
+          port: 21
+          security: loose
+          log-level: verbose
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/node_modules/**
+            **/.github/**
+            **/tests/**
+            **/.vscode/**
+            **/.idea/**
+            **/README.md
+
+  deploy-server-2:
+    name: Deploy to Server 2
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Deploy theme to Server 2
+        uses: SamKirkland/FTP-Deploy-Action@4.3.0
+        with:
+          server: ${{ secrets.FTP_SERVER_2 }}
+          username: ${{ secrets.FTP_USER_2 }}
+          password: ${{ secrets.FTP_PASSWORD_2 }}
+          local-dir: ./
+          server-dir: ${{ secrets.FTP_SERVER_DIR_2 }}
           protocol: ftp
           port: 21
           security: loose

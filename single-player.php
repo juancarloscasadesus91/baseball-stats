@@ -18,7 +18,9 @@ get_header(); ?>
             $rbis = get_post_meta($player_id, '_rbis', true);
             $hits = get_post_meta($player_id, '_hits', true);
             $at_bats = get_post_meta($player_id, '_at_bats', true);
-            $stolen_bases = get_post_meta($player_id, '_stolen_bases', true);
+            $doubles = get_post_meta($player_id, '_doubles', true);
+            $triples = get_post_meta($player_id, '_triples', true);
+            $errors = get_post_meta($player_id, '_errors', true);
             $walks = get_post_meta($player_id, '_walks', true);
             $strikeouts = get_post_meta($player_id, '_strikeouts', true);
             
@@ -84,8 +86,16 @@ get_header(); ?>
                     <div class="stat-value"><?php echo esc_html($rbis ?: '0'); ?></div>
                 </div>
                 <div class="stat-box">
-                    <div class="stat-label">Bases Robadas (SB)</div>
-                    <div class="stat-value"><?php echo esc_html($stolen_bases ?: '0'); ?></div>
+                    <div class="stat-label">Dobles (2B)</div>
+                    <div class="stat-value"><?php echo esc_html($doubles ?: '0'); ?></div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Triples (3B)</div>
+                    <div class="stat-value"><?php echo esc_html($triples ?: '0'); ?></div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Errores (E)</div>
+                    <div class="stat-value"><?php echo esc_html($errors ?: '0'); ?></div>
                 </div>
                 <div class="stat-box">
                     <div class="stat-label">Bases por Bolas (BB)</div>
@@ -172,7 +182,9 @@ get_header(); ?>
                             <th>RBI</th>
                             <th>BB</th>
                             <th>SO</th>
-                            <th>SB</th>
+                            <th>2B</th>
+                            <th>3B</th>
+                            <th>E</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -196,13 +208,15 @@ get_header(); ?>
                             <td><?php echo $stat->rbis; ?></td>
                             <td><?php echo $stat->walks; ?></td>
                             <td><?php echo $stat->strikeouts; ?></td>
-                            <td><?php echo $stat->stolen_bases; ?></td>
+                            <td><?php echo $stat->doubles; ?></td>
+                            <td><?php echo $stat->triples; ?></td>
+                            <td><?php echo $stat->errors; ?></td>
                         </tr>
                         <?php endforeach; ?>
                     </tbody>
                 </table>
             </div>
-            <p><em>AB = Turnos al Bate, H = Hits, AVG = Promedio, HR = Home Runs, RBI = Carreras Impulsadas, BB = Bases por Bolas, SO = Ponches, SB = Bases Robadas</em></p>
+            <p><em>AB = Turnos al Bate, H = Hits, AVG = Promedio, HR = Home Runs, RBI = Carreras Impulsadas, BB = Bases por Bolas, SO = Ponches, 2B = Dobles, 3B = Triples, E = Errores</em></p>
         </div>
         <?php endif; ?>
 

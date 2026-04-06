@@ -26,11 +26,13 @@ function baseball_create_tables() {
         team_id bigint(20) NOT NULL,
         at_bats int(11) DEFAULT 0,
         hits int(11) DEFAULT 0,
+        doubles int(11) DEFAULT 0,
+        triples int(11) DEFAULT 0,
         home_runs int(11) DEFAULT 0,
         rbis int(11) DEFAULT 0,
         walks int(11) DEFAULT 0,
         strikeouts int(11) DEFAULT 0,
-        stolen_bases int(11) DEFAULT 0,
+        errors int(11) DEFAULT 0,
         created_at datetime DEFAULT CURRENT_TIMESTAMP,
         PRIMARY KEY  (id),
         KEY game_id (game_id),
@@ -352,7 +354,9 @@ function baseball_player_stats_callback($post) {
     $rbis = get_post_meta($post->ID, '_rbis', true);
     $hits = get_post_meta($post->ID, '_hits', true);
     $at_bats = get_post_meta($post->ID, '_at_bats', true);
-    $stolen_bases = get_post_meta($post->ID, '_stolen_bases', true);
+    $doubles = get_post_meta($post->ID, '_doubles', true);
+    $triples = get_post_meta($post->ID, '_triples', true);
+    $errors = get_post_meta($post->ID, '_errors', true);
     $era = get_post_meta($post->ID, '_era', true);
     $wins = get_post_meta($post->ID, '_wins', true);
     $losses = get_post_meta($post->ID, '_losses', true);
@@ -405,8 +409,16 @@ function baseball_player_stats_callback($post) {
                 <input type="number" id="rbis" name="rbis" value="<?php echo esc_attr($rbis); ?>" style="width: 100%;">
             </p>
             <p>
-                <label for="stolen_bases"><strong>Bases Robadas (SB):</strong></label><br>
-                <input type="number" id="stolen_bases" name="stolen_bases" value="<?php echo esc_attr($stolen_bases); ?>" style="width: 100%;">
+                <label for="doubles"><strong>Dobles (2B):</strong></label><br>
+                <input type="number" id="doubles" name="doubles" value="<?php echo esc_attr($doubles); ?>" style="width: 100%;">
+            </p>
+            <p>
+                <label for="triples"><strong>Triples (3B):</strong></label><br>
+                <input type="number" id="triples" name="triples" value="<?php echo esc_attr($triples); ?>" style="width: 100%;">
+            </p>
+            <p>
+                <label for="errors"><strong>Errores (E):</strong></label><br>
+                <input type="number" id="errors" name="errors" value="<?php echo esc_attr($errors); ?>" style="width: 100%;">
             </p>
         </div>
     </div>
@@ -454,7 +466,7 @@ function baseball_save_player_stats($post_id) {
     // Save fields
     $fields = array(
         'player_number', 'player_team', 'batting_avg', 'home_runs', 'rbis',
-        'hits', 'at_bats', 'stolen_bases', 'era', 'wins', 'losses', 'strikeouts'
+        'hits', 'at_bats', 'doubles', 'triples', 'errors', 'era', 'wins', 'losses', 'strikeouts'
     );
 
     foreach ($fields as $field) {
@@ -1025,11 +1037,13 @@ function baseball_game_stats_callback($post) {
                     <th style="width: 200px;">Jugador</th>
                     <th>AB</th>
                     <th>H</th>
+                    <th>2B</th>
+                    <th>3B</th>
                     <th>HR</th>
                     <th>RBI</th>
                     <th>BB</th>
                     <th>SO</th>
-                    <th>SB</th>
+                    <th>E</th>
                     <th></th>
                 </tr>
             </thead>
@@ -1047,11 +1061,13 @@ function baseball_game_stats_callback($post) {
                     </td>
                     <td><input type="number" name="stats[<?php echo $player->ID; ?>][at_bats]" value="<?php echo $stat ? esc_attr($stat->at_bats) : '0'; ?>" style="width: 50px;" min="0"></td>
                     <td><input type="number" name="stats[<?php echo $player->ID; ?>][hits]" value="<?php echo $stat ? esc_attr($stat->hits) : '0'; ?>" style="width: 50px;" min="0"></td>
+                    <td><input type="number" name="stats[<?php echo $player->ID; ?>][doubles]" value="<?php echo $stat ? esc_attr($stat->doubles) : '0'; ?>" style="width: 50px;" min="0"></td>
+                    <td><input type="number" name="stats[<?php echo $player->ID; ?>][triples]" value="<?php echo $stat ? esc_attr($stat->triples) : '0'; ?>" style="width: 50px;" min="0"></td>
                     <td><input type="number" name="stats[<?php echo $player->ID; ?>][home_runs]" value="<?php echo $stat ? esc_attr($stat->home_runs) : '0'; ?>" style="width: 50px;" min="0"></td>
                     <td><input type="number" name="stats[<?php echo $player->ID; ?>][rbis]" value="<?php echo $stat ? esc_attr($stat->rbis) : '0'; ?>" style="width: 50px;" min="0"></td>
                     <td><input type="number" name="stats[<?php echo $player->ID; ?>][walks]" value="<?php echo $stat ? esc_attr($stat->walks) : '0'; ?>" style="width: 50px;" min="0"></td>
                     <td><input type="number" name="stats[<?php echo $player->ID; ?>][strikeouts]" value="<?php echo $stat ? esc_attr($stat->strikeouts) : '0'; ?>" style="width: 50px;" min="0"></td>
-                    <td><input type="number" name="stats[<?php echo $player->ID; ?>][stolen_bases]" value="<?php echo $stat ? esc_attr($stat->stolen_bases) : '0'; ?>" style="width: 50px;" min="0"></td>
+                    <td><input type="number" name="stats[<?php echo $player->ID; ?>][errors]" value="<?php echo $stat ? esc_attr($stat->errors) : '0'; ?>" style="width: 50px;" min="0"></td>
                     <input type="hidden" name="stats[<?php echo $player->ID; ?>][team_id]" value="<?php echo esc_attr($home_team_id); ?>">
                     <td><button type="button" class="button" onclick="this.closest('tr').remove()">Eliminar</button></td>
                 </tr>
@@ -1067,11 +1083,13 @@ function baseball_game_stats_callback($post) {
                     <th style="width: 200px;">Jugador</th>
                     <th>AB</th>
                     <th>H</th>
+                    <th>2B</th>
+                    <th>3B</th>
                     <th>HR</th>
                     <th>RBI</th>
                     <th>BB</th>
                     <th>SO</th>
-                    <th>SB</th>
+                    <th>E</th>
                     <th></th>
                 </tr>
             </thead>
@@ -1089,18 +1107,20 @@ function baseball_game_stats_callback($post) {
                     </td>
                     <td><input type="number" name="stats[<?php echo $player->ID; ?>][at_bats]" value="<?php echo $stat ? esc_attr($stat->at_bats) : '0'; ?>" style="width: 50px;" min="0"></td>
                     <td><input type="number" name="stats[<?php echo $player->ID; ?>][hits]" value="<?php echo $stat ? esc_attr($stat->hits) : '0'; ?>" style="width: 50px;" min="0"></td>
+                    <td><input type="number" name="stats[<?php echo $player->ID; ?>][doubles]" value="<?php echo $stat ? esc_attr($stat->doubles) : '0'; ?>" style="width: 50px;" min="0"></td>
+                    <td><input type="number" name="stats[<?php echo $player->ID; ?>][triples]" value="<?php echo $stat ? esc_attr($stat->triples) : '0'; ?>" style="width: 50px;" min="0"></td>
                     <td><input type="number" name="stats[<?php echo $player->ID; ?>][home_runs]" value="<?php echo $stat ? esc_attr($stat->home_runs) : '0'; ?>" style="width: 50px;" min="0"></td>
                     <td><input type="number" name="stats[<?php echo $player->ID; ?>][rbis]" value="<?php echo $stat ? esc_attr($stat->rbis) : '0'; ?>" style="width: 50px;" min="0"></td>
                     <td><input type="number" name="stats[<?php echo $player->ID; ?>][walks]" value="<?php echo $stat ? esc_attr($stat->walks) : '0'; ?>" style="width: 50px;" min="0"></td>
                     <td><input type="number" name="stats[<?php echo $player->ID; ?>][strikeouts]" value="<?php echo $stat ? esc_attr($stat->strikeouts) : '0'; ?>" style="width: 50px;" min="0"></td>
-                    <td><input type="number" name="stats[<?php echo $player->ID; ?>][stolen_bases]" value="<?php echo $stat ? esc_attr($stat->stolen_bases) : '0'; ?>" style="width: 50px;" min="0"></td>
+                    <td><input type="number" name="stats[<?php echo $player->ID; ?>][errors]" value="<?php echo $stat ? esc_attr($stat->errors) : '0'; ?>" style="width: 50px;" min="0"></td>
                     <input type="hidden" name="stats[<?php echo $player->ID; ?>][team_id]" value="<?php echo esc_attr($away_team_id); ?>">
                     <td><button type="button" class="button" onclick="this.closest('tr').remove()">Eliminar</button></td>
                 </tr>
                 <?php endforeach; ?>
             </tbody>
         </table>
-        <p><em>AB = Turnos al Bate, H = Hits, HR = Home Runs, RBI = Carreras Impulsadas, BB = Bases por Bolas, SO = Ponches, SB = Bases Robadas</em></p>
+        <p><em>AB = Turnos al Bate, H = Hits, 2B = Dobles, 3B = Triples, HR = Home Runs, RBI = Carreras Impulsadas, BB = Bases por Bolas, SO = Ponches, E = Errores</em></p>
     </div>
     
     <script>
@@ -1177,11 +1197,13 @@ function baseball_game_stats_callback($post) {
             </td>
             <td><input type="number" name="stats[${playerId}][at_bats]" value="0" style="width: 50px;" min="0"></td>
             <td><input type="number" name="stats[${playerId}][hits]" value="0" style="width: 50px;" min="0"></td>
+            <td><input type="number" name="stats[${playerId}][doubles]" value="0" style="width: 50px;" min="0"></td>
+            <td><input type="number" name="stats[${playerId}][triples]" value="0" style="width: 50px;" min="0"></td>
             <td><input type="number" name="stats[${playerId}][home_runs]" value="0" style="width: 50px;" min="0"></td>
             <td><input type="number" name="stats[${playerId}][rbis]" value="0" style="width: 50px;" min="0"></td>
             <td><input type="number" name="stats[${playerId}][walks]" value="0" style="width: 50px;" min="0"></td>
             <td><input type="number" name="stats[${playerId}][strikeouts]" value="0" style="width: 50px;" min="0"></td>
-            <td><input type="number" name="stats[${playerId}][stolen_bases]" value="0" style="width: 50px;" min="0"></td>
+            <td><input type="number" name="stats[${playerId}][errors]" value="0" style="width: 50px;" min="0"></td>
             <input type="hidden" name="stats[${playerId}][team_id]" value="${teamId}">
             <td><button type="button" class="button" onclick="this.closest('tr').remove(); updateAvailablePlayers();">Eliminar</button></td>
         `;
@@ -1378,17 +1400,25 @@ function baseball_game_scorecard_callback($post) {
 }
 
 function baseball_save_game_info($post_id) {
+    // Debug: Log function call
+    error_log("baseball_save_game_info called for post_id: $post_id");
+    
     if (!isset($_POST['baseball_game_info_nonce']) || !wp_verify_nonce($_POST['baseball_game_info_nonce'], 'baseball_save_game_info')) {
+        error_log("Nonce verification failed");
         return;
     }
 
     if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
+        error_log("Autosave detected, skipping");
         return;
     }
 
     if (!current_user_can('edit_post', $post_id)) {
+        error_log("User cannot edit post");
         return;
     }
+    
+    error_log("All checks passed, proceeding to save");
 
     $fields = array('game_tournament', 'game_home_team', 'game_away_team', 'game_home_score', 'game_away_score', 'game_date', 'game_time', 'game_location');
 
@@ -1425,44 +1455,96 @@ function baseball_save_game_info($post_id) {
     }
     
     // Save game statistics
+    error_log("Checking for stats in POST: " . (isset($_POST['stats']) ? 'YES' : 'NO'));
+    if (isset($_POST['stats'])) {
+        error_log("Stats data: " . print_r($_POST['stats'], true));
+    }
+    
     if (isset($_POST['stats']) && is_array($_POST['stats'])) {
         global $wpdb;
         $table_name = $wpdb->prefix . 'baseball_game_stats';
         
+        error_log("Processing stats for game $post_id. Total entries: " . count($_POST['stats']));
+        
         // First, delete all existing stats for this game
-        $wpdb->delete($table_name, array('game_id' => $post_id), array('%d'));
+        $deleted = $wpdb->delete($table_name, array('game_id' => $post_id), array('%d'));
+        error_log("Deleted $deleted existing stats for game $post_id");
+        
+        $saved_count = 0;
+        $skipped_count = 0;
         
         foreach ($_POST['stats'] as $key => $stats) {
-            // Get the actual player ID from the form
-            $player_id = isset($stats['player_id']) ? intval($stats['player_id']) : intval($key);
+            error_log("Processing stat entry key: $key");
             
-            // Skip if no player selected or no at-bats
-            if (!$player_id || !isset($stats['at_bats'])) {
+            // Get the actual player ID from the form
+            $player_id = isset($stats['player_id']) ? intval($stats['player_id']) : 0;
+            error_log("Player ID: $player_id");
+            
+            // Skip if no player selected
+            if (!$player_id || $player_id <= 0) {
+                error_log("Skipping - no player selected");
+                $skipped_count++;
                 continue;
             }
+            
+            // Skip if at_bats is not set (but allow 0 value)
+            if (!isset($stats['at_bats'])) {
+                error_log("Skipping - at_bats not set");
+                $skipped_count++;
+                continue;
+            }
+            
+            error_log("Valid entry - will save for player $player_id");
             
             $data = array(
                 'game_id' => $post_id,
                 'player_id' => $player_id,
-                'team_id' => intval($stats['team_id']),
-                'at_bats' => intval($stats['at_bats']),
-                'hits' => intval($stats['hits']),
-                'home_runs' => intval($stats['home_runs']),
-                'rbis' => intval($stats['rbis']),
-                'walks' => intval($stats['walks']),
-                'strikeouts' => intval($stats['strikeouts']),
-                'stolen_bases' => intval($stats['stolen_bases'])
+                'team_id' => intval($stats['team_id'] ?? 0),
+                'at_bats' => intval($stats['at_bats'] ?? 0),
+                'hits' => intval($stats['hits'] ?? 0),
+                'doubles' => intval($stats['doubles'] ?? 0),
+                'triples' => intval($stats['triples'] ?? 0),
+                'home_runs' => intval($stats['home_runs'] ?? 0),
+                'rbis' => intval($stats['rbis'] ?? 0),
+                'walks' => intval($stats['walks'] ?? 0),
+                'strikeouts' => intval($stats['strikeouts'] ?? 0),
+                'errors' => intval($stats['errors'] ?? 0)
             );
             
-            $wpdb->insert(
+            $result = $wpdb->insert(
                 $table_name,
                 $data,
-                array('%d', '%d', '%d', '%d', '%d', '%d', '%d', '%d', '%d', '%d')
+                array('%d', '%d', '%d', '%d', '%d', '%d', '%d', '%d', '%d', '%d', '%d', '%d')
             );
+            
+            if ($result) {
+                $saved_count++;
+                error_log("Successfully saved stats for player $player_id. Insert ID: " . $wpdb->insert_id);
+            } else {
+                // Log error for debugging
+                error_log("ERROR saving stats for player $player_id in game $post_id: " . $wpdb->last_error);
+                error_log("Data attempted: " . print_r($data, true));
+            }
         }
+        
+        error_log("Final results - Saved: $saved_count, Skipped: $skipped_count");
         
         // Update player cumulative stats
         baseball_update_player_cumulative_stats($post_id);
+        error_log("Cumulative stats updated for game $post_id");
+        
+        // Add admin notice
+        add_action('admin_notices', function() use ($skipped_count, $saved_count) {
+            $class = $saved_count > 0 ? 'notice-success' : 'notice-warning';
+            echo '<div class="notice ' . $class . ' is-dismissible">';
+            echo '<p><strong>Estadísticas guardadas:</strong> ' . $saved_count . ' jugadores. ';
+            if ($skipped_count > 0) {
+                echo '<strong>Omitidos:</strong> ' . $skipped_count . ' (sin jugador seleccionado o sin datos).';
+            }
+            echo '</p></div>';
+        });
+    } else {
+        error_log("No stats data found in POST");
     }
     
     // Save pitchers data
@@ -1772,11 +1854,13 @@ function baseball_update_player_cumulative_stats($game_id) {
             "SELECT 
                 SUM(at_bats) as total_ab,
                 SUM(hits) as total_hits,
+                SUM(doubles) as total_2b,
+                SUM(triples) as total_3b,
                 SUM(home_runs) as total_hr,
                 SUM(rbis) as total_rbi,
                 SUM(walks) as total_bb,
                 SUM(strikeouts) as total_so,
-                SUM(stolen_bases) as total_sb
+                SUM(errors) as total_e
             FROM $table_name 
             WHERE player_id = %d",
             $player_id
@@ -1785,11 +1869,13 @@ function baseball_update_player_cumulative_stats($game_id) {
         // Update player meta
         update_post_meta($player_id, '_at_bats', $stats->total_ab);
         update_post_meta($player_id, '_hits', $stats->total_hits);
+        update_post_meta($player_id, '_doubles', $stats->total_2b);
+        update_post_meta($player_id, '_triples', $stats->total_3b);
         update_post_meta($player_id, '_home_runs', $stats->total_hr);
         update_post_meta($player_id, '_rbis', $stats->total_rbi);
         update_post_meta($player_id, '_walks', $stats->total_bb);
         update_post_meta($player_id, '_strikeouts', $stats->total_so);
-        update_post_meta($player_id, '_stolen_bases', $stats->total_sb);
+        update_post_meta($player_id, '_errors', $stats->total_e);
         
         // Calculate batting average
         if ($stats->total_ab > 0) {
@@ -2243,7 +2329,9 @@ function baseball_leaders_compact_shortcode($atts) {
         'home_runs' => 'HR',
         'rbis' => 'RBI',
         'hits' => 'H',
-        'stolen_bases' => 'SB',
+        'doubles' => '2B',
+        'triples' => '3B',
+        'errors' => 'E',
     );
 
     $stat_label = isset($stat_labels[$atts['stat']]) ? $stat_labels[$atts['stat']] : $atts['stat'];

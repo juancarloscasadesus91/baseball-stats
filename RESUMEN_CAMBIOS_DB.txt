@@ -1,0 +1,105 @@
+================================================================================
+RESUMEN DE CAMBIOS EN BASE DE DATOS PARA PRODUCCIÓN
+================================================================================
+
+📋 CAMBIOS NECESARIOS:
+--------------------------------------------------------------------------------
+
+1. CREAR PÁGINA "NOTICIAS"
+   - Tabla: wp_posts
+   - Acción: INSERT nueva página
+   - Campos:
+     * post_title = 'Noticias'
+     * post_name = 'noticias'
+     * post_type = 'page'
+     * post_status = 'publish'
+
+2. ASIGNAR TEMPLATE A PÁGINA NOTICIAS
+   - Tabla: wp_postmeta
+   - Acción: INSERT/UPDATE
+   - Campos:
+     * meta_key = '_wp_page_template'
+     * meta_value = 'page-noticias.php'
+
+3. CREAR PÁGINA "INICIO"
+   - Tabla: wp_posts
+   - Acción: INSERT nueva página
+   - Campos:
+     * post_title = 'Inicio'
+     * post_name = 'inicio'
+     * post_type = 'page'
+     * post_status = 'publish'
+
+4. CONFIGURAR WORDPRESS
+   - Tabla: wp_options
+   - Acción: UPDATE 3 opciones
+   
+   a) page_on_front
+      * Antes: 0
+      * Después: [ID de página "Inicio"]
+   
+   b) page_for_posts
+      * Antes: [ID de página "Noticias"]
+      * Después: 0
+   
+   c) show_on_front
+      * Antes: puede variar
+      * Después: 'page'
+
+================================================================================
+📁 ARCHIVOS A SUBIR:
+================================================================================
+
+NUEVOS:
+  ✓ page-noticias.php
+  ✓ archive.php
+  ✓ update-noticias-produccion.sql
+
+MODIFICADOS:
+  ✓ front-page.php
+  ✓ single.php
+  ✓ style.css
+
+SIN CAMBIOS (pero verificar que estén actualizados):
+  - functions.php
+  - header.php
+  - footer.php
+
+================================================================================
+⚠️  IMPORTANTE:
+================================================================================
+
+1. ORDEN DE EJECUCIÓN:
+   a) Subir archivos PHP primero
+   b) Ejecutar script SQL después
+   c) Refrescar permalinks en WordPress Admin
+
+2. BACKUP:
+   Antes de ejecutar el SQL, haz backup de:
+   - Tabla wp_posts
+   - Tabla wp_postmeta
+   - Tabla wp_options
+
+3. VERIFICACIÓN POST-DEPLOY:
+   - Visitar: http://tudominio.com/
+   - Visitar: http://tudominio.com/noticias/
+   - Verificar que sidebar aparezca en ambas páginas
+   - Verificar que comentarios funcionen en posts
+
+================================================================================
+🔧 COMANDO SQL RÁPIDO (si prefieres manual):
+================================================================================
+
+-- Verificar IDs actuales
+SELECT ID, post_title, post_name FROM wp_posts 
+WHERE post_type = 'page' AND post_name IN ('inicio', 'noticias');
+
+-- Si las páginas NO existen, ejecuta el script completo:
+-- update-noticias-produccion.sql
+
+-- Si las páginas YA existen, solo actualiza la configuración:
+UPDATE wp_options SET option_value = 'page' WHERE option_name = 'show_on_front';
+UPDATE wp_options SET option_value = '0' WHERE option_name = 'page_for_posts';
+UPDATE wp_options SET option_value = '[ID_PAGINA_INICIO]' WHERE option_name = 'page_on_front';
+
+================================================================================

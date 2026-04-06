@@ -237,7 +237,9 @@ get_header();
                                                 <th>RBI</th>
                                                 <th>BB</th>
                                                 <th>SO</th>
-                                                <th>SB</th>
+                                                <th>2B</th>
+                                                <th>3B</th>
+                                                <th>E</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -270,7 +272,9 @@ get_header();
                                                 <td><?php echo $stat->rbis; ?></td>
                                                 <td><?php echo $stat->walks; ?></td>
                                                 <td><?php echo $stat->strikeouts; ?></td>
-                                                <td><?php echo $stat->stolen_bases; ?></td>
+                                                <td><?php echo $stat->doubles; ?></td>
+                                                <td><?php echo $stat->triples; ?></td>
+                                                <td><?php echo $stat->errors; ?></td>
                                             </tr>
                                             <?php endforeach; ?>
                                         </tbody>
@@ -360,7 +364,9 @@ get_header();
                                                 <th>RBI</th>
                                                 <th>BB</th>
                                                 <th>SO</th>
-                                                <th>SB</th>
+                                                <th>2B</th>
+                                                <th>3B</th>
+                                                <th>E</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -393,7 +399,9 @@ get_header();
                                                 <td><?php echo $stat->rbis; ?></td>
                                                 <td><?php echo $stat->walks; ?></td>
                                                 <td><?php echo $stat->strikeouts; ?></td>
-                                                <td><?php echo $stat->stolen_bases; ?></td>
+                                                <td><?php echo $stat->doubles; ?></td>
+                                                <td><?php echo $stat->triples; ?></td>
+                                                <td><?php echo $stat->errors; ?></td>
                                             </tr>
                                             <?php endforeach; ?>
                                         </tbody>

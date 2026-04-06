@@ -1,0 +1,135 @@
+═══════════════════════════════════════════════════════════════════════════════
+  RESUMEN DE CAMBIOS - BASEBALL STATS THEME
+  Fecha: 2026-04-06
+═══════════════════════════════════════════════════════════════════════════════
+
+📊 CAMBIOS EN ESTADÍSTICAS
+═══════════════════════════════════════════════════════════════════════════════
+
+ELIMINADO:
+  ❌ SB (Stolen Bases / Bases Robadas)
+
+AÑADIDO:
+  ✅ 2B (Doubles / Dobles)
+  ✅ 3B (Triples / Triples)
+  ✅ E (Errors / Errores)
+
+═══════════════════════════════════════════════════════════════════════════════
+🚀 DEPLOYMENT A SEGUNDO SERVIDOR
+═══════════════════════════════════════════════════════════════════════════════
+
+CONFIGURADO:
+  ✅ GitHub Actions actualizado para deployment a 2 servidores
+  ✅ Servidor 1: InfinityFree (existente)
+  ✅ Servidor 2: Configurable mediante secrets de GitHub
+
+SECRETS REQUERIDOS PARA SERVIDOR 2:
+  - FTP_SERVER_2
+  - FTP_USER_2
+  - FTP_PASSWORD_2
+  - FTP_SERVER_DIR_2
+
+═══════════════════════════════════════════════════════════════════════════════
+📝 ARCHIVOS MODIFICADOS (16 archivos)
+═══════════════════════════════════════════════════════════════════════════════
+
+CORE:
+  ✏️  functions.php
+  ✏️  .github/workflows/deploy.yml
+
+TEMPLATES FRONTEND:
+  ✏️  front-page.php
+  ✏️  archive-player.php
+  ✏️  single-player.php
+  ✏️  single-team.php
+  ✏️  single-game.php
+  ✏️  page-leaders.php
+
+SCRIPTS:
+  ✏️  reset-stats-simple.php
+  ✏️  reset-stats.php
+
+ARCHIVOS NUEVOS:
+  📄  CAMBIOS_ESTADISTICAS.md
+  📄  INSTRUCCIONES_ACTUALIZACION.md
+  📄  update-database.sql
+  📄  RESUMEN_CAMBIOS.txt
+
+═══════════════════════════════════════════════════════════════════════════════
+⚡ ACCIÓN INMEDIATA REQUERIDA
+═══════════════════════════════════════════════════════════════════════════════
+
+1. EJECUTAR SQL DE ACTUALIZACIÓN (OBLIGATORIO):
+   
+   ALTER TABLE wp_baseball_game_stats 
+   ADD COLUMN doubles int(11) DEFAULT 0 AFTER hits,
+   ADD COLUMN triples int(11) DEFAULT 0 AFTER doubles,
+   ADD COLUMN errors int(11) DEFAULT 0 AFTER strikeouts;
+
+   ⚠️  Cambia 'wp_' si tu prefijo es diferente
+
+2. CONFIGURAR SECRETS EN GITHUB (OPCIONAL - solo si quieres 2do servidor):
+   
+   GitHub → Settings → Secrets and variables → Actions
+   
+   Agregar:
+   - FTP_SERVER_2
+   - FTP_USER_2
+   - FTP_PASSWORD_2
+   - FTP_SERVER_DIR_2
+
+3. VERIFICAR:
+   
+   ✓ Admin: Editar partido → Ver campos 2B, 3B, E
+   ✓ Frontend: Ver tablas de jugadores con nuevas columnas
+   ✓ Líderes: Ver opciones para 2B, 3B, E
+
+═══════════════════════════════════════════════════════════════════════════════
+📍 UBICACIONES IMPORTANTES
+═══════════════════════════════════════════════════════════════════════════════
+
+DOCUMENTACIÓN:
+  📖 INSTRUCCIONES_ACTUALIZACION.md  → Guía paso a paso
+  📖 CAMBIOS_ESTADISTICAS.md         → Documentación técnica detallada
+  📖 RESUMEN_CAMBIOS.txt             → Este archivo
+
+SQL:
+  💾 update-database.sql             → Script de actualización de BD
+
+DEPLOYMENT:
+  🚀 .github/workflows/deploy.yml    → Configuración de deployment
+
+═══════════════════════════════════════════════════════════════════════════════
+✅ CHECKLIST RÁPIDO
+═══════════════════════════════════════════════════════════════════════════════
+
+[ ] Ejecutar SQL de actualización
+[ ] Probar crear/editar partido
+[ ] Verificar frontend
+[ ] Configurar secrets GitHub (si aplica)
+[ ] Limpiar caché WordPress
+[ ] Hacer commit y push a GitHub
+
+═══════════════════════════════════════════════════════════════════════════════
+🎯 RESULTADO ESPERADO
+═══════════════════════════════════════════════════════════════════════════════
+
+ANTES:                          DESPUÉS:
+AB  H  HR  RBI  BB  SO  SB  →  AB  H  2B  3B  HR  RBI  BB  SO  E
+
+DEPLOYMENT:                     DEPLOYMENT:
+1 servidor                  →   2 servidores (paralelo)
+
+═══════════════════════════════════════════════════════════════════════════════
+📞 SOPORTE
+═══════════════════════════════════════════════════════════════════════════════
+
+Si tienes problemas:
+  1. Lee INSTRUCCIONES_ACTUALIZACION.md
+  2. Verifica logs de WordPress
+  3. Revisa GitHub Actions logs
+  4. Verifica que ejecutaste el SQL correctamente
+
+═══════════════════════════════════════════════════════════════════════════════
+Fin del resumen - ¡Buena suerte! ⚾
+═══════════════════════════════════════════════════════════════════════════════

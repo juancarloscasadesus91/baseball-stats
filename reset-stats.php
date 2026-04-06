@@ -83,7 +83,7 @@ function reset_player_cumulative_stats() {
     $count = 0;
     $meta_keys = array(
         '_at_bats', '_hits', '_home_runs', '_rbis', '_walks', 
-        '_strikeouts', '_stolen_bases', '_batting_avg',
+        '_strikeouts', '_doubles', '_triples', '_errors', '_batting_avg',
         '_innings_pitched', '_pitching_hits', '_pitching_runs',
         '_pitching_earned_runs', '_pitching_walks', '_pitching_strikeouts',
         '_pitching_wins', '_pitching_losses', '_pitching_saves', '_era'

@@ -158,7 +158,9 @@ get_header(); ?>
                                 <th>RBI</th>
                                 <th>BB</th>
                                 <th>SO</th>
-                                <th>SB</th>
+                                <th>2B</th>
+                                <th>3B</th>
+                                <th>E</th>
                                 <th>Acciones</th>
                             </tr>
                         </thead>
@@ -173,7 +175,9 @@ get_header(); ?>
                                 $rbis = get_post_meta($player_id, '_rbis', true);
                                 $walks = get_post_meta($player_id, '_walks', true);
                                 $strikeouts = get_post_meta($player_id, '_strikeouts', true);
-                                $stolen_bases = get_post_meta($player_id, '_stolen_bases', true);
+                                $doubles = get_post_meta($player_id, '_doubles', true);
+                                $triples = get_post_meta($player_id, '_triples', true);
+                                $errors = get_post_meta($player_id, '_errors', true);
                                 $positions = wp_get_post_terms($player_id, 'position');
                                 $position_name = !empty($positions) ? $positions[0]->name : 'N/A';
                             ?>
@@ -201,7 +205,9 @@ get_header(); ?>
                                 <td class="stat-highlight"><?php echo esc_html($rbis ?: '0'); ?></td>
                                 <td><?php echo esc_html($walks ?: '0'); ?></td>
                                 <td><?php echo esc_html($strikeouts ?: '0'); ?></td>
-                                <td class="stat-highlight"><?php echo esc_html($stolen_bases ?: '0'); ?></td>
+                                <td class="stat-highlight"><?php echo esc_html($doubles ?: '0'); ?></td>
+                                <td class="stat-highlight"><?php echo esc_html($triples ?: '0'); ?></td>
+                                <td class="stat-highlight"><?php echo esc_html($errors ?: '0'); ?></td>
                                 <td>
                                     <a href="<?php echo get_permalink($player_id); ?>" class="btn-small">Ver</a>
                                 </td>

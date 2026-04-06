@@ -21,7 +21,9 @@ get_header();
             <button class="tab-button" data-stat="home_runs">Home Runs</button>
             <button class="tab-button" data-stat="rbis">Carreras Impulsadas</button>
             <button class="tab-button" data-stat="hits">Hits</button>
-            <button class="tab-button" data-stat="stolen_bases">Bases Robadas</button>
+            <button class="tab-button" data-stat="doubles">Dobles</button>
+            <button class="tab-button" data-stat="triples">Triples</button>
+            <button class="tab-button" data-stat="errors">Errores</button>
         </div>
 
         <div class="leaders-content">
@@ -31,7 +33,9 @@ get_header();
                 'home_runs' => 'Home Runs',
                 'rbis' => 'Carreras Impulsadas',
                 'hits' => 'Hits',
-                'stolen_bases' => 'Bases Robadas'
+                'doubles' => 'Dobles',
+                'triples' => 'Triples',
+                'errors' => 'Errores'
             );
 
             foreach ($stats as $stat_key => $stat_label):
