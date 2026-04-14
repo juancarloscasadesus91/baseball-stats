@@ -29,6 +29,7 @@ function baseball_create_tables() {
         doubles int(11) DEFAULT 0,
         triples int(11) DEFAULT 0,
         home_runs int(11) DEFAULT 0,
+        runs int(11) DEFAULT 0,
         rbis int(11) DEFAULT 0,
         walks int(11) DEFAULT 0,
         strikeouts int(11) DEFAULT 0,
@@ -351,6 +352,7 @@ function baseball_player_stats_callback($post) {
     $team_id = get_post_meta($post->ID, '_player_team', true);
     $batting_avg = get_post_meta($post->ID, '_batting_avg', true);
     $home_runs = get_post_meta($post->ID, '_home_runs', true);
+    $runs = get_post_meta($post->ID, '_runs', true);
     $rbis = get_post_meta($post->ID, '_rbis', true);
     $hits = get_post_meta($post->ID, '_hits', true);
     $at_bats = get_post_meta($post->ID, '_at_bats', true);
@@ -403,6 +405,10 @@ function baseball_player_stats_callback($post) {
             <p>
                 <label for="home_runs"><strong>Home Runs (HR):</strong></label><br>
                 <input type="number" id="home_runs" name="home_runs" value="<?php echo esc_attr($home_runs); ?>" style="width: 100%;">
+            </p>
+            <p>
+                <label for="runs"><strong>Carreras Anotadas (R):</strong></label><br>
+                <input type="number" id="runs" name="runs" value="<?php echo esc_attr($runs); ?>" style="width: 100%;">
             </p>
             <p>
                 <label for="rbis"><strong>Carreras Impulsadas (RBI):</strong></label><br>
@@ -465,7 +471,7 @@ function baseball_save_player_stats($post_id) {
 
     // Save fields
     $fields = array(
-        'player_number', 'player_team', 'batting_avg', 'home_runs', 'rbis',
+        'player_number', 'player_team', 'batting_avg', 'home_runs', 'runs', 'rbis',
         'hits', 'at_bats', 'doubles', 'triples', 'errors', 'era', 'wins', 'losses', 'strikeouts'
     );
 
@@ -1040,6 +1046,7 @@ function baseball_game_stats_callback($post) {
                     <th>2B</th>
                     <th>3B</th>
                     <th>HR</th>
+                    <th>R</th>
                     <th>RBI</th>
                     <th>BB</th>
                     <th>SO</th>
@@ -1064,6 +1071,7 @@ function baseball_game_stats_callback($post) {
                     <td><input type="number" name="stats[<?php echo $player->ID; ?>][doubles]" value="<?php echo $stat ? esc_attr($stat->doubles) : '0'; ?>" style="width: 50px;" min="0"></td>
                     <td><input type="number" name="stats[<?php echo $player->ID; ?>][triples]" value="<?php echo $stat ? esc_attr($stat->triples) : '0'; ?>" style="width: 50px;" min="0"></td>
                     <td><input type="number" name="stats[<?php echo $player->ID; ?>][home_runs]" value="<?php echo $stat ? esc_attr($stat->home_runs) : '0'; ?>" style="width: 50px;" min="0"></td>
+                    <td><input type="number" name="stats[<?php echo $player->ID; ?>][runs]" value="<?php echo $stat ? esc_attr($stat->runs) : '0'; ?>" style="width: 50px;" min="0"></td>
                     <td><input type="number" name="stats[<?php echo $player->ID; ?>][rbis]" value="<?php echo $stat ? esc_attr($stat->rbis) : '0'; ?>" style="width: 50px;" min="0"></td>
                     <td><input type="number" name="stats[<?php echo $player->ID; ?>][walks]" value="<?php echo $stat ? esc_attr($stat->walks) : '0'; ?>" style="width: 50px;" min="0"></td>
                     <td><input type="number" name="stats[<?php echo $player->ID; ?>][strikeouts]" value="<?php echo $stat ? esc_attr($stat->strikeouts) : '0'; ?>" style="width: 50px;" min="0"></td>
@@ -1086,6 +1094,7 @@ function baseball_game_stats_callback($post) {
                     <th>2B</th>
                     <th>3B</th>
                     <th>HR</th>
+                    <th>R</th>
                     <th>RBI</th>
                     <th>BB</th>
                     <th>SO</th>
@@ -1110,6 +1119,7 @@ function baseball_game_stats_callback($post) {
                     <td><input type="number" name="stats[<?php echo $player->ID; ?>][doubles]" value="<?php echo $stat ? esc_attr($stat->doubles) : '0'; ?>" style="width: 50px;" min="0"></td>
                     <td><input type="number" name="stats[<?php echo $player->ID; ?>][triples]" value="<?php echo $stat ? esc_attr($stat->triples) : '0'; ?>" style="width: 50px;" min="0"></td>
                     <td><input type="number" name="stats[<?php echo $player->ID; ?>][home_runs]" value="<?php echo $stat ? esc_attr($stat->home_runs) : '0'; ?>" style="width: 50px;" min="0"></td>
+                    <td><input type="number" name="stats[<?php echo $player->ID; ?>][runs]" value="<?php echo $stat ? esc_attr($stat->runs) : '0'; ?>" style="width: 50px;" min="0"></td>
                     <td><input type="number" name="stats[<?php echo $player->ID; ?>][rbis]" value="<?php echo $stat ? esc_attr($stat->rbis) : '0'; ?>" style="width: 50px;" min="0"></td>
                     <td><input type="number" name="stats[<?php echo $player->ID; ?>][walks]" value="<?php echo $stat ? esc_attr($stat->walks) : '0'; ?>" style="width: 50px;" min="0"></td>
                     <td><input type="number" name="stats[<?php echo $player->ID; ?>][strikeouts]" value="<?php echo $stat ? esc_attr($stat->strikeouts) : '0'; ?>" style="width: 50px;" min="0"></td>
@@ -1120,7 +1130,7 @@ function baseball_game_stats_callback($post) {
                 <?php endforeach; ?>
             </tbody>
         </table>
-        <p><em>AB = Turnos al Bate, H = Hits, 2B = Dobles, 3B = Triples, HR = Home Runs, RBI = Carreras Impulsadas, BB = Bases por Bolas, SO = Ponches, E = Errores</em></p>
+        <p><em>AB = Turnos al Bate, H = Hits, 2B = Dobles, 3B = Triples, HR = Home Runs, R = Carreras Anotadas, RBI = Carreras Impulsadas, BB = Bases por Bolas, SO = Ponches, E = Errores</em></p>
     </div>
     
     <script>
@@ -1200,6 +1210,7 @@ function baseball_game_stats_callback($post) {
             <td><input type="number" name="stats[${playerId}][doubles]" value="0" style="width: 50px;" min="0"></td>
             <td><input type="number" name="stats[${playerId}][triples]" value="0" style="width: 50px;" min="0"></td>
             <td><input type="number" name="stats[${playerId}][home_runs]" value="0" style="width: 50px;" min="0"></td>
+            <td><input type="number" name="stats[${playerId}][runs]" value="0" style="width: 50px;" min="0"></td>
             <td><input type="number" name="stats[${playerId}][rbis]" value="0" style="width: 50px;" min="0"></td>
             <td><input type="number" name="stats[${playerId}][walks]" value="0" style="width: 50px;" min="0"></td>
             <td><input type="number" name="stats[${playerId}][strikeouts]" value="0" style="width: 50px;" min="0"></td>
@@ -1505,6 +1516,7 @@ function baseball_save_game_info($post_id) {
                 'doubles' => intval($stats['doubles'] ?? 0),
                 'triples' => intval($stats['triples'] ?? 0),
                 'home_runs' => intval($stats['home_runs'] ?? 0),
+                'runs' => intval($stats['runs'] ?? 0),
                 'rbis' => intval($stats['rbis'] ?? 0),
                 'walks' => intval($stats['walks'] ?? 0),
                 'strikeouts' => intval($stats['strikeouts'] ?? 0),
@@ -1514,7 +1526,7 @@ function baseball_save_game_info($post_id) {
             $result = $wpdb->insert(
                 $table_name,
                 $data,
-                array('%d', '%d', '%d', '%d', '%d', '%d', '%d', '%d', '%d', '%d', '%d', '%d')
+                array('%d', '%d', '%d', '%d', '%d', '%d', '%d', '%d', '%d', '%d', '%d', '%d', '%d')
             );
             
             if ($result) {
@@ -1970,6 +1982,7 @@ function baseball_update_player_cumulative_stats($game_id) {
                 SUM(doubles) as total_2b,
                 SUM(triples) as total_3b,
                 SUM(home_runs) as total_hr,
+                SUM(runs) as total_r,
                 SUM(rbis) as total_rbi,
                 SUM(walks) as total_bb,
                 SUM(strikeouts) as total_so,
@@ -1985,6 +1998,7 @@ function baseball_update_player_cumulative_stats($game_id) {
         update_post_meta($player_id, '_doubles', $stats->total_2b);
         update_post_meta($player_id, '_triples', $stats->total_3b);
         update_post_meta($player_id, '_home_runs', $stats->total_hr);
+        update_post_meta($player_id, '_runs', $stats->total_r);
         update_post_meta($player_id, '_rbis', $stats->total_rbi);
         update_post_meta($player_id, '_walks', $stats->total_bb);
         update_post_meta($player_id, '_strikeouts', $stats->total_so);

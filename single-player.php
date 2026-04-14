@@ -15,6 +15,7 @@ get_header(); ?>
             $team_id = get_post_meta($player_id, '_player_team', true);
             $batting_avg = get_post_meta($player_id, '_batting_avg', true);
             $home_runs = get_post_meta($player_id, '_home_runs', true);
+            $runs = get_post_meta($player_id, '_runs', true);
             $rbis = get_post_meta($player_id, '_rbis', true);
             $hits = get_post_meta($player_id, '_hits', true);
             $at_bats = get_post_meta($player_id, '_at_bats', true);
@@ -80,6 +81,10 @@ get_header(); ?>
                 <div class="stat-box">
                     <div class="stat-label">Home Runs (HR)</div>
                     <div class="stat-value"><?php echo esc_html($home_runs ?: '0'); ?></div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Carreras Anotadas (R)</div>
+                    <div class="stat-value"><?php echo esc_html($runs ?: '0'); ?></div>
                 </div>
                 <div class="stat-box">
                     <div class="stat-label">Carreras Impulsadas (RBI)</div>
@@ -179,6 +184,7 @@ get_header(); ?>
                             <th>H</th>
                             <th>AVG</th>
                             <th>HR</th>
+                            <th>R</th>
                             <th>RBI</th>
                             <th>BB</th>
                             <th>SO</th>
@@ -205,6 +211,7 @@ get_header(); ?>
                             <td><?php echo $stat->hits; ?></td>
                             <td><?php echo $game_avg; ?></td>
                             <td><?php echo $stat->home_runs; ?></td>
+                            <td><?php echo $stat->runs; ?></td>
                             <td><?php echo $stat->rbis; ?></td>
                             <td><?php echo $stat->walks; ?></td>
                             <td><?php echo $stat->strikeouts; ?></td>
@@ -216,7 +223,7 @@ get_header(); ?>
                     </tbody>
                 </table>
             </div>
-            <p><em>AB = Turnos al Bate, H = Hits, AVG = Promedio, HR = Home Runs, RBI = Carreras Impulsadas, BB = Bases por Bolas, SO = Ponches, 2B = Dobles, 3B = Triples, E = Errores</em></p>
+            <p><em>AB = Turnos al Bate, H = Hits, AVG = Promedio, HR = Home Runs, R = Carreras Anotadas, RBI = Carreras Impulsadas, BB = Bases por Bolas, SO = Ponches, 2B = Dobles, 3B = Triples, E = Errores</em></p>
         </div>
         <?php endif; ?>
 
