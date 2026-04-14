@@ -1599,6 +1599,119 @@ function baseball_save_game_info($post_id) {
 add_action('save_post_game', 'baseball_save_game_info');
 
 /**
+ * Update Team Standings After Game Save
+ */
+function baseball_update_team_standings($post_id) {
+    // Check if this is a game post type
+    if (get_post_type($post_id) !== 'game') {
+        return;
+    }
+
+    // Don't update on autosave
+    if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
+        return;
+    }
+
+    // Get game data
+    $away_team = get_post_meta($post_id, '_game_away_team', true);
+    $home_team = get_post_meta($post_id, '_game_home_team', true);
+    $away_score = get_post_meta($post_id, '_game_away_score', true);
+    $home_score = get_post_meta($post_id, '_game_home_score', true);
+
+    // Only update if we have all required data
+    if (empty($away_team) || empty($home_team) || $away_score === '' || $home_score === '') {
+        return;
+    }
+
+    // Recalculate standings for both teams
+    baseball_recalculate_team_record($away_team);
+    baseball_recalculate_team_record($home_team);
+}
+add_action('save_post_game', 'baseball_update_team_standings', 20);
+
+/**
+ * Recalculate Team Record from All Games
+ */
+function baseball_recalculate_team_record($team_id) {
+    if (empty($team_id)) {
+        return;
+    }
+
+    $wins = 0;
+    $losses = 0;
+
+    // Get all published games for this team
+    $games = get_posts(array(
+        'post_type' => 'game',
+        'post_status' => 'publish',
+        'posts_per_page' => -1,
+        'meta_query' => array(
+            'relation' => 'OR',
+            array(
+                'key' => '_game_home_team',
+                'value' => $team_id,
+                'compare' => '='
+            ),
+            array(
+                'key' => '_game_away_team',
+                'value' => $team_id,
+                'compare' => '='
+            )
+        )
+    ));
+
+    foreach ($games as $game) {
+        $home_team = get_post_meta($game->ID, '_game_home_team', true);
+        $away_team = get_post_meta($game->ID, '_game_away_team', true);
+        $home_score = get_post_meta($game->ID, '_game_home_score', true);
+        $away_score = get_post_meta($game->ID, '_game_away_score', true);
+
+        // Skip if scores are not set
+        if ($home_score === '' || $away_score === '') {
+            continue;
+        }
+
+        $home_score = intval($home_score);
+        $away_score = intval($away_score);
+
+        // Determine if this team won or lost
+        if ($home_team == $team_id) {
+            if ($home_score > $away_score) {
+                $wins++;
+            } elseif ($home_score < $away_score) {
+                $losses++;
+            }
+        } elseif ($away_team == $team_id) {
+            if ($away_score > $home_score) {
+                $wins++;
+            } elseif ($away_score < $home_score) {
+                $losses++;
+            }
+        }
+    }
+
+    // Update team meta
+    update_post_meta($team_id, '_team_wins', $wins);
+    update_post_meta($team_id, '_team_losses', $losses);
+}
+
+/**
+ * Recalculate All Team Standings
+ * Can be called manually or via admin action
+ */
+function baseball_recalculate_all_team_standings() {
+    $teams = get_posts(array(
+        'post_type' => 'team',
+        'post_status' => 'publish',
+        'posts_per_page' => -1
+    ));
+
+    foreach ($teams as $team) {
+        baseball_recalculate_team_record($team->ID);
+    }
+}
+
+/**
  * Save Game Highlights
  */
 function baseball_save_game_highlights($post_id) {
