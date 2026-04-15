@@ -597,15 +597,27 @@ get_header();
             
             <!-- Scorecard Section -->
             <?php
-            $scorecard_image = get_post_meta(get_the_ID(), '_game_scorecard_image', true);
-            if ($scorecard_image) : ?>
+            $scorecard_images = get_post_meta(get_the_ID(), '_game_scorecard_images', true);
+            // Backward compatibility: check for old single image field
+            if (empty($scorecard_images) || !is_array($scorecard_images)) {
+                $scorecard_image = get_post_meta(get_the_ID(), '_game_scorecard_image', true);
+                if ($scorecard_image) {
+                    $scorecard_images = array($scorecard_image);
+                }
+            }
+            
+            if (!empty($scorecard_images) && is_array($scorecard_images)) : ?>
             <section class="game-scorecard">
                 <h2>Anotación Oficial</h2>
-                <div class="scorecard-image-container">
-                    <img src="<?php echo esc_url($scorecard_image); ?>" alt="Anotación Oficial del Partido" class="scorecard-image">
-                    <a href="<?php echo esc_url($scorecard_image); ?>" target="_blank" class="btn scorecard-download">
-                        Ver en Tamaño Completo
-                    </a>
+                <div class="scorecard-gallery" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; margin-top: 20px;">
+                    <?php foreach ($scorecard_images as $index => $image_url) : ?>
+                        <div class="scorecard-image-item">
+                            <img src="<?php echo esc_url($image_url); ?>" alt="Anotación Oficial del Partido <?php echo $index + 1; ?>" class="scorecard-image" style="width: 100%; height: auto; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;" onclick="window.open('<?php echo esc_url($image_url); ?>', '_blank')">
+                            <a href="<?php echo esc_url($image_url); ?>" target="_blank" class="btn scorecard-download" style="display: block; margin-top: 10px; text-align: center;">
+                                Ver en Tamaño Completo
+                            </a>
+                        </div>
+                    <?php endforeach; ?>
                 </div>
             </section>
             <?php endif; ?>

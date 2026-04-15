@@ -1342,24 +1342,31 @@ function baseball_game_highlights_callback($post) {
  */
 function baseball_game_scorecard_callback($post) {
     wp_nonce_field('baseball_save_game_scorecard', 'baseball_game_scorecard_nonce');
-    $scorecard_image = get_post_meta($post->ID, '_game_scorecard_image', true);
+    $scorecard_images = get_post_meta($post->ID, '_game_scorecard_images', true);
+    if (!is_array($scorecard_images)) {
+        $scorecard_images = array();
+    }
     ?>
     <div style="margin-bottom: 20px;">
         <p>
-            <label><strong>Imagen de la Anotación Oficial:</strong></label><br>
-            <input type="hidden" id="scorecard-image-url" name="scorecard_image" value="<?php echo esc_url($scorecard_image); ?>">
+            <label><strong>Imágenes de la Anotación Oficial:</strong></label><br>
             <button type="button" class="button button-primary" id="upload-scorecard-button">
-                <?php echo $scorecard_image ? 'Cambiar Imagen' : 'Subir Imagen'; ?>
-            </button>
-            <button type="button" class="button" id="remove-scorecard-button" style="<?php echo !$scorecard_image ? 'display:none;' : ''; ?>">
-                Eliminar Imagen
+                Agregar Imágenes
             </button>
         </p>
-        <div id="scorecard-preview" style="margin-top: 15px; <?php echo !$scorecard_image ? 'display:none;' : ''; ?>">
-            <img src="<?php echo esc_url($scorecard_image); ?>" style="max-width: 100%; height: auto; border: 1px solid #ddd; border-radius: 4px;">
+        <div id="scorecard-gallery" style="margin-top: 15px; display: flex; flex-wrap: wrap; gap: 10px;">
+            <?php foreach ($scorecard_images as $index => $image_url) : ?>
+                <div class="scorecard-image-item" style="position: relative; width: 150px;">
+                    <img src="<?php echo esc_url($image_url); ?>" style="width: 100%; height: 150px; object-fit: cover; border: 1px solid #ddd; border-radius: 4px;">
+                    <button type="button" class="button remove-scorecard-image" data-index="<?php echo $index; ?>" style="position: absolute; top: 5px; right: 5px; padding: 2px 8px; background: #dc3232; color: white; border: none; border-radius: 3px; cursor: pointer;">
+                        ✕
+                    </button>
+                    <input type="hidden" name="scorecard_images[]" value="<?php echo esc_url($image_url); ?>">
+                </div>
+            <?php endforeach; ?>
         </div>
         <p style="margin-top: 10px; color: #666;">
-            <small>Sube una imagen de la anotación oficial del partido (scorecard). Formatos soportados: JPG, PNG, PDF.</small>
+            <small>Sube una o más imágenes de la anotación oficial del partido (scorecard). Formatos soportados: JPG, PNG, PDF.</small>
         </p>
     </div>
     
@@ -1376,34 +1383,37 @@ function baseball_game_scorecard_callback($post) {
             }
             
             scorecardUploader = wp.media({
-                title: 'Seleccionar Anotación Oficial',
+                title: 'Seleccionar Imágenes de Anotación',
                 button: {
-                    text: 'Usar esta imagen'
+                    text: 'Agregar imágenes'
                 },
                 library: {
                     type: ['image']
                 },
-                multiple: false
+                multiple: true
             });
             
             scorecardUploader.on('select', function() {
-                var attachment = scorecardUploader.state().get('selection').first().toJSON();
-                $('#scorecard-image-url').val(attachment.url);
-                $('#scorecard-preview img').attr('src', attachment.url);
-                $('#scorecard-preview').show();
-                $('#remove-scorecard-button').show();
-                $('#upload-scorecard-button').text('Cambiar Imagen');
+                var attachments = scorecardUploader.state().get('selection').toJSON();
+                
+                attachments.forEach(function(attachment) {
+                    var imageHtml = '<div class="scorecard-image-item" style="position: relative; width: 150px;">' +
+                        '<img src="' + attachment.url + '" style="width: 100%; height: 150px; object-fit: cover; border: 1px solid #ddd; border-radius: 4px;">' +
+                        '<button type="button" class="button remove-scorecard-image" style="position: absolute; top: 5px; right: 5px; padding: 2px 8px; background: #dc3232; color: white; border: none; border-radius: 3px; cursor: pointer;">✕</button>' +
+                        '<input type="hidden" name="scorecard_images[]" value="' + attachment.url + '">' +
+                        '</div>';
+                    
+                    $('#scorecard-gallery').append(imageHtml);
+                });
             });
             
             scorecardUploader.open();
         });
         
-        $('#remove-scorecard-button').on('click', function(e) {
+        // Remove individual image
+        $(document).on('click', '.remove-scorecard-image', function(e) {
             e.preventDefault();
-            $('#scorecard-image-url').val('');
-            $('#scorecard-preview').hide();
-            $(this).hide();
-            $('#upload-scorecard-button').text('Subir Imagen');
+            $(this).closest('.scorecard-image-item').remove();
         });
     });
     </script>
@@ -1777,10 +1787,17 @@ function baseball_save_game_scorecard($post_id) {
         return;
     }
 
+    // Save multiple images
+    if (isset($_POST['scorecard_images']) && is_array($_POST['scorecard_images'])) {
+        $images = array_map('esc_url_raw', $_POST['scorecard_images']);
+        update_post_meta($post_id, '_game_scorecard_images', $images);
+    } else {
+        delete_post_meta($post_id, '_game_scorecard_images');
+    }
+    
+    // Keep backward compatibility with old single image field
     if (isset($_POST['scorecard_image'])) {
         update_post_meta($post_id, '_game_scorecard_image', esc_url_raw($_POST['scorecard_image']));
-    } else {
-        delete_post_meta($post_id, '_game_scorecard_image');
     }
 }
 add_action('save_post_game', 'baseball_save_game_scorecard');
