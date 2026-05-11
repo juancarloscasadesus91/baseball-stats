@@ -145,22 +145,22 @@ get_header(); ?>
             <!-- Batting Stats -->
             <div class="players-tab-content active" id="batting-stats">
                 <div class="table-responsive">
-                    <table class="players-table">
+                    <table class="players-table sortable-table">
                         <thead>
                             <tr>
-                                <th>#</th>
-                                <th>Jugador</th>
-                                <th>Pos</th>
-                                <th>AVG</th>
-                                <th>AB</th>
-                                <th>H</th>
-                                <th>HR</th>
-                                <th>RBI</th>
-                                <th>BB</th>
-                                <th>SO</th>
-                                <th>2B</th>
-                                <th>3B</th>
-                                <th>E</th>
+                                <th data-sort="number">#</th>
+                                <th data-sort="name">Jugador</th>
+                                <th data-sort="position">Pos</th>
+                                <th data-sort="avg" class="sortable">AVG <span class="sort-arrow">↕</span></th>
+                                <th data-sort="ab" class="sortable">AB <span class="sort-arrow">↕</span></th>
+                                <th data-sort="hits" class="sortable">H <span class="sort-arrow">↕</span></th>
+                                <th data-sort="hr" class="sortable">HR <span class="sort-arrow">↕</span></th>
+                                <th data-sort="rbi" class="sortable">RBI <span class="sort-arrow">↕</span></th>
+                                <th data-sort="bb" class="sortable">BB <span class="sort-arrow">↕</span></th>
+                                <th data-sort="so" class="sortable">SO <span class="sort-arrow">↕</span></th>
+                                <th data-sort="doubles" class="sortable">2B <span class="sort-arrow">↕</span></th>
+                                <th data-sort="triples" class="sortable">3B <span class="sort-arrow">↕</span></th>
+                                <th data-sort="errors" class="sortable">E <span class="sort-arrow">↕</span></th>
                                 <th>Acciones</th>
                             </tr>
                         </thead>
@@ -182,8 +182,8 @@ get_header(); ?>
                                 $position_name = !empty($positions) ? $positions[0]->name : 'N/A';
                             ?>
                             <tr>
-                                <td><?php echo esc_html($player_number ?: '-'); ?></td>
-                                <td>
+                                <td data-value="<?php echo esc_attr($player_number ?: 0); ?>"><?php echo esc_html($player_number ?: '-'); ?></td>
+                                <td data-value="<?php echo esc_attr($player->post_title); ?>">
                                     <div class="player-name-cell">
                                         <div class="player-mini-photo">
                                             <?php if (has_post_thumbnail($player_id)) : ?>
@@ -197,17 +197,17 @@ get_header(); ?>
                                         <strong><?php echo esc_html($player->post_title); ?></strong>
                                     </div>
                                 </td>
-                                <td><?php echo esc_html($position_name); ?></td>
-                                <td class="stat-highlight"><?php echo esc_html($batting_avg ?: '.000'); ?></td>
-                                <td><?php echo esc_html($at_bats ?: '0'); ?></td>
-                                <td><?php echo esc_html($hits ?: '0'); ?></td>
-                                <td class="stat-highlight"><?php echo esc_html($home_runs ?: '0'); ?></td>
-                                <td class="stat-highlight"><?php echo esc_html($rbis ?: '0'); ?></td>
-                                <td><?php echo esc_html($walks ?: '0'); ?></td>
-                                <td><?php echo esc_html($strikeouts ?: '0'); ?></td>
-                                <td class="stat-highlight"><?php echo esc_html($doubles ?: '0'); ?></td>
-                                <td class="stat-highlight"><?php echo esc_html($triples ?: '0'); ?></td>
-                                <td class="stat-highlight"><?php echo esc_html($errors ?: '0'); ?></td>
+                                <td data-value="<?php echo esc_attr($position_name); ?>"><?php echo esc_html($position_name); ?></td>
+                                <td data-value="<?php echo esc_attr($batting_avg ?: 0); ?>" class="stat-highlight"><?php echo esc_html($batting_avg ?: '.000'); ?></td>
+                                <td data-value="<?php echo esc_attr($at_bats ?: 0); ?>"><?php echo esc_html($at_bats ?: '0'); ?></td>
+                                <td data-value="<?php echo esc_attr($hits ?: 0); ?>"><?php echo esc_html($hits ?: '0'); ?></td>
+                                <td data-value="<?php echo esc_attr($home_runs ?: 0); ?>" class="stat-highlight"><?php echo esc_html($home_runs ?: '0'); ?></td>
+                                <td data-value="<?php echo esc_attr($rbis ?: 0); ?>" class="stat-highlight"><?php echo esc_html($rbis ?: '0'); ?></td>
+                                <td data-value="<?php echo esc_attr($walks ?: 0); ?>"><?php echo esc_html($walks ?: '0'); ?></td>
+                                <td data-value="<?php echo esc_attr($strikeouts ?: 0); ?>"><?php echo esc_html($strikeouts ?: '0'); ?></td>
+                                <td data-value="<?php echo esc_attr($doubles ?: 0); ?>" class="stat-highlight"><?php echo esc_html($doubles ?: '0'); ?></td>
+                                <td data-value="<?php echo esc_attr($triples ?: 0); ?>" class="stat-highlight"><?php echo esc_html($triples ?: '0'); ?></td>
+                                <td data-value="<?php echo esc_attr($errors ?: 0); ?>" class="stat-highlight"><?php echo esc_html($errors ?: '0'); ?></td>
                                 <td>
                                     <a href="<?php echo get_permalink($player_id); ?>" class="btn-small">Ver</a>
                                 </td>
@@ -221,20 +221,20 @@ get_header(); ?>
             <!-- Pitching Stats -->
             <div class="players-tab-content" id="pitching-stats">
                 <div class="table-responsive">
-                    <table class="players-table">
+                    <table class="players-table sortable-table">
                         <thead>
                             <tr>
-                                <th>#</th>
-                                <th>Jugador</th>
-                                <th>ERA</th>
-                                <th>W</th>
-                                <th>L</th>
-                                <th>SV</th>
-                                <th>IP</th>
-                                <th>H</th>
-                                <th>ER</th>
-                                <th>BB</th>
-                                <th>SO</th>
+                                <th data-sort="number">#</th>
+                                <th data-sort="name">Jugador</th>
+                                <th data-sort="era" class="sortable">ERA <span class="sort-arrow">↕</span></th>
+                                <th data-sort="wins" class="sortable">W <span class="sort-arrow">↕</span></th>
+                                <th data-sort="losses" class="sortable">L <span class="sort-arrow">↕</span></th>
+                                <th data-sort="saves" class="sortable">SV <span class="sort-arrow">↕</span></th>
+                                <th data-sort="ip" class="sortable">IP <span class="sort-arrow">↕</span></th>
+                                <th data-sort="hits" class="sortable">H <span class="sort-arrow">↕</span></th>
+                                <th data-sort="er" class="sortable">ER <span class="sort-arrow">↕</span></th>
+                                <th data-sort="bb" class="sortable">BB <span class="sort-arrow">↕</span></th>
+                                <th data-sort="so" class="sortable">SO <span class="sort-arrow">↕</span></th>
                                 <th>Acciones</th>
                             </tr>
                         </thead>
@@ -268,8 +268,8 @@ get_header(); ?>
                                 }
                             ?>
                             <tr>
-                                <td><?php echo esc_html($player_number ?: '-'); ?></td>
-                                <td>
+                                <td data-value="<?php echo esc_attr($player_number ?: 0); ?>"><?php echo esc_html($player_number ?: '-'); ?></td>
+                                <td data-value="<?php echo esc_attr($player->post_title); ?>">
                                     <div class="player-name-cell">
                                         <div class="player-mini-photo">
                                             <?php if (has_post_thumbnail($player_id)) : ?>
@@ -283,15 +283,15 @@ get_header(); ?>
                                         <strong><?php echo esc_html($player->post_title); ?></strong>
                                     </div>
                                 </td>
-                                <td class="stat-highlight"><?php echo esc_html($era); ?></td>
-                                <td class="stat-highlight"><?php echo esc_html($wins ?: '0'); ?></td>
-                                <td><?php echo esc_html($losses ?: '0'); ?></td>
-                                <td class="stat-highlight"><?php echo esc_html($saves ?: '0'); ?></td>
-                                <td><?php echo number_format(floatval($ip), 1); ?></td>
-                                <td><?php echo esc_html($hits ?: '0'); ?></td>
-                                <td><?php echo esc_html($er ?: '0'); ?></td>
-                                <td><?php echo esc_html($bb ?: '0'); ?></td>
-                                <td class="stat-highlight"><?php echo esc_html($so ?: '0'); ?></td>
+                                <td data-value="<?php echo esc_attr($era); ?>" class="stat-highlight"><?php echo esc_html($era); ?></td>
+                                <td data-value="<?php echo esc_attr($wins ?: 0); ?>" class="stat-highlight"><?php echo esc_html($wins ?: '0'); ?></td>
+                                <td data-value="<?php echo esc_attr($losses ?: 0); ?>"><?php echo esc_html($losses ?: '0'); ?></td>
+                                <td data-value="<?php echo esc_attr($saves ?: 0); ?>" class="stat-highlight"><?php echo esc_html($saves ?: '0'); ?></td>
+                                <td data-value="<?php echo esc_attr(floatval($ip)); ?>"><?php echo number_format(floatval($ip), 1); ?></td>
+                                <td data-value="<?php echo esc_attr($hits ?: 0); ?>"><?php echo esc_html($hits ?: '0'); ?></td>
+                                <td data-value="<?php echo esc_attr($er ?: 0); ?>"><?php echo esc_html($er ?: '0'); ?></td>
+                                <td data-value="<?php echo esc_attr($bb ?: 0); ?>"><?php echo esc_html($bb ?: '0'); ?></td>
+                                <td data-value="<?php echo esc_attr($so ?: 0); ?>" class="stat-highlight"><?php echo esc_html($so ?: '0'); ?></td>
                                 <td>
                                     <a href="<?php echo get_permalink($player_id); ?>" class="btn-small">Ver</a>
                                 </td>
@@ -447,6 +447,106 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById(tabName + '-stats').classList.add('active');
         });
     });
+    
+    // Table sorting for both batting and pitching tables
+    const tables = document.querySelectorAll('.sortable-table');
+    
+    tables.forEach(table => {
+        const headers = table.querySelectorAll('th.sortable');
+        let currentSort = { column: null, direction: 'asc' };
+        
+        headers.forEach(header => {
+            header.style.cursor = 'pointer';
+            header.addEventListener('click', function() {
+                const sortType = this.getAttribute('data-sort');
+                const tbody = table.querySelector('tbody');
+                const rows = Array.from(tbody.querySelectorAll('tr'));
+                
+                // Toggle direction
+                if (currentSort.column === sortType) {
+                    currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+                } else {
+                    currentSort.direction = 'desc'; // Default to descending for stats
+                    currentSort.column = sortType;
+                }
+                
+                // Remove all sort indicators
+                headers.forEach(h => {
+                    const arrow = h.querySelector('.sort-arrow');
+                    if (arrow) arrow.textContent = '↕';
+                    h.classList.remove('sorted-asc', 'sorted-desc');
+                });
+                
+                // Add sort indicator
+                const arrow = this.querySelector('.sort-arrow');
+                if (arrow) arrow.textContent = currentSort.direction === 'asc' ? '↑' : '↓';
+                this.classList.add(currentSort.direction === 'asc' ? 'sorted-asc' : 'sorted-desc');
+                
+                // Sort rows
+                rows.sort((a, b) => {
+                    const aCell = a.querySelector(`td[data-value]:nth-child(${getColumnIndex(sortType)})`);
+                    const bCell = b.querySelector(`td[data-value]:nth-child(${getColumnIndex(sortType)})`);
+                    
+                    let aVal = aCell.getAttribute('data-value');
+                    let bVal = bCell.getAttribute('data-value');
+                    
+                    // Convert to numbers if numeric
+                    if (!isNaN(aVal) && !isNaN(bVal)) {
+                        aVal = parseFloat(aVal);
+                        bVal = parseFloat(bVal);
+                    } else {
+                        aVal = aVal.toLowerCase();
+                        bVal = bVal.toLowerCase();
+                    }
+                    
+                    if (currentSort.direction === 'asc') {
+                        return aVal > bVal ? 1 : -1;
+                    } else {
+                        return aVal < bVal ? 1 : -1;
+                    }
+                });
+                
+                // Re-append sorted rows
+                rows.forEach(row => tbody.appendChild(row));
+            });
+        });
+    });
+    
+    function getColumnIndex(sortType) {
+        // Mapping for batting table
+        const battingMapping = {
+            'number': 1,
+            'name': 2,
+            'position': 3,
+            'avg': 4,
+            'ab': 5,
+            'hits': 6,
+            'hr': 7,
+            'rbi': 8,
+            'bb': 9,
+            'so': 10,
+            'doubles': 11,
+            'triples': 12,
+            'errors': 13
+        };
+        
+        // Mapping for pitching table
+        const pitchingMapping = {
+            'number': 1,
+            'name': 2,
+            'era': 3,
+            'wins': 4,
+            'losses': 5,
+            'saves': 6,
+            'ip': 7,
+            'hits': 8,
+            'er': 9,
+            'bb': 10,
+            'so': 11
+        };
+        
+        return battingMapping[sortType] || pitchingMapping[sortType] || 1;
+    }
 });
 </script>
 
