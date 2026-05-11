@@ -1994,6 +1994,7 @@ function baseball_update_player_cumulative_stats($game_id) {
         // Calculate cumulative stats for this player
         $stats = $wpdb->get_row($wpdb->prepare(
             "SELECT 
+                COUNT(DISTINCT game_id) as total_games,
                 SUM(at_bats) as total_ab,
                 SUM(hits) as total_hits,
                 SUM(doubles) as total_2b,
@@ -2010,6 +2011,7 @@ function baseball_update_player_cumulative_stats($game_id) {
         ));
         
         // Update player meta
+        update_post_meta($player_id, '_games_played', $stats->total_games);
         update_post_meta($player_id, '_at_bats', $stats->total_ab);
         update_post_meta($player_id, '_hits', $stats->total_hits);
         update_post_meta($player_id, '_doubles', $stats->total_2b);
