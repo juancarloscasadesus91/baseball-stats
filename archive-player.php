@@ -129,7 +129,7 @@ $players = get_posts(array(
                         <thead>
                             <tr>
                                 <th data-sort="number">#</th>
-                                <th data-sort="name">Jugador</th>
+                                <th data-sort="name"> Jugador</th>
                                 <th data-sort="team">Equipo</th>
                                 <th data-sort="era" class="sortable">ERA <span class="sort-arrow">↕</span></th>
                                 <th data-sort="wins" class="sortable">W <span class="sort-arrow">↕</span></th>
