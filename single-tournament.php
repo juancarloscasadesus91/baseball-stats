@@ -181,12 +181,13 @@ get_header();
         });
         ?>
 
-        <?php if (!empty($tournament_batting) || !empty($tournament_pitching)): ?>
-        <div class="stats-card">
+        <?php if (!empty($tournament_batting) || !empty($tournament_pitching) || $games): ?>
+        <div class="stats-card tournament-stats-card">
             <h2>Estadísticas del Torneo</h2>
-            <div class="players-tabs">
+            <div class="players-tabs tournament-tabs">
                 <button class="players-tab active" data-tab="tournament-batting">Bateo</button>
                 <button class="players-tab" data-tab="tournament-pitching">Pitcheo</button>
+                <button class="players-tab" data-tab="tournament-games">Partidos <?php if ($games): ?>(<?php echo count($games); ?>)<?php endif; ?></button>
             </div>
 
             <!-- Bateo -->
@@ -349,95 +350,91 @@ get_header();
                     <p class="no-content"><em>No hay estadísticas de pitcheo registradas en este torneo.</em></p>
                 <?php endif; ?>
             </div>
-        </div>
-        <?php endif; ?>
 
-        <?php if ($games): ?>
-            <div class="stats-card">
-                <section class="tournament-games">
-                    <h2>Partidos del Torneo (<?php echo count($games); ?>)</h2>
-                    <div class="tournament-games-grid">
-                        <?php foreach ($games as $game): 
-                            $home_team_id = get_post_meta($game->ID, '_game_home_team', true);
-                            $away_team_id = get_post_meta($game->ID, '_game_away_team', true);
-                            $home_score = get_post_meta($game->ID, '_game_home_score', true);
-                            $away_score = get_post_meta($game->ID, '_game_away_score', true);
-                            $game_date = get_post_meta($game->ID, '_game_date', true);
-                            $game_time = get_post_meta($game->ID, '_game_time', true);
-                            $location = get_post_meta($game->ID, '_game_location', true);
-                            
-                            $away_team_name = get_the_title($away_team_id);
-                            $home_team_name = get_the_title($home_team_id);
-                            $away_abbr = strtoupper(substr($away_team_name, 0, 3));
-                            $home_abbr = strtoupper(substr($home_team_name, 0, 3));
-                        ?>
-                            <div class="tournament-game-card">
-                                <div class="game-card-header">
-                                    <?php if ($game_date): ?>
-                                        <span class="game-date-badge">
-                                            <?php echo date('d/m/Y', strtotime($game_date)); ?>
-                                            <?php if ($game_time): ?>
-                                                - <?php echo date('H:i', strtotime($game_time)); ?>
+            <!-- Partidos -->
+            <div class="players-tab-content" id="tournament-games-stats">
+                <?php if ($games): ?>
+                    <section class="tournament-games tournament-games-tab">
+                        <div class="tournament-games-grid">
+                            <?php foreach ($games as $game): 
+                                $home_team_id = get_post_meta($game->ID, '_game_home_team', true);
+                                $away_team_id = get_post_meta($game->ID, '_game_away_team', true);
+                                $home_score = get_post_meta($game->ID, '_game_home_score', true);
+                                $away_score = get_post_meta($game->ID, '_game_away_score', true);
+                                $game_date = get_post_meta($game->ID, '_game_date', true);
+                                $game_time = get_post_meta($game->ID, '_game_time', true);
+                                $location = get_post_meta($game->ID, '_game_location', true);
+                                
+                                $away_team_name = get_the_title($away_team_id);
+                                $home_team_name = get_the_title($home_team_id);
+                                $away_abbr = strtoupper(substr($away_team_name, 0, 3));
+                                $home_abbr = strtoupper(substr($home_team_name, 0, 3));
+                            ?>
+                                <div class="tournament-game-card">
+                                    <div class="game-card-header">
+                                        <?php if ($game_date): ?>
+                                            <span class="game-date-badge">
+                                                <?php echo date('d/m/Y', strtotime($game_date)); ?>
+                                                <?php if ($game_time): ?>
+                                                    - <?php echo date('H:i', strtotime($game_time)); ?>
+                                                <?php endif; ?>
+                                            </span>
+                                        <?php endif; ?>
+                                        <?php if ($location): ?>
+                                            <span class="game-location-badge"><?php echo esc_html($location); ?></span>
+                                        <?php endif; ?>
+                                    </div>
+                                    
+                                    <div class="game-card-teams">
+                                        <div class="game-team away">
+                                            <?php if (has_post_thumbnail($away_team_id)): ?>
+                                                <div class="team-logo-small">
+                                                    <?php echo get_the_post_thumbnail($away_team_id, 'thumbnail'); ?>
+                                                </div>
                                             <?php endif; ?>
-                                        </span>
-                                    <?php endif; ?>
-                                    <?php if ($location): ?>
-                                        <span class="game-location-badge"><?php echo esc_html($location); ?></span>
-                                    <?php endif; ?>
-                                </div>
-                                
-                                <div class="game-card-teams">
-                                    <div class="game-team away">
-                                        <?php if (has_post_thumbnail($away_team_id)): ?>
-                                            <div class="team-logo-small">
-                                                <?php echo get_the_post_thumbnail($away_team_id, 'thumbnail'); ?>
+                                            <div class="team-info">
+                                                <span class="team-name-full"><?php echo esc_html($away_team_name); ?></span>
+                                                <span class="team-name-abbr"><?php echo esc_html($away_abbr); ?></span>
+                                                <span class="team-label">Visitante</span>
                                             </div>
-                                        <?php endif; ?>
-                                        <div class="team-info">
-                                            <span class="team-name-full"><?php echo esc_html($away_team_name); ?></span>
-                                            <span class="team-name-abbr"><?php echo esc_html($away_abbr); ?></span>
-                                            <span class="team-label">Visitante</span>
+                                            <div class="team-score-large">
+                                                <?php echo $away_score !== '' ? $away_score : '-'; ?>
+                                            </div>
                                         </div>
-                                        <div class="team-score-large">
-                                            <?php echo $away_score !== '' ? $away_score : '-'; ?>
+                                        
+                                        <div class="vs-divider">VS</div>
+                                        
+                                        <div class="game-team home">
+                                            <?php if (has_post_thumbnail($home_team_id)): ?>
+                                                <div class="team-logo-small">
+                                                    <?php echo get_the_post_thumbnail($home_team_id, 'thumbnail'); ?>
+                                                </div>
+                                            <?php endif; ?>
+                                            <div class="team-info">
+                                                <span class="team-name-full"><?php echo esc_html($home_team_name); ?></span>
+                                                <span class="team-name-abbr"><?php echo esc_html($home_abbr); ?></span>
+                                                <span class="team-label">Local</span>
+                                            </div>
+                                            <div class="team-score-large">
+                                                <?php echo $home_score !== '' ? $home_score : '-'; ?>
+                                            </div>
                                         </div>
                                     </div>
                                     
-                                    <div class="vs-divider">VS</div>
-                                    
-                                    <div class="game-team home">
-                                        <?php if (has_post_thumbnail($home_team_id)): ?>
-                                            <div class="team-logo-small">
-                                                <?php echo get_the_post_thumbnail($home_team_id, 'thumbnail'); ?>
-                                            </div>
-                                        <?php endif; ?>
-                                        <div class="team-info">
-                                            <span class="team-name-full"><?php echo esc_html($home_team_name); ?></span>
-                                            <span class="team-name-abbr"><?php echo esc_html($home_abbr); ?></span>
-                                            <span class="team-label">Local</span>
-                                        </div>
-                                        <div class="team-score-large">
-                                            <?php echo $home_score !== '' ? $home_score : '-'; ?>
-                                        </div>
+                                    <div class="game-card-footer">
+                                        <a href="<?php echo get_permalink($game->ID); ?>" class="btn-view-game">
+                                            Ver Detalles
+                                        </a>
                                     </div>
                                 </div>
-                                
-                                <div class="game-card-footer">
-                                    <a href="<?php echo get_permalink($game->ID); ?>" class="btn-view-game">
-                                        Ver Detalles →
-                                    </a>
-                                </div>
-                            </div>
-                        <?php endforeach; ?>
-                    </div>
-                </section>
+                            <?php endforeach; ?>
+                        </div>
+                    </section>
+                <?php else: ?>
+                    <p class="no-content"><em>No hay partidos registrados en este torneo.</em></p>
+                <?php endif; ?>
             </div>
-        <?php else: ?>
-            <div class="stats-card">
-                <div class="no-content">
-                    <p>No hay partidos registrados en este torneo.</p>
-                </div>
-            </div>
+        </div>
         <?php endif; ?>
     </article>
 
@@ -447,15 +444,20 @@ get_header();
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    // Tabs Bateo / Pitcheo
-    document.querySelectorAll('.players-tab').forEach(function (tab) {
-        tab.addEventListener('click', function () {
-            var name = this.getAttribute('data-tab');
-            document.querySelectorAll('.players-tab').forEach(function (t) { t.classList.remove('active'); });
-            document.querySelectorAll('.players-tab-content').forEach(function (c) { c.classList.remove('active'); });
-            this.classList.add('active');
-            var content = document.getElementById(name + '-stats');
-            if (content) { content.classList.add('active'); }
+    // Tabs del bloque de torneo
+    document.querySelectorAll('.players-tabs').forEach(function (tabGroup) {
+        var tabs = tabGroup.querySelectorAll('.players-tab');
+        var scope = tabGroup.closest('.stats-card') || document;
+
+        tabs.forEach(function (tab) {
+            tab.addEventListener('click', function () {
+                var name = this.getAttribute('data-tab');
+                tabs.forEach(function (t) { t.classList.remove('active'); });
+                scope.querySelectorAll('.players-tab-content').forEach(function (c) { c.classList.remove('active'); });
+                this.classList.add('active');
+                var content = scope.querySelector('#' + name + '-stats');
+                if (content) { content.classList.add('active'); }
+            });
         });
     });
 
