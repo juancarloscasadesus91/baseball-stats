@@ -248,85 +248,59 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // Sorting for batting table
-    const table = document.getElementById('players-stats-table');
-    if (!table) return;
-    
-    const headers = table.querySelectorAll('th.sortable');
-    let currentSort = { column: null, direction: 'asc' };
-    
-    headers.forEach(header => {
-        header.style.cursor = 'pointer';
-        header.addEventListener('click', function() {
-            const sortType = this.getAttribute('data-sort');
-            const tbody = table.querySelector('tbody');
-            const rows = Array.from(tbody.querySelectorAll('tr'));
-            
-            // Toggle direction
-            if (currentSort.column === sortType) {
-                currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
-            } else {
-                currentSort.direction = 'desc'; // Default to descending for stats
-                currentSort.column = sortType;
-            }
-            
-            // Remove all sort indicators
-            headers.forEach(h => {
-                h.querySelector('.sort-arrow').textContent = '↕';
-                h.classList.remove('sorted-asc', 'sorted-desc');
-            });
-            
-            // Add sort indicator
-            const arrow = this.querySelector('.sort-arrow');
-            arrow.textContent = currentSort.direction === 'asc' ? '↑' : '↓';
-            this.classList.add(currentSort.direction === 'asc' ? 'sorted-asc' : 'sorted-desc');
-            
-            // Sort rows
-            rows.sort((a, b) => {
-                const aCell = a.querySelector(`td[data-value]:nth-child(${getColumnIndex(sortType)})`);
-                const bCell = b.querySelector(`td[data-value]:nth-child(${getColumnIndex(sortType)})`);
-                
-                let aVal = aCell.getAttribute('data-value');
-                let bVal = bCell.getAttribute('data-value');
-                
-                // Convert to numbers if numeric
-                if (!isNaN(aVal) && !isNaN(bVal)) {
-                    aVal = parseFloat(aVal);
-                    bVal = parseFloat(bVal);
+    // Sorting for batting and pitching tables
+    document.querySelectorAll('.sortable-table').forEach(table => {
+        const headers = table.querySelectorAll('th.sortable');
+        let currentSort = { column: null, direction: 'asc' };
+
+        headers.forEach(header => {
+            header.style.cursor = 'pointer';
+            header.addEventListener('click', function() {
+                const columnIndex = Array.prototype.indexOf.call(this.parentNode.children, this);
+                const tbody = table.querySelector('tbody');
+                const rows = Array.from(tbody.querySelectorAll('tr'));
+
+                if (currentSort.column === columnIndex) {
+                    currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
                 } else {
-                    aVal = aVal.toLowerCase();
-                    bVal = bVal.toLowerCase();
+                    currentSort.direction = 'desc';
+                    currentSort.column = columnIndex;
                 }
-                
-                if (currentSort.direction === 'asc') {
-                    return aVal > bVal ? 1 : -1;
-                } else {
-                    return aVal < bVal ? 1 : -1;
-                }
+
+                headers.forEach(h => {
+                    const arrow = h.querySelector('.sort-arrow');
+                    if (arrow) arrow.textContent = '\u2195';
+                    h.classList.remove('sorted-asc', 'sorted-desc');
+                });
+
+                const arrow = this.querySelector('.sort-arrow');
+                if (arrow) arrow.textContent = currentSort.direction === 'asc' ? '\u2191' : '\u2193';
+                this.classList.add(currentSort.direction === 'asc' ? 'sorted-asc' : 'sorted-desc');
+
+                rows.sort((a, b) => {
+                    const aCell = a.children[columnIndex];
+                    const bCell = b.children[columnIndex];
+                    let aVal = aCell ? (aCell.getAttribute('data-value') || aCell.textContent.trim()) : '';
+                    let bVal = bCell ? (bCell.getAttribute('data-value') || bCell.textContent.trim()) : '';
+
+                    if (aVal !== '' && bVal !== '' && !isNaN(aVal) && !isNaN(bVal)) {
+                        aVal = parseFloat(aVal);
+                        bVal = parseFloat(bVal);
+                    } else {
+                        aVal = aVal.toLowerCase();
+                        bVal = bVal.toLowerCase();
+                    }
+
+                    if (currentSort.direction === 'asc') {
+                        return aVal > bVal ? 1 : (aVal < bVal ? -1 : 0);
+                    }
+                    return aVal < bVal ? 1 : (aVal > bVal ? -1 : 0);
+                });
+
+                rows.forEach(row => tbody.appendChild(row));
             });
-            
-            // Re-append sorted rows
-            rows.forEach(row => tbody.appendChild(row));
         });
     });
-    
-    function getColumnIndex(sortType) {
-        const mapping = {
-            'avg': 5,
-            'games': 6,
-            'ab': 7,
-            'hits': 8,
-            'hr': 9,
-            'rbi': 10,
-            'runs': 11,
-            'bb': 12,
-            'so': 13,
-            'doubles': 14,
-            'triples': 15,
-            'errors': 16
-        };
-        return mapping[sortType] || 1;
-    }
 });
 </script>
 
