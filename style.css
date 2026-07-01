@@ -1318,6 +1318,25 @@ body {
     margin-top: 0 !important;
 }
 
+.tournament-section-card,
+.tournament-stats-card {
+    width: 100% !important;
+}
+
+.tournament-section-card .tournament-standings {
+    margin: 0 !important;
+}
+
+.tournament-section-card h2,
+.tournament-stats-card h2 {
+    margin-bottom: 20px !important;
+}
+
+.tournament-standings-card .table-responsive,
+.tournament-standings-card .stats-table {
+    margin-top: 0 !important;
+}
+
 .tournament-games-tab {
     margin: 0 !important;
 }

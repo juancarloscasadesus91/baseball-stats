@@ -2868,9 +2868,11 @@ function baseball_get_season_player_batting_totals($game_ids) {
                 SUM(hits)      AS h,
                 SUM(home_runs) AS hr,
                 SUM(runs)      AS r,
+                SUM(rbis)      AS rbi,
                 SUM(doubles)   AS d,
                 SUM(triples)   AS t,
                 SUM(walks)     AS bb,
+                SUM(strikeouts) AS so,
                 SUM(errors)    AS e
             FROM $table
             WHERE game_id IN ($placeholders)
@@ -3073,6 +3075,9 @@ function baseball_get_leaders_ajax() {
                 case 'runs':
                     $leaders[] = array('id' => $pid, 'sort' => intval($row->r), 'display' => intval($row->r));
                     break;
+                case 'rbis':
+                    $leaders[] = array('id' => $pid, 'sort' => intval($row->rbi), 'display' => intval($row->rbi));
+                    break;
                 case 'hits':
                     $leaders[] = array('id' => $pid, 'sort' => intval($row->h), 'display' => intval($row->h));
                     break;
@@ -3084,6 +3089,9 @@ function baseball_get_leaders_ajax() {
                     break;
                 case 'bb':
                     $leaders[] = array('id' => $pid, 'sort' => intval($row->bb), 'display' => intval($row->bb));
+                    break;
+                case 'strikeouts':
+                    $leaders[] = array('id' => $pid, 'sort' => intval($row->so), 'display' => intval($row->so));
                     break;
                 case 'errors':
                     $leaders[] = array('id' => $pid, 'sort' => intval($row->e), 'display' => intval($row->e));

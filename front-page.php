@@ -131,10 +131,12 @@ get_header(); ?>
                             <button class="filter-tab active" data-stat="avg">AVG</button>
                             <button class="filter-tab" data-stat="hr">HR</button>
                             <button class="filter-tab" data-stat="runs">R</button>
+                            <button class="filter-tab" data-stat="rbis">RBI</button>
                             <button class="filter-tab" data-stat="hits">H</button>
                             <button class="filter-tab" data-stat="doubles">2B</button>
                             <button class="filter-tab" data-stat="triples">3B</button>
                             <button class="filter-tab" data-stat="bb">BB</button>
+                            <button class="filter-tab" data-stat="strikeouts">SO</button>
                             <button class="filter-tab" data-stat="errors">E</button>
                         </div>
                         
@@ -216,10 +218,12 @@ jQuery(document).ready(function($) {
             avg: { meta: '_batting_avg', order: 'DESC', label: 'AVG', default: '.000' },
             hr: { meta: '_home_runs', order: 'DESC', label: 'HR', default: '0' },
             runs: { meta: '_runs', order: 'DESC', label: 'R', default: '0' },
+            rbis: { meta: '_rbis', order: 'DESC', label: 'RBI', default: '0' },
             hits: { meta: '_hits', order: 'DESC', label: 'H', default: '0' },
             doubles: { meta: '_doubles', order: 'DESC', label: '2B', default: '0' },
             triples: { meta: '_triples', order: 'DESC', label: '3B', default: '0' },
             bb: { meta: '_walks', order: 'DESC', label: 'BB', default: '0' },
+            strikeouts: { meta: '_strikeouts', order: 'DESC', label: 'SO', default: '0' },
             errors: { meta: '_errors', order: 'DESC', label: 'E', default: '0' }
         },
         pitcheo: {

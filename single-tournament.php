@@ -95,75 +95,77 @@ get_header();
         <?php endif; ?>
         
         <?php if ($teams): ?>
-            <div class="stats-card">
+            <div class="stats-card tournament-section-card tournament-standings-card">
                 <section class="tournament-standings">
                     <h2>Tabla de Posiciones</h2>
-                    <table class="stats-table">
-                        <thead>
-                            <tr>
-                                <th>Pos</th>
-                                <th>Equipo</th>
-                                <th>PJ</th>
-                                <th>G</th>
-                                <th>P</th>
-                                <th>%</th>
-                                <th>CF</th>
-                                <th>CC</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php 
-                            $standings = array();
-                            foreach ($teams as $team) {
-                                $stats = baseball_get_team_stats($team->ID, get_the_ID());
-                                $standings[] = array(
-                                    'team' => $team,
-                                    'stats' => $stats
-                                );
-                            }
-                            
-                            // Sort by wins
-                            usort($standings, function($a, $b) {
-                                if ($a['stats']['wins'] == $b['stats']['wins']) {
-                                    return $b['stats']['runs_scored'] - $a['stats']['runs_scored'];
+                    <div class="table-responsive">
+                        <table class="stats-table">
+                            <thead>
+                                <tr>
+                                    <th>Pos</th>
+                                    <th>Equipo</th>
+                                    <th>PJ</th>
+                                    <th>G</th>
+                                    <th>P</th>
+                                    <th>%</th>
+                                    <th>CF</th>
+                                    <th>CC</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php 
+                                $standings = array();
+                                foreach ($teams as $team) {
+                                    $stats = baseball_get_team_stats($team->ID, get_the_ID());
+                                    $standings[] = array(
+                                        'team' => $team,
+                                        'stats' => $stats
+                                    );
                                 }
-                                return $b['stats']['wins'] - $a['stats']['wins'];
-                            });
-                            
-                            $pos = 1;
-                            foreach ($standings as $standing): 
-                                $team = $standing['team'];
-                                $stats = $standing['stats'];
-                                $team_name = $team->post_title;
-                                $team_abbr = strtoupper(substr($team_name, 0, 3));
-                            ?>
-                            <tr>
-                                <td><?php echo $pos++; ?></td>
-                                <td>
-                                    <div class="team-name-cell">
-                                        <?php if (has_post_thumbnail($team->ID)): ?>
-                                            <div class="team-mini-logo">
-                                                <?php echo get_the_post_thumbnail($team->ID, 'thumbnail'); ?>
+                                
+                                // Sort by wins
+                                usort($standings, function($a, $b) {
+                                    if ($a['stats']['wins'] == $b['stats']['wins']) {
+                                        return $b['stats']['runs_scored'] - $a['stats']['runs_scored'];
+                                    }
+                                    return $b['stats']['wins'] - $a['stats']['wins'];
+                                });
+                                
+                                $pos = 1;
+                                foreach ($standings as $standing): 
+                                    $team = $standing['team'];
+                                    $stats = $standing['stats'];
+                                    $team_name = $team->post_title;
+                                    $team_abbr = strtoupper(substr($team_name, 0, 3));
+                                ?>
+                                <tr>
+                                    <td><?php echo $pos++; ?></td>
+                                    <td>
+                                        <div class="team-name-cell">
+                                            <?php if (has_post_thumbnail($team->ID)): ?>
+                                                <div class="team-mini-logo">
+                                                    <?php echo get_the_post_thumbnail($team->ID, 'thumbnail'); ?>
+                                                </div>
+                                            <?php endif; ?>
+                                            <div class="team-name-text">
+                                                <a href="<?php echo get_permalink($team->ID); ?>">
+                                                    <span class="team-full-name"><?php echo esc_html($team_name); ?></span>
+                                                    <span class="team-abbr-name"><?php echo esc_html($team_abbr); ?></span>
+                                                </a>
                                             </div>
-                                        <?php endif; ?>
-                                        <div class="team-name-text">
-                                            <a href="<?php echo get_permalink($team->ID); ?>">
-                                                <span class="team-full-name"><?php echo esc_html($team_name); ?></span>
-                                                <span class="team-abbr-name"><?php echo esc_html($team_abbr); ?></span>
-                                            </a>
                                         </div>
-                                    </div>
-                                </td>
-                                <td><?php echo $stats['games']; ?></td>
-                                <td><?php echo $stats['wins']; ?></td>
-                                <td><?php echo $stats['losses']; ?></td>
-                                <td><?php echo $stats['win_pct']; ?></td>
-                                <td><?php echo $stats['runs_scored']; ?></td>
-                                <td><?php echo $stats['runs_allowed']; ?></td>
-                            </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
+                                    </td>
+                                    <td><?php echo $stats['games']; ?></td>
+                                    <td><?php echo $stats['wins']; ?></td>
+                                    <td><?php echo $stats['losses']; ?></td>
+                                    <td><?php echo $stats['win_pct']; ?></td>
+                                    <td><?php echo $stats['runs_scored']; ?></td>
+                                    <td><?php echo $stats['runs_allowed']; ?></td>
+                                </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
                     <p><em>PJ = Partidos Jugados, G = Ganados, P = Perdidos, % = Porcentaje, CF = Carreras a Favor, CC = Carreras en Contra</em></p>
                 </section>
             </div>
