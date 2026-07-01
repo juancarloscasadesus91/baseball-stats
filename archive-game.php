@@ -10,6 +10,7 @@ get_header();
 $selected_season = isset($_GET['game_season']) ? absint($_GET['game_season']) : 0;
 $selected_tournament = isset($_GET['game_tournament']) ? absint($_GET['game_tournament']) : 0;
 $selected_team = isset($_GET['game_team']) ? absint($_GET['game_team']) : 0;
+$selected_vs_team = isset($_GET['game_vs_team']) ? absint($_GET['game_vs_team']) : 0;
 
 $seasons = get_posts(array(
     'post_type' => 'season',
@@ -40,16 +41,17 @@ $teams = get_posts(array(
 
 $paged = max(1, get_query_var('paged'), get_query_var('page'));
 $meta_query = array('relation' => 'AND');
+$scope_meta_query = array('relation' => 'AND');
 
 if ($selected_tournament) {
-    $meta_query[] = array(
+    $scope_meta_query[] = array(
         'key' => '_game_tournament',
         'value' => $selected_tournament,
         'compare' => '=',
     );
 } elseif ($selected_season) {
     $season_tournament_ids = wp_list_pluck($tournaments, 'ID');
-    $meta_query[] = !empty($season_tournament_ids)
+    $scope_meta_query[] = !empty($season_tournament_ids)
         ? array(
             'key' => '_game_tournament',
             'value' => $season_tournament_ids,
@@ -62,8 +64,62 @@ if ($selected_tournament) {
         );
 }
 
+if (count($scope_meta_query) > 1) {
+    foreach (array_slice($scope_meta_query, 1) as $scope_filter) {
+        $meta_query[] = $scope_filter;
+    }
+}
+
+$vs_teams = array();
+$vs_options_by_team = array();
+$vs_scope_query_args = array(
+    'post_type' => 'game',
+    'post_status' => 'publish',
+    'posts_per_page' => -1,
+    'fields' => 'ids',
+);
+
+if (count($scope_meta_query) > 1) {
+    $vs_scope_query_args['meta_query'] = $scope_meta_query;
+}
+
+$vs_scope_game_ids = get_posts($vs_scope_query_args);
+
+foreach ($vs_scope_game_ids as $vs_scope_game_id) {
+    $home_id = absint(get_post_meta($vs_scope_game_id, '_game_home_team', true));
+    $away_id = absint(get_post_meta($vs_scope_game_id, '_game_away_team', true));
+
+    if (!$home_id || !$away_id) {
+        continue;
+    }
+
+    if (!isset($vs_options_by_team[$home_id])) {
+        $vs_options_by_team[$home_id] = array();
+    }
+    if (!isset($vs_options_by_team[$away_id])) {
+        $vs_options_by_team[$away_id] = array();
+    }
+
+    $vs_options_by_team[$home_id][$away_id] = get_the_title($away_id);
+    $vs_options_by_team[$away_id][$home_id] = get_the_title($home_id);
+}
+
+foreach ($vs_options_by_team as $team_id => $opponents) {
+    asort($opponents, SORT_NATURAL | SORT_FLAG_CASE);
+    $vs_options_by_team[$team_id] = $opponents;
+}
+
 if ($selected_team) {
-    $meta_query[] = array(
+    foreach ($vs_options_by_team[$selected_team] ?? array() as $vs_team_id => $vs_team_title) {
+        $vs_teams[] = (object) array(
+            'ID' => $vs_team_id,
+            'post_title' => $vs_team_title,
+        );
+    }
+}
+
+if ($selected_team) {
+    $team_filter = array(
         'relation' => 'OR',
         array(
             'key' => '_game_home_team',
@@ -76,6 +132,126 @@ if ($selected_team) {
             'compare' => '=',
         ),
     );
+
+    if ($selected_vs_team) {
+        $team_filter = array(
+            'relation' => 'OR',
+            array(
+                'relation' => 'AND',
+                array(
+                    'key' => '_game_home_team',
+                    'value' => $selected_team,
+                    'compare' => '=',
+                ),
+                array(
+                    'key' => '_game_away_team',
+                    'value' => $selected_vs_team,
+                    'compare' => '=',
+                ),
+            ),
+            array(
+                'relation' => 'AND',
+                array(
+                    'key' => '_game_away_team',
+                    'value' => $selected_team,
+                    'compare' => '=',
+                ),
+                array(
+                    'key' => '_game_home_team',
+                    'value' => $selected_vs_team,
+                    'compare' => '=',
+                ),
+            ),
+        );
+    }
+
+    $meta_query[] = $team_filter;
+}
+
+$vs_summary = null;
+if ($selected_team && $selected_vs_team) {
+    $summary_query_args = array(
+        'post_type' => 'game',
+        'post_status' => 'publish',
+        'posts_per_page' => -1,
+        'fields' => 'ids',
+    );
+
+    if (count($meta_query) > 1) {
+        $summary_query_args['meta_query'] = $meta_query;
+    }
+
+    $summary_game_ids = get_posts($summary_query_args);
+
+    $vs_summary = array(
+        'games' => count($summary_game_ids),
+        'wins' => 0,
+        'losses' => 0,
+        'run_diff' => 0,
+        'avg' => '.000',
+        'h' => 0,
+        'doubles' => 0,
+        'triples' => 0,
+        'hr' => 0,
+        'bb' => 0,
+        'e' => 0,
+    );
+
+    foreach ($summary_game_ids as $summary_game_id) {
+        $home_id = absint(get_post_meta($summary_game_id, '_game_home_team', true));
+        $away_id = absint(get_post_meta($summary_game_id, '_game_away_team', true));
+        $home_score = intval(get_post_meta($summary_game_id, '_game_home_score', true));
+        $away_score = intval(get_post_meta($summary_game_id, '_game_away_score', true));
+
+        if ($home_id === $selected_team) {
+            $team_score = $home_score;
+            $opponent_score = $away_score;
+        } elseif ($away_id === $selected_team) {
+            $team_score = $away_score;
+            $opponent_score = $home_score;
+        } else {
+            continue;
+        }
+
+        $vs_summary['run_diff'] += ($team_score - $opponent_score);
+
+        if ($team_score > $opponent_score) {
+            $vs_summary['wins']++;
+        } elseif ($team_score < $opponent_score) {
+            $vs_summary['losses']++;
+        }
+    }
+
+    if (!empty($summary_game_ids)) {
+        global $wpdb;
+        $stats_table = $wpdb->prefix . 'baseball_game_stats';
+        $placeholders = implode(',', array_fill(0, count($summary_game_ids), '%d'));
+        $summary_sql = "SELECT
+                SUM(at_bats) AS ab,
+                SUM(hits) AS h,
+                SUM(doubles) AS doubles,
+                SUM(triples) AS triples,
+                SUM(home_runs) AS hr,
+                SUM(walks) AS bb,
+                SUM(errors) AS e
+            FROM $stats_table
+            WHERE team_id = %d
+            AND game_id IN ($placeholders)";
+
+        $summary_stats = $wpdb->get_row($wpdb->prepare($summary_sql, array_merge(array($selected_team), $summary_game_ids)));
+
+        if ($summary_stats) {
+            $ab = intval($summary_stats->ab);
+            $hits = intval($summary_stats->h);
+            $vs_summary['avg'] = $ab > 0 ? number_format($hits / $ab, 3) : '.000';
+            $vs_summary['h'] = $hits;
+            $vs_summary['doubles'] = intval($summary_stats->doubles);
+            $vs_summary['triples'] = intval($summary_stats->triples);
+            $vs_summary['hr'] = intval($summary_stats->hr);
+            $vs_summary['bb'] = intval($summary_stats->bb);
+            $vs_summary['e'] = intval($summary_stats->e);
+        }
+    }
 }
 
 $games_query_args = array(
@@ -137,11 +313,43 @@ $games_query = new WP_Query($games_query_args);
                 </select>
             </div>
 
+            <div class="game-filter-field">
+                <label for="game-vs-team-filter">VS</label>
+                <select id="game-vs-team-filter" name="game_vs_team" <?php disabled(!$selected_team); ?>>
+                    <option value=""><?php echo $selected_team ? 'Todos' : 'Selecciona un equipo'; ?></option>
+                    <?php foreach ($vs_teams as $vs_team): ?>
+                        <option value="<?php echo esc_attr($vs_team->ID); ?>" <?php selected($selected_vs_team, $vs_team->ID); ?>>
+                            <?php echo esc_html($vs_team->post_title); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+
             <div class="game-filter-actions">
                 <button type="submit" class="btn">Filtrar</button>
                 <a href="<?php echo esc_url(get_post_type_archive_link('game')); ?>" class="btn btn-secondary">Limpiar</a>
             </div>
         </form>
+
+        <?php if ($vs_summary): ?>
+            <div class="game-vs-summary">
+                <div class="game-vs-summary-title">
+                    <?php echo esc_html(get_the_title($selected_team)); ?> vs <?php echo esc_html(get_the_title($selected_vs_team)); ?>
+                </div>
+                <div class="game-vs-summary-grid">
+                    <div class="summary-stat"><span>V</span><strong><?php echo esc_html($vs_summary['wins']); ?></strong></div>
+                    <div class="summary-stat"><span>D</span><strong><?php echo esc_html($vs_summary['losses']); ?></strong></div>
+                    <div class="summary-stat"><span>DIF</span><strong><?php echo esc_html($vs_summary['run_diff'] > 0 ? '+' . $vs_summary['run_diff'] : $vs_summary['run_diff']); ?></strong></div>
+                    <div class="summary-stat"><span>AVG</span><strong><?php echo esc_html($vs_summary['avg']); ?></strong></div>
+                    <div class="summary-stat"><span>H</span><strong><?php echo esc_html($vs_summary['h']); ?></strong></div>
+                    <div class="summary-stat"><span>2B</span><strong><?php echo esc_html($vs_summary['doubles']); ?></strong></div>
+                    <div class="summary-stat"><span>3B</span><strong><?php echo esc_html($vs_summary['triples']); ?></strong></div>
+                    <div class="summary-stat"><span>HR</span><strong><?php echo esc_html($vs_summary['hr']); ?></strong></div>
+                    <div class="summary-stat"><span>BB</span><strong><?php echo esc_html($vs_summary['bb']); ?></strong></div>
+                    <div class="summary-stat"><span>E</span><strong><?php echo esc_html($vs_summary['e']); ?></strong></div>
+                </div>
+            </div>
+        <?php endif; ?>
 
         <?php if ($games_query->have_posts()): ?>
             <div class="games-grid">
@@ -233,6 +441,7 @@ $games_query = new WP_Query($games_query_args);
                         'game_season' => $selected_season,
                         'game_tournament' => $selected_tournament,
                         'game_team' => $selected_team,
+                        'game_vs_team' => $selected_vs_team,
                     )),
                 ));
                 ?>
@@ -245,6 +454,54 @@ $games_query = new WP_Query($games_query_args);
         <?php wp_reset_postdata(); ?>
     </div>
 </main>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var teamFilter = document.getElementById('game-team-filter');
+    var vsFilter = document.getElementById('game-vs-team-filter');
+    var vsOptionsByTeam = <?php echo wp_json_encode($vs_options_by_team); ?>;
+    var selectedVsTeam = '<?php echo esc_js((string) $selected_vs_team); ?>';
+
+    if (!teamFilter || !vsFilter) {
+        return;
+    }
+
+    function rebuildVsOptions(teamId, selectedValue) {
+        var opponents = vsOptionsByTeam[teamId] || {};
+        var opponentIds = Object.keys(opponents);
+
+        vsFilter.innerHTML = '';
+
+        var defaultOption = document.createElement('option');
+        defaultOption.value = '';
+        defaultOption.textContent = teamId ? 'Todos' : 'Selecciona un equipo';
+        vsFilter.appendChild(defaultOption);
+
+        opponentIds.forEach(function (opponentId) {
+            var option = document.createElement('option');
+            option.value = opponentId;
+            option.textContent = opponents[opponentId];
+            if (String(selectedValue) === String(opponentId)) {
+                option.selected = true;
+            }
+            vsFilter.appendChild(option);
+        });
+
+        vsFilter.disabled = !teamId || opponentIds.length === 0;
+
+        if (vsFilter.disabled || !opponents[selectedValue]) {
+            vsFilter.value = '';
+        }
+    }
+
+    rebuildVsOptions(teamFilter.value, selectedVsTeam);
+
+    teamFilter.addEventListener('change', function () {
+        selectedVsTeam = '';
+        rebuildVsOptions(this.value, '');
+    });
+});
+</script>
 
 <?php
 get_footer();

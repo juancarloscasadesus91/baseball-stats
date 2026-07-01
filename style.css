@@ -72,7 +72,7 @@ body {
 
 .game-filters {
     display: grid !important;
-    grid-template-columns: repeat(3, minmax(180px, 1fr)) auto !important;
+    grid-template-columns: repeat(4, minmax(150px, 1fr)) auto !important;
     gap: 16px !important;
     align-items: end !important;
     background: var(--white) !important;
@@ -106,10 +106,60 @@ body {
     font-size: 0.95rem !important;
 }
 
+.game-filter-field select:disabled {
+    background: var(--lighter-bg) !important;
+    color: var(--text-light) !important;
+    cursor: not-allowed !important;
+}
+
 .game-filter-actions {
     display: flex !important;
     gap: 10px !important;
     align-items: center !important;
+}
+
+.game-vs-summary {
+    background: var(--white) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 8px !important;
+    padding: 18px 20px !important;
+    margin: 0 0 24px !important;
+    box-shadow: var(--shadow-sm) !important;
+}
+
+.game-vs-summary-title {
+    color: var(--primary-color) !important;
+    font-weight: 800 !important;
+    margin-bottom: 14px !important;
+    padding-bottom: 10px !important;
+    border-bottom: 2px solid var(--mlb-red) !important;
+}
+
+.game-vs-summary-grid {
+    display: grid !important;
+    grid-template-columns: repeat(10, minmax(64px, 1fr)) !important;
+    gap: 10px !important;
+}
+
+.summary-stat {
+    background: var(--lighter-bg) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 6px !important;
+    padding: 10px 8px !important;
+    text-align: center !important;
+}
+
+.summary-stat span {
+    display: block !important;
+    color: var(--text-light) !important;
+    font-size: 0.72rem !important;
+    font-weight: 700 !important;
+    margin-bottom: 4px !important;
+}
+
+.summary-stat strong {
+    color: var(--primary-color) !important;
+    font-size: 1.05rem !important;
 }
 
 .game-box {
@@ -245,6 +295,10 @@ body {
 
     .game-filter-actions .btn {
         width: 100% !important;
+    }
+
+    .game-vs-summary-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
     }
 
     .games-grid {
