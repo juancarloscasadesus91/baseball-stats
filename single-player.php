@@ -46,6 +46,150 @@ get_header(); ?>
             $positions = wp_get_post_terms($player_id, 'position');
             $position_name = !empty($positions) ? $positions[0]->name : 'N/A';
             $team_name = $team_id ? get_the_title($team_id) : 'Agente Libre';
+
+            $get_tournament_game_ids = function ($tournament_id) {
+                if (!$tournament_id) {
+                    return array();
+                }
+
+                return array_map('intval', get_posts(array(
+                    'post_type'      => 'game',
+                    'post_status'    => 'publish',
+                    'posts_per_page' => -1,
+                    'fields'         => 'ids',
+                    'meta_query'     => array(
+                        array(
+                            'key'   => '_game_tournament',
+                            'value' => intval($tournament_id),
+                        ),
+                    ),
+                )));
+            };
+
+            $get_player_batting_totals = function ($game_ids) use ($player_id) {
+                global $wpdb;
+
+                $totals = (object) array(
+                    'games' => 0,
+                    'ab'    => 0,
+                    'h'     => 0,
+                    'hr'    => 0,
+                    'r'     => 0,
+                    'rbi'   => 0,
+                    'bb'    => 0,
+                    'so'    => 0,
+                    'd'     => 0,
+                    't'     => 0,
+                    'e'     => 0,
+                );
+
+                $game_ids = array_values(array_unique(array_map('intval', $game_ids)));
+                if (empty($game_ids)) {
+                    return $totals;
+                }
+
+                $table = $wpdb->prefix . 'baseball_game_stats';
+                $placeholders = implode(',', array_fill(0, count($game_ids), '%d'));
+                $sql = "SELECT
+                        COUNT(DISTINCT game_id) AS games,
+                        SUM(at_bats) AS ab,
+                        SUM(hits) AS h,
+                        SUM(home_runs) AS hr,
+                        SUM(runs) AS r,
+                        SUM(rbis) AS rbi,
+                        SUM(walks) AS bb,
+                        SUM(strikeouts) AS so,
+                        SUM(doubles) AS d,
+                        SUM(triples) AS t,
+                        SUM(errors) AS e
+                    FROM $table
+                    WHERE player_id = %d AND game_id IN ($placeholders)";
+
+                $prepared = $wpdb->prepare($sql, array_merge(array($player_id), $game_ids));
+                $row = $wpdb->get_row($prepared);
+
+                return $row ?: $totals;
+            };
+
+            $get_player_pitching_totals = function ($game_ids) use ($player_id) {
+                $totals = array(
+                    'ip'     => 0,
+                    'h'      => 0,
+                    'r'      => 0,
+                    'er'     => 0,
+                    'bb'     => 0,
+                    'so'     => 0,
+                    'wins'   => 0,
+                    'losses' => 0,
+                    'saves'  => 0,
+                );
+
+                foreach (array_unique(array_map('intval', $game_ids)) as $gid) {
+                    $home = get_post_meta($gid, '_game_home_pitchers', true) ?: array();
+                    $away = get_post_meta($gid, '_game_away_pitchers', true) ?: array();
+
+                    foreach (array_merge($home, $away) as $pitcher) {
+                        if (empty($pitcher['player_id']) || intval($pitcher['player_id']) !== intval($player_id)) {
+                            continue;
+                        }
+
+                        $totals['ip'] += floatval($pitcher['ip'] ?? 0);
+                        $totals['h'] += intval($pitcher['h'] ?? 0);
+                        $totals['r'] += intval($pitcher['r'] ?? 0);
+                        $totals['er'] += intval($pitcher['er'] ?? 0);
+                        $totals['bb'] += intval($pitcher['bb'] ?? 0);
+                        $totals['so'] += intval($pitcher['so'] ?? 0);
+
+                        $decision = $pitcher['decision'] ?? '';
+                        if ($decision === 'W') { $totals['wins']++; }
+                        if ($decision === 'L') { $totals['losses']++; }
+                        if ($decision === 'SV') { $totals['saves']++; }
+                    }
+                }
+
+                return $totals;
+            };
+
+            $render_batting_boxes = function ($totals) {
+                $ab = intval($totals->ab ?? 0);
+                $hits_total = intval($totals->h ?? 0);
+                $avg = $ab > 0 ? number_format($hits_total / $ab, 3) : '.000';
+                ?>
+                <div class="stat-boxes">
+                    <div class="stat-box"><div class="stat-label">Promedio (AVG)</div><div class="stat-value"><?php echo esc_html($avg); ?></div></div>
+                    <div class="stat-box"><div class="stat-label">Juegos (J)</div><div class="stat-value"><?php echo esc_html(intval($totals->games ?? 0)); ?></div></div>
+                    <div class="stat-box"><div class="stat-label">Turnos al Bate (AB)</div><div class="stat-value"><?php echo esc_html($ab); ?></div></div>
+                    <div class="stat-box"><div class="stat-label">Hits (H)</div><div class="stat-value"><?php echo esc_html($hits_total); ?></div></div>
+                    <div class="stat-box"><div class="stat-label">Home Runs (HR)</div><div class="stat-value"><?php echo esc_html(intval($totals->hr ?? 0)); ?></div></div>
+                    <div class="stat-box"><div class="stat-label">Carreras Anotadas (R)</div><div class="stat-value"><?php echo esc_html(intval($totals->r ?? 0)); ?></div></div>
+                    <div class="stat-box"><div class="stat-label">Carreras Impulsadas (RBI)</div><div class="stat-value"><?php echo esc_html(intval($totals->rbi ?? 0)); ?></div></div>
+                    <div class="stat-box"><div class="stat-label">Dobles (2B)</div><div class="stat-value"><?php echo esc_html(intval($totals->d ?? 0)); ?></div></div>
+                    <div class="stat-box"><div class="stat-label">Triples (3B)</div><div class="stat-value"><?php echo esc_html(intval($totals->t ?? 0)); ?></div></div>
+                    <div class="stat-box"><div class="stat-label">Bases por Bolas (BB)</div><div class="stat-value"><?php echo esc_html(intval($totals->bb ?? 0)); ?></div></div>
+                    <div class="stat-box"><div class="stat-label">Ponches (SO)</div><div class="stat-value"><?php echo esc_html(intval($totals->so ?? 0)); ?></div></div>
+                    <div class="stat-box"><div class="stat-label">Errores (E)</div><div class="stat-value"><?php echo esc_html(intval($totals->e ?? 0)); ?></div></div>
+                </div>
+                <?php
+            };
+
+            $render_pitching_boxes = function ($totals) {
+                $ip_total = floatval($totals['ip'] ?? 0);
+                $era_total = $ip_total > 0 ? number_format((floatval($totals['er'] ?? 0) * 9) / $ip_total, 2) : '0.00';
+                ?>
+                <div class="stat-boxes">
+                    <div class="stat-box"><div class="stat-label">Efectividad (ERA)</div><div class="stat-value"><?php echo esc_html($era_total); ?></div></div>
+                    <div class="stat-box"><div class="stat-label">Victorias (W)</div><div class="stat-value"><?php echo esc_html(intval($totals['wins'] ?? 0)); ?></div></div>
+                    <div class="stat-box"><div class="stat-label">Derrotas (L)</div><div class="stat-value"><?php echo esc_html(intval($totals['losses'] ?? 0)); ?></div></div>
+                    <div class="stat-box"><div class="stat-label">Salvados (SV)</div><div class="stat-value"><?php echo esc_html(intval($totals['saves'] ?? 0)); ?></div></div>
+                    <div class="stat-box"><div class="stat-label">Innings Lanzados (IP)</div><div class="stat-value"><?php echo esc_html(number_format($ip_total, 1)); ?></div></div>
+                    <div class="stat-box"><div class="stat-label">Hits Permitidos (H)</div><div class="stat-value"><?php echo esc_html(intval($totals['h'] ?? 0)); ?></div></div>
+                    <div class="stat-box"><div class="stat-label">Carreras Permitidas (R)</div><div class="stat-value"><?php echo esc_html(intval($totals['r'] ?? 0)); ?></div></div>
+                    <div class="stat-box"><div class="stat-label">Carreras Limpias (ER)</div><div class="stat-value"><?php echo esc_html(intval($totals['er'] ?? 0)); ?></div></div>
+                    <div class="stat-box"><div class="stat-label">Bases por Bolas (BB)</div><div class="stat-value"><?php echo esc_html(intval($totals['bb'] ?? 0)); ?></div></div>
+                    <div class="stat-box"><div class="stat-label">Ponches (SO)</div><div class="stat-value"><?php echo esc_html(intval($totals['so'] ?? 0)); ?></div></div>
+                </div>
+                <?php
+            };
         ?>
         
         <div class="team-header">
@@ -157,6 +301,93 @@ get_header(); ?>
         </div>
         <?php endif; ?>
 
+        <?php
+        $game_stats = baseball_get_player_game_stats($player_id);
+        $player_game_ids = array();
+        $player_tournaments = array();
+        $player_seasons = array();
+        $player_opponents = array();
+
+        foreach ($game_stats as $stat) {
+            $gid = intval($stat->game_id);
+            $player_game_ids[] = $gid;
+
+            $tournament_id = intval(get_post_meta($gid, '_game_tournament', true));
+            if ($tournament_id) {
+                $player_tournaments[$tournament_id] = get_the_title($tournament_id);
+                $season_for_tournament = intval(get_post_meta($tournament_id, '_tournament_season', true));
+                if ($season_for_tournament) {
+                    $player_seasons[$season_for_tournament] = get_the_title($season_for_tournament);
+                }
+            }
+
+            $opponent_team_id = intval($stat->home_team_id) === intval($stat->team_id) ? intval($stat->away_team_id) : intval($stat->home_team_id);
+            if ($opponent_team_id) {
+                $player_opponents[$opponent_team_id] = get_the_title($opponent_team_id);
+            }
+        }
+
+        asort($player_tournaments);
+        asort($player_seasons);
+        asort($player_opponents);
+
+        $selected_stats_tournament = isset($_GET['player_stats_tournament']) ? intval($_GET['player_stats_tournament']) : intval(array_key_first($player_tournaments));
+        $selected_stats_season = isset($_GET['player_stats_season']) ? intval($_GET['player_stats_season']) : intval(array_key_first($player_seasons));
+        $active_scope_tab = isset($_GET['player_stats_season']) ? 'season' : 'tournament';
+        $tournament_stat_game_ids = $selected_stats_tournament ? array_intersect($player_game_ids, $get_tournament_game_ids($selected_stats_tournament)) : array();
+        $season_stat_game_ids = $selected_stats_season && function_exists('baseball_get_season_game_ids') ? array_intersect($player_game_ids, baseball_get_season_game_ids($selected_stats_season)) : array();
+        ?>
+
+        <?php if (!empty($player_tournaments) || !empty($player_seasons)) : ?>
+        <div class="stats-card tournament-stats-card player-scope-stats-card">
+            <h2>Estad&iacute;sticas por Torneo y Temporada</h2>
+            <div class="players-tabs tournament-tabs">
+                <button class="players-tab <?php echo $active_scope_tab === 'tournament' ? 'active' : ''; ?>" data-tab="player-tournament">Por Torneo</button>
+                <button class="players-tab <?php echo $active_scope_tab === 'season' ? 'active' : ''; ?>" data-tab="player-season">Por Temporada</button>
+            </div>
+
+            <div class="players-tab-content <?php echo $active_scope_tab === 'tournament' ? 'active' : ''; ?>" id="player-tournament-stats">
+                <form class="game-filters player-scope-filter" method="get">
+                    <div class="game-filter-field">
+                        <label for="player-stats-tournament">Torneo</label>
+                        <select id="player-stats-tournament" name="player_stats_tournament" onchange="this.form.submit()">
+                            <?php foreach ($player_tournaments as $tid => $title) : ?>
+                                <option value="<?php echo esc_attr($tid); ?>" <?php selected($selected_stats_tournament, $tid); ?>>
+                                    <?php echo esc_html($title); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                </form>
+
+                <h3>Bateo</h3>
+                <?php $render_batting_boxes($get_player_batting_totals($tournament_stat_game_ids)); ?>
+                <h3>Pitcheo</h3>
+                <?php $render_pitching_boxes($get_player_pitching_totals($tournament_stat_game_ids)); ?>
+            </div>
+
+            <div class="players-tab-content <?php echo $active_scope_tab === 'season' ? 'active' : ''; ?>" id="player-season-stats">
+                <form class="game-filters player-scope-filter" method="get">
+                    <div class="game-filter-field">
+                        <label for="player-stats-season">Temporada</label>
+                        <select id="player-stats-season" name="player_stats_season" onchange="this.form.submit()">
+                            <?php foreach ($player_seasons as $sid => $title) : ?>
+                                <option value="<?php echo esc_attr($sid); ?>" <?php selected($selected_stats_season, $sid); ?>>
+                                    <?php echo esc_html($title); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                </form>
+
+                <h3>Bateo</h3>
+                <?php $render_batting_boxes($get_player_batting_totals($season_stat_game_ids)); ?>
+                <h3>Pitcheo</h3>
+                <?php $render_pitching_boxes($get_player_pitching_totals($season_stat_game_ids)); ?>
+            </div>
+        </div>
+        <?php endif; ?>
+
         <?php if (get_the_content()) : ?>
         <div class="stats-card">
             <h2>Biografía</h2>
@@ -167,13 +398,93 @@ get_header(); ?>
         <?php endif; ?>
 
         <?php
-        // Get player game-by-game stats
-        $game_stats = baseball_get_player_game_stats($player_id);
+        $selected_game_season = isset($_GET['player_game_season']) ? intval($_GET['player_game_season']) : 0;
+        $selected_game_tournament = isset($_GET['player_game_tournament']) ? intval($_GET['player_game_tournament']) : 0;
+        $selected_game_opponent = isset($_GET['player_game_opponent']) ? intval($_GET['player_game_opponent']) : 0;
+
+        $filtered_game_stats = array_values(array_filter($game_stats, function ($stat) use ($selected_game_season, $selected_game_tournament, $selected_game_opponent) {
+            $gid = intval($stat->game_id);
+            $game_tournament_id = intval(get_post_meta($gid, '_game_tournament', true));
+            $game_season_id = $game_tournament_id ? intval(get_post_meta($game_tournament_id, '_tournament_season', true)) : 0;
+            $opponent_team_id = intval($stat->home_team_id) === intval($stat->team_id) ? intval($stat->away_team_id) : intval($stat->home_team_id);
+
+            if ($selected_game_season && $game_season_id !== $selected_game_season) {
+                return false;
+            }
+
+            if ($selected_game_tournament && $game_tournament_id !== $selected_game_tournament) {
+                return false;
+            }
+
+            if ($selected_game_opponent && $opponent_team_id !== $selected_game_opponent) {
+                return false;
+            }
+
+            return true;
+        }));
+
+        $filtered_game_ids = array_map(function ($stat) {
+            return intval($stat->game_id);
+        }, $filtered_game_stats);
+        $filtered_batting_summary = $get_player_batting_totals($filtered_game_ids);
+        $filtered_pitching_summary = $get_player_pitching_totals($filtered_game_ids);
         
         if ($game_stats) : ?>
         <div class="stats-card">
-            <h2>Estadísticas por Partido</h2>
-            <div style="overflow-x: auto;">
+            <h2>Estad&iacute;sticas por Partido</h2>
+            <form class="game-filters player-game-filters" method="get">
+                <div class="game-filter-field">
+                    <label for="player-game-season">Temporada</label>
+                    <select id="player-game-season" name="player_game_season">
+                        <option value="">Todas</option>
+                        <?php foreach ($player_seasons as $sid => $title) : ?>
+                            <option value="<?php echo esc_attr($sid); ?>" <?php selected($selected_game_season, $sid); ?>>
+                                <?php echo esc_html($title); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="game-filter-field">
+                    <label for="player-game-tournament">Torneo</label>
+                    <select id="player-game-tournament" name="player_game_tournament">
+                        <option value="">Todos</option>
+                        <?php foreach ($player_tournaments as $tid => $title) : ?>
+                            <option value="<?php echo esc_attr($tid); ?>" <?php selected($selected_game_tournament, $tid); ?>>
+                                <?php echo esc_html($title); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="game-filter-field">
+                    <label for="player-game-opponent">Equipo en contra</label>
+                    <select id="player-game-opponent" name="player_game_opponent">
+                        <option value="">Todos</option>
+                        <?php foreach ($player_opponents as $oid => $title) : ?>
+                            <option value="<?php echo esc_attr($oid); ?>" <?php selected($selected_game_opponent, $oid); ?>>
+                                <?php echo esc_html($title); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="game-filter-actions">
+                    <button type="submit" class="btn">Filtrar</button>
+                    <a href="<?php echo esc_url(get_permalink($player_id)); ?>" class="btn btn-secondary">Limpiar</a>
+                </div>
+            </form>
+
+            <div class="game-vs-summary player-game-summary">
+                <div class="game-vs-summary-title">Resumen filtrado</div>
+                <?php $render_batting_boxes($filtered_batting_summary); ?>
+                <?php if (floatval($filtered_pitching_summary['ip']) > 0) : ?>
+                    <h3>Pitcheo</h3>
+                    <?php $render_pitching_boxes($filtered_pitching_summary); ?>
+                <?php endif; ?>
+            </div>
+
+            <?php if (empty($filtered_game_stats)) : ?>
+                <p class="no-content"><em>No hay partidos para los filtros seleccionados.</em></p>
+            <?php else : ?>
+            <div class="table-responsive">
                 <table class="stats-table">
                     <thead>
                         <tr>
@@ -194,7 +505,7 @@ get_header(); ?>
                         </tr>
                     </thead>
                     <tbody>
-                        <?php foreach ($game_stats as $stat): 
+                        <?php foreach ($filtered_game_stats as $stat): 
                             $game_avg = $stat->at_bats > 0 ? number_format($stat->hits / $stat->at_bats, 3) : '.000';
                             $opponent_team_id = ($stat->home_team_id == $stat->team_id) ? $stat->away_team_id : $stat->home_team_id;
                             $vs_label = ($stat->home_team_id == $stat->team_id) ? 'vs' : '@';
@@ -223,6 +534,7 @@ get_header(); ?>
                     </tbody>
                 </table>
             </div>
+            <?php endif; ?>
             <p><em>AB = Turnos al Bate, H = Hits, AVG = Promedio, HR = Home Runs, R = Carreras Anotadas, RBI = Carreras Impulsadas, BB = Bases por Bolas, SO = Ponches, 2B = Dobles, 3B = Triples, E = Errores</em></p>
         </div>
         <?php endif; ?>
@@ -230,5 +542,31 @@ get_header(); ?>
         <?php endwhile; ?>
     </div>
 </main>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.player-scope-stats-card .players-tabs').forEach(function (tabGroup) {
+        var tabs = tabGroup.querySelectorAll('.players-tab');
+        var scope = tabGroup.closest('.player-scope-stats-card');
+
+        tabs.forEach(function (tab) {
+            tab.addEventListener('click', function () {
+                var name = this.getAttribute('data-tab');
+
+                tabs.forEach(function (item) { item.classList.remove('active'); });
+                scope.querySelectorAll('.players-tab-content').forEach(function (content) {
+                    content.classList.remove('active');
+                });
+
+                this.classList.add('active');
+                var panel = scope.querySelector('#' + name + '-stats');
+                if (panel) {
+                    panel.classList.add('active');
+                }
+            });
+        });
+    });
+});
+</script>
 
 <?php get_footer(); ?>

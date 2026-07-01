@@ -2,6 +2,7 @@
     <div class="container">
         <p>&copy; <?php echo date('Y'); ?> <?php bloginfo('name'); ?>. Todos los derechos reservados.</p>
         <p>Sistema de Estadísticas de Baseball</p>
+        <p>Desarrollado por @r4yd3n</p>
     </div>
 </footer>
 

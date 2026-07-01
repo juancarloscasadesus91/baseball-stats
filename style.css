@@ -118,6 +118,55 @@ body {
     align-items: center !important;
 }
 
+.player-scope-filter {
+    grid-template-columns: minmax(220px, 360px) !important;
+    margin-bottom: 20px !important;
+}
+
+.player-game-filters {
+    grid-template-columns: repeat(3, minmax(160px, 1fr)) auto !important;
+}
+
+.player-scope-stats-card h3,
+.player-game-summary h3 {
+    color: var(--primary-color) !important;
+    font-size: 1.1rem !important;
+    margin: 22px 0 14px !important;
+}
+
+.player-scope-stats-card .stat-boxes,
+.player-game-summary .stat-boxes {
+    grid-template-columns: repeat(auto-fit, minmax(118px, 1fr)) !important;
+    gap: 10px !important;
+    margin: 12px 0 8px !important;
+}
+
+.player-scope-stats-card .stat-box,
+.player-game-summary .stat-box {
+    padding: 14px 12px !important;
+    border-top-width: 3px !important;
+    box-shadow: none !important;
+}
+
+.player-scope-stats-card .stat-box:hover,
+.player-game-summary .stat-box:hover {
+    transform: none !important;
+    box-shadow: var(--shadow-sm) !important;
+}
+
+.player-scope-stats-card .stat-box .stat-label,
+.player-game-summary .stat-box .stat-label {
+    font-size: 0.68rem !important;
+    line-height: 1.2 !important;
+    margin-bottom: 5px !important;
+}
+
+.player-scope-stats-card .stat-box .stat-value,
+.player-game-summary .stat-box .stat-value {
+    font-size: 1.35rem !important;
+    line-height: 1.05 !important;
+}
+
 .game-vs-summary {
     background: var(--white) !important;
     border: 1px solid var(--border-color) !important;
