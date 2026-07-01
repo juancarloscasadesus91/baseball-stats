@@ -107,9 +107,16 @@ get_header(); ?>
 
             <!-- Sidebar -->
             <aside class="sidebar-area">
+                <?php
+                $fp_active_season_id = function_exists('baseball_get_active_season_id') ? baseball_get_active_season_id() : 0;
+                $fp_active_season_name = $fp_active_season_id ? get_the_title($fp_active_season_id) : '';
+                ?>
                 <!-- Leaders Widget with Tabs -->
                 <div class="sidebar-widget leaders-widget">
                     <h3 class="widget-title">Líderes</h3>
+                    <?php if ($fp_active_season_name) : ?>
+                        <p class="widget-subtitle"><?php echo esc_html($fp_active_season_name); ?></p>
+                    <?php endif; ?>
                     
                     <!-- Main Tabs: Bateo / Pitcheo -->
                     <div class="leaders-main-tabs">
@@ -155,28 +162,17 @@ get_header(); ?>
                 <!-- Team Standings -->
                 <div class="sidebar-widget">
                     <h3 class="widget-title">Tabla de Posiciones</h3>
+                    <?php if ($fp_active_season_name) : ?>
+                        <p class="widget-subtitle"><?php echo esc_html($fp_active_season_name); ?></p>
+                    <?php endif; ?>
                     <?php
-                    $teams = get_posts(array(
-                        'post_type' => 'team',
-                        'posts_per_page' => -1,
-                    ));
+                    $standings = $fp_active_season_id ? baseball_get_season_standings($fp_active_season_id) : array();
 
-                    if ($teams) : 
-                        // Sort teams by win percentage
-                        usort($teams, function($a, $b) {
-                            $wins_a = get_post_meta($a->ID, '_team_wins', true) ?: 0;
-                            $losses_a = get_post_meta($a->ID, '_team_losses', true) ?: 0;
-                            $total_a = $wins_a + $losses_a;
-                            $pct_a = $total_a > 0 ? $wins_a / $total_a : 0;
-                            
-                            $wins_b = get_post_meta($b->ID, '_team_wins', true) ?: 0;
-                            $losses_b = get_post_meta($b->ID, '_team_losses', true) ?: 0;
-                            $total_b = $wins_b + $losses_b;
-                            $pct_b = $total_b > 0 ? $wins_b / $total_b : 0;
-                            
-                            return $pct_b <=> $pct_a;
-                        });
-                    ?>
+                    if (!$fp_active_season_id) : ?>
+                        <p class="no-active-season"><em>No hay temporada activa.</em></p>
+                    <?php elseif (empty($standings)) : ?>
+                        <p class="no-active-season"><em>La temporada activa aún no tiene partidos jugados.</em></p>
+                    <?php else : ?>
                         <div class="standings-table">
                             <table>
                                 <thead>
@@ -188,20 +184,17 @@ get_header(); ?>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <?php foreach ($teams as $team) : 
-                                        $wins = get_post_meta($team->ID, '_team_wins', true) ?: 0;
-                                        $losses = get_post_meta($team->ID, '_team_losses', true) ?: 0;
-                                        $total = $wins + $losses;
-                                        $pct = $total > 0 ? number_format($wins / $total, 3) : '.000';
+                                    <?php foreach ($standings as $row) : 
+                                        $pct = number_format($row->pct, 3);
                                     ?>
                                     <tr>
                                         <td class="team-name">
-                                            <a href="<?php echo get_permalink($team->ID); ?>">
-                                                <?php echo esc_html($team->post_title); ?>
+                                            <a href="<?php echo get_permalink($row->team_id); ?>">
+                                                <?php echo esc_html($row->title); ?>
                                             </a>
                                         </td>
-                                        <td><?php echo esc_html($wins); ?></td>
-                                        <td><?php echo esc_html($losses); ?></td>
+                                        <td><?php echo esc_html($row->wins); ?></td>
+                                        <td><?php echo esc_html($row->losses); ?></td>
                                         <td><strong><?php echo esc_html($pct); ?></strong></td>
                                     </tr>
                                     <?php endforeach; ?>

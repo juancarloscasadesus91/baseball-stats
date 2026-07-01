@@ -577,6 +577,7 @@ function baseball_season_info_callback($post) {
     $start_date = get_post_meta($post->ID, '_season_start_date', true);
     $end_date = get_post_meta($post->ID, '_season_end_date', true);
     $year = get_post_meta($post->ID, '_season_year', true);
+    $is_active = get_post_meta($post->ID, '_season_active', true);
     
     ?>
     <p>
@@ -590,6 +591,14 @@ function baseball_season_info_callback($post) {
     <p>
         <label for="season_end_date"><strong>Fecha de Fin:</strong></label><br>
         <input type="date" id="season_end_date" name="season_end_date" value="<?php echo esc_attr($end_date); ?>" style="width: 100%;">
+    </p>
+    <hr>
+    <p>
+        <label for="season_active">
+            <input type="checkbox" id="season_active" name="season_active" value="1" <?php checked($is_active, '1'); ?>>
+            <strong>Temporada activa</strong>
+        </label><br>
+        <em>Solo la temporada activa se muestra en la portada (líderes y tabla de posiciones). Al activar esta, las demás se marcan como terminadas automáticamente.</em>
     </p>
     <?php
 }
@@ -612,6 +621,22 @@ function baseball_save_season_info($post_id) {
     foreach ($fields as $field) {
         if (isset($_POST[$field])) {
             update_post_meta($post_id, '_' . $field, sanitize_text_field($_POST[$field]));
+        }
+    }
+
+    // Temporada activa (checkbox). Solo una puede estar activa a la vez.
+    $is_active = isset($_POST['season_active']) ? '1' : '';
+    update_post_meta($post_id, '_season_active', $is_active);
+
+    if ($is_active === '1') {
+        $other_seasons = get_posts(array(
+            'post_type'      => 'season',
+            'posts_per_page' => -1,
+            'post__not_in'   => array($post_id),
+            'fields'         => 'ids',
+        ));
+        foreach ($other_seasons as $other_id) {
+            update_post_meta($other_id, '_season_active', '');
         }
     }
 }
@@ -2777,94 +2802,267 @@ function baseball_customize_register($wp_customize) {
 add_action('customize_register', 'baseball_customize_register');
 
 /**
- * AJAX Handler for Leaders Widget
+ * =========================================================================
+ * Temporada activa: helpers de agregacion por temporada
+ * =========================================================================
+ */
+
+// Devuelve el ID de la temporada marcada como activa (o 0 si no hay).
+function baseball_get_active_season_id() {
+    $seasons = get_posts(array(
+        'post_type'      => 'season',
+        'posts_per_page' => 1,
+        'meta_key'       => '_season_active',
+        'meta_value'     => '1',
+        'fields'         => 'ids',
+    ));
+    return !empty($seasons) ? intval($seasons[0]) : 0;
+}
+
+// IDs de los torneos que pertenecen a una temporada.
+function baseball_get_season_tournament_ids($season_id) {
+    if (!$season_id) {
+        return array();
+    }
+    return array_map('intval', get_posts(array(
+        'post_type'      => 'tournament',
+        'posts_per_page' => -1,
+        'meta_key'       => '_tournament_season',
+        'meta_value'     => $season_id,
+        'fields'         => 'ids',
+    )));
+}
+
+// IDs de los partidos publicados de una temporada (via sus torneos).
+function baseball_get_season_game_ids($season_id) {
+    $tournament_ids = baseball_get_season_tournament_ids($season_id);
+    if (empty($tournament_ids)) {
+        return array();
+    }
+    $game_ids = get_posts(array(
+        'post_type'      => 'game',
+        'post_status'    => 'publish',
+        'posts_per_page' => -1,
+        'fields'         => 'ids',
+        'meta_query'     => array(
+            array(
+                'key'     => '_game_tournament',
+                'value'   => $tournament_ids,
+                'compare' => 'IN',
+            ),
+        ),
+    ));
+    return array_map('intval', $game_ids);
+}
+
+// Totales de bateo por jugador para un conjunto de partidos.
+function baseball_get_season_player_batting_totals($game_ids) {
+    global $wpdb;
+    if (empty($game_ids)) {
+        return array();
+    }
+    $table = $wpdb->prefix . 'baseball_game_stats';
+    $placeholders = implode(',', array_fill(0, count($game_ids), '%d'));
+    $sql = "SELECT player_id,
+                SUM(at_bats)   AS ab,
+                SUM(hits)      AS h,
+                SUM(home_runs) AS hr,
+                SUM(runs)      AS r,
+                SUM(doubles)   AS d,
+                SUM(triples)   AS t,
+                SUM(walks)     AS bb,
+                SUM(errors)    AS e
+            FROM $table
+            WHERE game_id IN ($placeholders)
+            GROUP BY player_id";
+    return $wpdb->get_results($wpdb->prepare($sql, $game_ids));
+}
+
+// Totales de pitcheo por jugador para un conjunto de partidos.
+function baseball_get_season_pitching_totals($game_ids) {
+    $totals = array();
+    foreach ($game_ids as $gid) {
+        $home = get_post_meta($gid, '_game_home_pitchers', true) ?: array();
+        $away = get_post_meta($gid, '_game_away_pitchers', true) ?: array();
+        foreach (array_merge($home, $away) as $p) {
+            if (empty($p['player_id'])) {
+                continue;
+            }
+            $pid = intval($p['player_id']);
+            if (!isset($totals[$pid])) {
+                $totals[$pid] = array('ip' => 0, 'er' => 0, 'wins' => 0, 'so' => 0);
+            }
+            $totals[$pid]['ip'] += floatval($p['ip']);
+            $totals[$pid]['er'] += intval($p['er']);
+            $totals[$pid]['so'] += intval($p['so']);
+            if (isset($p['decision']) && $p['decision'] === 'W') {
+                $totals[$pid]['wins']++;
+            }
+        }
+    }
+    return $totals;
+}
+
+// Tabla de posiciones (V/D/%) calculada solo con los partidos de una temporada.
+function baseball_get_season_standings($season_id) {
+    $game_ids = baseball_get_season_game_ids($season_id);
+    $records = array();
+    foreach ($game_ids as $gid) {
+        $home = intval(get_post_meta($gid, '_game_home_team', true));
+        $away = intval(get_post_meta($gid, '_game_away_team', true));
+        $hs = get_post_meta($gid, '_game_home_score', true);
+        $as = get_post_meta($gid, '_game_away_score', true);
+        if ($hs === '' || $as === '') {
+            continue;
+        }
+        $hs = intval($hs);
+        $as = intval($as);
+        foreach (array($home, $away) as $tid) {
+            if ($tid && !isset($records[$tid])) {
+                $records[$tid] = array('wins' => 0, 'losses' => 0);
+            }
+        }
+        if ($home) {
+            if ($hs > $as) { $records[$home]['wins']++; }
+            elseif ($hs < $as) { $records[$home]['losses']++; }
+        }
+        if ($away) {
+            if ($as > $hs) { $records[$away]['wins']++; }
+            elseif ($as < $hs) { $records[$away]['losses']++; }
+        }
+    }
+    $standings = array();
+    foreach ($records as $tid => $r) {
+        $total = $r['wins'] + $r['losses'];
+        $standings[] = (object) array(
+            'team_id' => $tid,
+            'title'   => get_the_title($tid),
+            'wins'    => $r['wins'],
+            'losses'  => $r['losses'],
+            'pct'     => $total > 0 ? $r['wins'] / $total : 0,
+        );
+    }
+    usort($standings, function ($a, $b) {
+        return $b->pct <=> $a->pct;
+    });
+    return $standings;
+}
+
+/**
+ * AJAX Handler for Leaders Widget (filtrado por la temporada activa)
  */
 function baseball_get_leaders_ajax() {
     $category = isset($_POST['category']) ? sanitize_text_field($_POST['category']) : 'bateo';
     $stat = isset($_POST['stat']) ? sanitize_text_field($_POST['stat']) : 'avg';
-    $meta_key = isset($_POST['meta_key']) ? sanitize_text_field($_POST['meta_key']) : '_batting_avg';
     $order = isset($_POST['order']) ? sanitize_text_field($_POST['order']) : 'DESC';
-    
-    // Get players
-    $args = array(
-        'post_type' => 'player',
-        'posts_per_page' => 6,
-        'meta_key' => $meta_key,
-        'orderby' => 'meta_value_num',
-        'order' => $order,
-    );
-    
-    // Special handling for pitching stats - only show players with pitching data
-    if ($category === 'pitcheo') {
-        if ($stat === 'era') {
-            // For ERA, show players with innings pitched > 0
-            $args['meta_query'] = array(
-                array(
-                    'key' => '_innings_pitched',
-                    'value' => '0',
-                    'compare' => '>',
-                    'type' => 'DECIMAL'
-                )
-            );
-        } else {
-            // For other pitching stats, show players with values > 0
-            $args['meta_query'] = array(
-                array(
-                    'key' => $meta_key,
-                    'value' => '0',
-                    'compare' => '>',
-                    'type' => 'NUMERIC'
-                )
-            );
-        }
-    }
-    
-    $players = get_posts($args);
-    
-    if (!$players) {
+
+    // Mensaje reutilizable
+    $render_message = function ($msg) {
         ob_start();
         ?>
         <div class="no-leaders-data">
-            <p><em>No hay jugadores con estadísticas de <?php echo $category === 'pitcheo' ? 'pitcheo' : 'bateo'; ?> disponibles.</em></p>
-            <p><small>Asegúrate de haber registrado partidos con estadísticas de <?php echo $category === 'pitcheo' ? 'pitchers' : 'bateadores'; ?>.</small></p>
+            <p><em><?php echo esc_html($msg); ?></em></p>
         </div>
         <?php
-        $html = ob_get_clean();
-        wp_send_json_success(array('html' => $html));
+        wp_send_json_success(array('html' => ob_get_clean()));
+    };
+
+    $season_id = baseball_get_active_season_id();
+    if (!$season_id) {
+        $render_message('No hay temporada activa.');
         return;
     }
-    
-    // Build HTML
+
+    $game_ids = baseball_get_season_game_ids($season_id);
+    if (empty($game_ids)) {
+        $render_message('La temporada activa aún no tiene partidos con estadísticas.');
+        return;
+    }
+
+    // Construir lista normalizada de lideres: id, valor de orden y valor a mostrar.
+    $leaders = array();
+
+    if ($category === 'pitcheo') {
+        $totals = baseball_get_season_pitching_totals($game_ids);
+        foreach ($totals as $pid => $tot) {
+            switch ($stat) {
+                case 'era':
+                    if ($tot['ip'] <= 0) { continue 2; }
+                    $era = ($tot['er'] * 9) / $tot['ip'];
+                    $leaders[] = array('id' => $pid, 'sort' => $era, 'display' => number_format($era, 2));
+                    break;
+                case 'wins':
+                    $leaders[] = array('id' => $pid, 'sort' => $tot['wins'], 'display' => intval($tot['wins']));
+                    break;
+                case 'so':
+                    $leaders[] = array('id' => $pid, 'sort' => $tot['so'], 'display' => intval($tot['so']));
+                    break;
+                case 'ip':
+                    $leaders[] = array('id' => $pid, 'sort' => $tot['ip'], 'display' => number_format($tot['ip'], 1));
+                    break;
+            }
+        }
+    } else {
+        $rows = baseball_get_season_player_batting_totals($game_ids);
+        foreach ($rows as $row) {
+            $pid = intval($row->player_id);
+            switch ($stat) {
+                case 'avg':
+                    if (intval($row->ab) <= 0) { continue 2; }
+                    $avg = intval($row->h) / intval($row->ab);
+                    $leaders[] = array('id' => $pid, 'sort' => $avg, 'display' => number_format($avg, 3));
+                    break;
+                case 'hr':
+                    $leaders[] = array('id' => $pid, 'sort' => intval($row->hr), 'display' => intval($row->hr));
+                    break;
+                case 'runs':
+                    $leaders[] = array('id' => $pid, 'sort' => intval($row->r), 'display' => intval($row->r));
+                    break;
+                case 'hits':
+                    $leaders[] = array('id' => $pid, 'sort' => intval($row->h), 'display' => intval($row->h));
+                    break;
+                case 'doubles':
+                    $leaders[] = array('id' => $pid, 'sort' => intval($row->d), 'display' => intval($row->d));
+                    break;
+                case 'triples':
+                    $leaders[] = array('id' => $pid, 'sort' => intval($row->t), 'display' => intval($row->t));
+                    break;
+                case 'bb':
+                    $leaders[] = array('id' => $pid, 'sort' => intval($row->bb), 'display' => intval($row->bb));
+                    break;
+                case 'errors':
+                    $leaders[] = array('id' => $pid, 'sort' => intval($row->e), 'display' => intval($row->e));
+                    break;
+            }
+        }
+    }
+
+    if (empty($leaders)) {
+        $render_message('No hay estadísticas de ' . ($category === 'pitcheo' ? 'pitcheo' : 'bateo') . ' para la temporada activa.');
+        return;
+    }
+
+    // Ordenar y quedarnos con el top 6.
+    $asc = strtoupper($order) === 'ASC';
+    usort($leaders, function ($a, $b) use ($asc) {
+        if ($a['sort'] == $b['sort']) { return 0; }
+        return $asc ? ($a['sort'] <=> $b['sort']) : ($b['sort'] <=> $a['sort']);
+    });
+    $leaders = array_slice($leaders, 0, 6);
+
+    // Render
     ob_start();
     ?>
     <div class="stats-list">
-        <?php 
+        <?php
         $rank = 1;
-        foreach ($players as $player) : 
-            $stat_value = get_post_meta($player->ID, $meta_key, true);
+        foreach ($leaders as $ld) :
+            $player = get_post($ld['id']);
+            if (!$player) { continue; }
             $team_id = get_post_meta($player->ID, '_player_team', true);
             $team_name = $team_id ? get_the_title($team_id) : '';
             $team_abbr = $team_name ? strtoupper(substr($team_name, 0, 3)) : '';
-            
-            // Format stat value
-            if ($stat === 'avg') {
-                $display_value = $stat_value ? number_format(floatval($stat_value), 3) : '.000';
-            } elseif ($stat === 'era') {
-                // Always calculate ERA from IP and ER to ensure accuracy
-                $ip = floatval(get_post_meta($player->ID, '_innings_pitched', true));
-                $er = floatval(get_post_meta($player->ID, '_pitching_earned_runs', true));
-                
-                if ($ip > 0) {
-                    $calculated_era = ($er * 9) / $ip;
-                    $display_value = number_format($calculated_era, 2);
-                } else {
-                    $display_value = '0.00';
-                }
-            } elseif ($stat === 'ip') {
-                $display_value = number_format(floatval($stat_value), 1);
-            } else {
-                $display_value = intval($stat_value);
-            }
+            $display_value = $ld['display'];
         ?>
         <div class="stats-list-item">
             <span class="rank"><?php echo $rank++; ?></span>
@@ -2895,9 +3093,7 @@ function baseball_get_leaders_ajax() {
         </a>
     </div>
     <?php
-    $html = ob_get_clean();
-    
-    wp_send_json_success(array('html' => $html));
+    wp_send_json_success(array('html' => ob_get_clean()));
 }
 add_action('wp_ajax_get_leaders', 'baseball_get_leaders_ajax');
 add_action('wp_ajax_nopriv_get_leaders', 'baseball_get_leaders_ajax');
