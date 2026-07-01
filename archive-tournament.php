@@ -15,16 +15,37 @@ get_header(); ?>
         </div>
 
         <?php if (have_posts()) : ?>
-            <div class="stats-grid">
-                <?php while (have_posts()) : the_post(); ?>
-                <div class="stats-card">
+            <div class="tournament-grid">
+                <?php while (have_posts()) : the_post();
+                    $season_id = get_post_meta(get_the_ID(), '_tournament_season', true);
+                    $start_date = get_post_meta(get_the_ID(), '_tournament_start_date', true);
+                    $end_date = get_post_meta(get_the_ID(), '_tournament_end_date', true);
+                ?>
+                <div class="tournament-card">
                     <?php if (has_post_thumbnail()) : ?>
-                        <div class="post-thumbnail">
-                            <?php the_post_thumbnail('medium'); ?>
+                        <div class="tournament-logo">
+                            <a href="<?php the_permalink(); ?>">
+                                <?php the_post_thumbnail('medium'); ?>
+                            </a>
                         </div>
                     <?php endif; ?>
                     
-                    <h2><?php the_title(); ?></h2>
+                    <h3>
+                        <a href="<?php the_permalink(); ?>">
+                            <?php the_title(); ?>
+                        </a>
+                    </h3>
+
+                    <?php if ($season_id) : ?>
+                        <p><strong>Temporada:</strong> <?php echo esc_html(get_the_title($season_id)); ?></p>
+                    <?php endif; ?>
+
+                    <?php if ($start_date && $end_date) : ?>
+                        <p class="tournament-dates">
+                            <?php echo date('d/m/Y', strtotime($start_date)); ?> - 
+                            <?php echo date('d/m/Y', strtotime($end_date)); ?>
+                        </p>
+                    <?php endif; ?>
                     
                     <?php if (get_the_excerpt()) : ?>
                         <p><?php the_excerpt(); ?></p>

@@ -1843,6 +1843,8 @@ body {
 .btn:hover {
     background: var(--mlb-red);
     border-color: var(--mlb-red);
+    color: var(--white) !important;
+    text-decoration: none;
     box-shadow: var(--shadow-md);
     transform: translateY(-1px);
 }
@@ -3254,6 +3256,8 @@ h6 { font-size: 1rem; }
     display: flex;
     flex-direction: column;
     align-items: flex-start;
+    gap: 12px;
+    min-height: 100%;
 }
 
 .tournament-card:hover, .season-card:hover {
@@ -3263,7 +3267,7 @@ h6 { font-size: 1rem; }
 
 .tournament-card h3, .season-card h3 {
     color: var(--primary-color);
-    margin-bottom: 16px;
+    margin-bottom: 4px;
     font-size: 1.25rem;
     border-bottom: 3px solid var(--mlb-red);
     padding-bottom: 8px;
@@ -3282,6 +3286,13 @@ h6 { font-size: 1rem; }
 .tournament-card .btn, .season-card .btn {
     margin-top: auto;
     width: auto;
+    color: var(--white) !important;
+    align-self: flex-start;
+}
+
+.tournament-card .btn:hover,
+.season-card .btn:hover {
+    color: var(--white) !important;
 }
 
 .tournament-logo, .tournament-logo-large {

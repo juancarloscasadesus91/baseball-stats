@@ -321,7 +321,9 @@ document.addEventListener('DOMContentLoaded', function() {
             'runs': 11,
             'bb': 12,
             'so': 13,
-            'sb': 14
+            'doubles': 14,
+            'triples': 15,
+            'errors': 16
         };
         return mapping[sortType] || 1;
     }

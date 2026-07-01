@@ -234,6 +234,7 @@ get_header();
                                                 <th>H</th>
                                                 <th>AVG</th>
                                                 <th>HR</th>
+                                                <th>R</th>
                                                 <th>RBI</th>
                                                 <th>BB</th>
                                                 <th>SO</th>
@@ -269,6 +270,7 @@ get_header();
                                                 <td><?php echo $stat->hits; ?></td>
                                                 <td><?php echo $avg; ?></td>
                                                 <td><?php echo $stat->home_runs; ?></td>
+                                                <td><?php echo $stat->runs; ?></td>
                                                 <td><?php echo $stat->rbis; ?></td>
                                                 <td><?php echo $stat->walks; ?></td>
                                                 <td><?php echo $stat->strikeouts; ?></td>
@@ -361,6 +363,7 @@ get_header();
                                                 <th>H</th>
                                                 <th>AVG</th>
                                                 <th>HR</th>
+                                                <th>R</th>
                                                 <th>RBI</th>
                                                 <th>BB</th>
                                                 <th>SO</th>
@@ -396,6 +399,7 @@ get_header();
                                                 <td><?php echo $stat->hits; ?></td>
                                                 <td><?php echo $avg; ?></td>
                                                 <td><?php echo $stat->home_runs; ?></td>
+                                                <td><?php echo $stat->runs; ?></td>
                                                 <td><?php echo $stat->rbis; ?></td>
                                                 <td><?php echo $stat->walks; ?></td>
                                                 <td><?php echo $stat->strikeouts; ?></td>
