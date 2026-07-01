@@ -2948,6 +2948,61 @@ function baseball_get_season_standings($season_id) {
     return $standings;
 }
 
+// Totales de bateo por jugador para un conjunto de partidos (tabla completa).
+function baseball_get_batting_stats_for_games($game_ids) {
+    global $wpdb;
+    if (empty($game_ids)) {
+        return array();
+    }
+    $table = $wpdb->prefix . 'baseball_game_stats';
+    $placeholders = implode(',', array_fill(0, count($game_ids), '%d'));
+    $sql = "SELECT player_id,
+                COUNT(DISTINCT game_id) AS games,
+                SUM(at_bats)   AS ab,
+                SUM(hits)      AS h,
+                SUM(home_runs) AS hr,
+                SUM(rbis)      AS rbi,
+                SUM(runs)      AS r,
+                SUM(walks)     AS bb,
+                SUM(strikeouts) AS so,
+                SUM(doubles)   AS d,
+                SUM(triples)   AS t,
+                SUM(errors)    AS e
+            FROM $table
+            WHERE game_id IN ($placeholders)
+            GROUP BY player_id";
+    return $wpdb->get_results($wpdb->prepare($sql, $game_ids));
+}
+
+// Totales de pitcheo por jugador para un conjunto de partidos (tabla completa).
+function baseball_get_pitching_stats_for_games($game_ids) {
+    $totals = array();
+    foreach ($game_ids as $gid) {
+        $home = get_post_meta($gid, '_game_home_pitchers', true) ?: array();
+        $away = get_post_meta($gid, '_game_away_pitchers', true) ?: array();
+        foreach (array_merge($home, $away) as $p) {
+            if (empty($p['player_id'])) {
+                continue;
+            }
+            $pid = intval($p['player_id']);
+            if (!isset($totals[$pid])) {
+                $totals[$pid] = array('ip' => 0, 'h' => 0, 'r' => 0, 'er' => 0, 'bb' => 0, 'so' => 0, 'wins' => 0, 'losses' => 0, 'saves' => 0);
+            }
+            $totals[$pid]['ip'] += floatval($p['ip']);
+            $totals[$pid]['h']  += intval($p['h']);
+            $totals[$pid]['r']  += intval($p['r']);
+            $totals[$pid]['er'] += intval($p['er']);
+            $totals[$pid]['bb'] += intval($p['bb']);
+            $totals[$pid]['so'] += intval($p['so']);
+            $dec = isset($p['decision']) ? $p['decision'] : '';
+            if ($dec === 'W') { $totals[$pid]['wins']++; }
+            elseif ($dec === 'L') { $totals[$pid]['losses']++; }
+            elseif ($dec === 'S') { $totals[$pid]['saves']++; }
+        }
+    }
+    return $totals;
+}
+
 /**
  * AJAX Handler for Leaders Widget (filtrado por la temporada activa)
  */
