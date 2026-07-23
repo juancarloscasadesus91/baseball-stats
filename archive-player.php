@@ -32,6 +32,9 @@ $players = get_posts(array(
             
             <!-- Batting Stats -->
             <div class="stats-card players-tab-content active" id="batting-stats">
+                <div class="table-scroll-top" aria-hidden="true">
+                    <div class="table-scroll-top-inner"></div>
+                </div>
                 <div class="table-responsive">
                     <table class="players-table sortable-table" id="players-stats-table">
                         <thead>
@@ -97,7 +100,7 @@ $players = get_posts(array(
                             <tr>
                                 <td data-value="<?php echo esc_attr($player_number ?: 0); ?>"><?php echo esc_html($player_number ?: '-'); ?></td>
                                 <td data-value="<?php echo esc_attr($player->post_title); ?>">
-                                    <div class="player-name-cell">
+                                    <a href="<?php echo esc_url(get_permalink($player_id)); ?>" class="player-name-cell player-name-link">
                                         <div class="player-mini-photo">
                                             <?php if (has_post_thumbnail($player_id)) : ?>
                                                 <?php echo get_the_post_thumbnail($player_id, 'thumbnail'); ?>
@@ -108,7 +111,7 @@ $players = get_posts(array(
                                             <?php endif; ?>
                                         </div>
                                         <strong><?php echo esc_html($player->post_title); ?></strong>
-                                    </div>
+                                    </a>
                                 </td>
                                 <td data-value="<?php echo esc_attr($team_name); ?>"><?php echo esc_html($team_abbr); ?></td>
                                 <td data-value="<?php echo esc_attr($position_name); ?>"><?php echo esc_html($position_name); ?></td>
@@ -148,6 +151,9 @@ $players = get_posts(array(
             
             <!-- Pitching Stats -->
             <div class="stats-card players-tab-content" id="pitching-stats">
+                <div class="table-scroll-top" aria-hidden="true">
+                    <div class="table-scroll-top-inner"></div>
+                </div>
                 <div class="table-responsive">
                     <table class="players-table sortable-table" id="pitchers-stats-table">
                         <thead>
@@ -205,7 +211,7 @@ $players = get_posts(array(
                             <tr>
                                 <td data-value="<?php echo esc_attr($player_number ?: 0); ?>"><?php echo esc_html($player_number ?: '-'); ?></td>
                                 <td data-value="<?php echo esc_attr($player->post_title); ?>">
-                                    <div class="player-name-cell">
+                                    <a href="<?php echo esc_url(get_permalink($player_id)); ?>" class="player-name-cell player-name-link">
                                         <div class="player-mini-photo">
                                             <?php if (has_post_thumbnail($player_id)) : ?>
                                                 <?php echo get_the_post_thumbnail($player_id, 'thumbnail'); ?>
@@ -216,7 +222,7 @@ $players = get_posts(array(
                                             <?php endif; ?>
                                         </div>
                                         <strong><?php echo esc_html($player->post_title); ?></strong>
-                                    </div>
+                                    </a>
                                 </td>
                                 <td data-value="<?php echo esc_attr($team_name); ?>"><?php echo esc_html($team_abbr); ?></td>
                                 <td data-value="<?php echo esc_attr($era); ?>" class="stat-highlight"><?php echo esc_html($era); ?></td>
@@ -254,6 +260,43 @@ $players = get_posts(array(
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Top horizontal scrollbars synced with each table.
+    function setupTopTableScrollbars() {
+        document.querySelectorAll('.table-scroll-top').forEach(topScroll => {
+            const tableWrap = topScroll.nextElementSibling;
+            const inner = topScroll.querySelector('.table-scroll-top-inner');
+
+            if (!tableWrap || !tableWrap.classList.contains('table-responsive') || !inner) {
+                return;
+            }
+
+            const updateWidth = () => {
+                inner.style.width = tableWrap.scrollWidth + 'px';
+                topScroll.scrollLeft = tableWrap.scrollLeft;
+            };
+
+            updateWidth();
+
+            if (topScroll.dataset.scrollSynced === 'true') {
+                return;
+            }
+
+            topScroll.dataset.scrollSynced = 'true';
+
+            topScroll.addEventListener('scroll', () => {
+                tableWrap.scrollLeft = topScroll.scrollLeft;
+            });
+
+            tableWrap.addEventListener('scroll', () => {
+                topScroll.scrollLeft = tableWrap.scrollLeft;
+            });
+
+            window.addEventListener('resize', updateWidth);
+        });
+    }
+
+    setupTopTableScrollbars();
+
     // Tab switching
     const tabs = document.querySelectorAll('.players-tab');
     const tabContents = document.querySelectorAll('.players-tab-content');
@@ -269,6 +312,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Add active class to clicked tab and corresponding content
             this.classList.add('active');
             document.getElementById(tabName + '-stats').classList.add('active');
+            setupTopTableScrollbars();
         });
     });
     

@@ -948,6 +948,18 @@ body {
     -webkit-overflow-scrolling: touch !important;
 }
 
+.table-scroll-top {
+    height: 16px !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    margin: 12px 0 -8px !important;
+    -webkit-overflow-scrolling: touch !important;
+}
+
+.table-scroll-top-inner {
+    height: 1px !important;
+}
+
 .players-table {
     width: 100% !important;
     border-collapse: collapse !important;
@@ -1067,6 +1079,16 @@ body {
     align-items: center !important;
     gap: 8px !important;
     min-width: 150px !important;
+}
+
+.player-name-link {
+    color: var(--text-color) !important;
+    text-decoration: none !important;
+}
+
+.player-name-link:hover strong {
+    color: var(--mlb-red) !important;
+    text-decoration: underline !important;
 }
 
 .player-name-cell strong {
