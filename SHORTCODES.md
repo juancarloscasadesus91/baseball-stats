@@ -80,6 +80,9 @@
 
 **Estadísticas disponibles:**
 - `batting_avg` - Promedio de bateo
+- `on_base_percentage` - Porcentaje de embasado
+- `slugging_percentage` - Slugging
+- `on_base_plus_slugging` - OPS
 - `home_runs` - Home runs
 - `rbis` - Carreras impulsadas
 - `hits` - Hits
@@ -88,6 +91,9 @@
 **Ejemplos:**
 ```
 [baseball_leaders stat="batting_avg" limit="10"]
+[baseball_leaders stat="on_base_percentage" limit="10"]
+[baseball_leaders stat="slugging_percentage" limit="10"]
+[baseball_leaders stat="on_base_plus_slugging" limit="10"]
 [baseball_leaders stat="home_runs" limit="5"]
 [baseball_leaders stat="rbis" limit="15"]
 ```

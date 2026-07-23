@@ -25,6 +25,8 @@ $sidebar_active_season_name = $sidebar_active_season_id ? get_the_title($sidebar
         <div class="leaders-filter-tabs">
             <button class="filter-tab active" data-stat="avg">AVG</button>
             <button class="filter-tab" data-stat="obp">OBP</button>
+            <button class="filter-tab" data-stat="slg">SLG</button>
+            <button class="filter-tab" data-stat="ops">OPS</button>
             <button class="filter-tab" data-stat="hr">HR</button>
             <button class="filter-tab" data-stat="runs">R</button>
             <button class="filter-tab" data-stat="rbis">RBI</button>
@@ -104,6 +106,8 @@ jQuery(document).ready(function($) {
         bateo: {
             avg: { meta: '_batting_avg', order: 'DESC' },
             obp: { meta: '_on_base_percentage', order: 'DESC' },
+            slg: { meta: '_slugging_percentage', order: 'DESC' },
+            ops: { meta: '_on_base_plus_slugging', order: 'DESC' },
             hr: { meta: '_home_runs', order: 'DESC' },
             runs: { meta: '_runs', order: 'DESC' },
             rbis: { meta: '_rbis', order: 'DESC' },

@@ -64,6 +64,7 @@ function reset_player_cumulative_stats() {
         '_hit_by_pitch', '_grounded_into_dp', '_sacrifice_flies',
         '_reached_on_error', '_fielders_choice', '_strikeouts',
         '_doubles', '_triples', '_errors', '_batting_avg', '_on_base_percentage',
+        '_slugging_percentage', '_on_base_plus_slugging',
         '_innings_pitched', '_pitching_hits', '_pitching_runs',
         '_pitching_earned_runs', '_pitching_walks', '_pitching_strikeouts',
         '_pitching_wins', '_pitching_losses', '_pitching_saves', '_era'

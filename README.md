@@ -14,7 +14,7 @@ Un tema completo de WordPress para gestionar estadísticas de baseball con una j
 ### Gestión de Estadísticas
 - ✅ **Estadísticas por Partido**: Ingresa estadísticas individuales de cada jugador por partido
 - ✅ **Cálculo Automático**: Las estadísticas acumuladas se calculan automáticamente
-- ✅ **Estadísticas de Bateo**: AB, H, HR, RBI, BB, HBP, SO, GIDP, SF, ROE, FC, AVG, OBP
+- ✅ **Estadísticas de Bateo**: AB, H, HR, RBI, BB, HBP, SO, GIDP, SF, ROE, FC, AVG, OBP, SLG, OPS
 - ✅ **Estadísticas de Pitcheo**: W, L, ERA, K
 - ✅ **Estadísticas de Equipos**: Victorias, derrotas, porcentaje, carreras
 - ✅ **Trazabilidad de Jugadores**: Sistema de cambio de equipos con historial completo
@@ -121,6 +121,9 @@ Partidos → Añadir Nuevo
 ### Líderes
 ```
 [baseball_leaders stat="batting_avg" limit="10"]
+[baseball_leaders stat="on_base_percentage" limit="10"]
+[baseball_leaders stat="slugging_percentage" limit="10"]
+[baseball_leaders stat="on_base_plus_slugging" limit="10"]
 [baseball_leaders stat="home_runs" limit="5"]
 ```
 
@@ -198,13 +201,25 @@ OBP = (H + BB + HBP) / (AB + BB + HBP + SF)
 
 `ROE` (embasado por error) y `FC` (fielder's choice / bola ocupada) se registran para trazabilidad, pero no aumentan el OBP.
 
+### Slugging (SLG) y OPS
+
+El tema calcula SLG y OPS con las formulas oficiales:
+
+```text
+TB = 1B + (2B * 2) + (3B * 3) + (HR * 4)
+SLG = TB / AB
+OPS = OBP + SLG
+```
+
+Los sencillos (`1B`) se derivan como `H - 2B - 3B - HR`.
+
 ### Actualización de Producción
 
 Para una instalación existente desde navegador:
 
 1. Inicia sesión en WordPress como administrador.
 2. Abre `/wp-content/themes/baseball-stats/update-obp-stats-production.php` y ejecuta la actualización de base de datos.
-3. Abre `/wp-content/themes/baseball-stats/recalculate-obp-stats.php` y recalcula los acumulados históricos y OBP.
+3. Abre `/wp-content/themes/baseball-stats/recalculate-obp-stats.php` y recalcula los acumulados históricos, OBP, SLG y OPS.
 
 Si tienes acceso por consola, también puedes ejecutar:
 

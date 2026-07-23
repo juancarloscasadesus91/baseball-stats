@@ -118,6 +118,8 @@ get_header();
                                 <th data-sort="position">Pos</th>
                                 <th class="sortable">AVG <span class="sort-arrow">&#8597;</span></th>
                                 <th class="sortable">OBP <span class="sort-arrow">&#8597;</span></th>
+                                <th class="sortable">SLG <span class="sort-arrow">&#8597;</span></th>
+                                <th class="sortable">OPS <span class="sort-arrow">&#8597;</span></th>
                                 <th class="sortable">J <span class="sort-arrow">&#8597;</span></th>
                                 <th class="sortable">AB <span class="sort-arrow">&#8597;</span></th>
                                 <th class="sortable">H <span class="sort-arrow">&#8597;</span></th>
@@ -148,6 +150,10 @@ get_header();
                                 $obp = baseball_calculate_obp($b->h, $b->bb, $b->hbp, $b->ab, $b->sf);
                                 $obp_denominator = intval($b->ab) + intval($b->bb) + intval($b->hbp) + intval($b->sf);
                                 $obp_val = $obp_denominator > 0 ? (intval($b->h) + intval($b->bb) + intval($b->hbp)) / $obp_denominator : 0;
+                                $slg = baseball_calculate_slg($b->h, $b->d, $b->t, $b->hr, $b->ab);
+                                $slg_val = baseball_calculate_slg_value($b->h, $b->d, $b->t, $b->hr, $b->ab);
+                                $ops = baseball_calculate_ops($b->h, $b->d, $b->t, $b->hr, $b->bb, $b->hbp, $b->ab, $b->sf);
+                                $ops_val = baseball_calculate_ops_value($b->h, $b->d, $b->t, $b->hr, $b->bb, $b->hbp, $b->ab, $b->sf);
                                 $positions = wp_get_post_terms($player_id, 'position');
                                 $position_name = !empty($positions) ? $positions[0]->name : 'N/A';
                                 $team_id = get_post_meta($player_id, '_player_team', true);
@@ -172,6 +178,8 @@ get_header();
                                 <td data-value="<?php echo esc_attr($position_name); ?>"><?php echo esc_html($position_name); ?></td>
                                 <td data-value="<?php echo esc_attr($avg_val); ?>" class="stat-highlight"><?php echo esc_html($avg); ?></td>
                                 <td data-value="<?php echo esc_attr($obp_val); ?>" class="stat-highlight"><?php echo esc_html($obp); ?></td>
+                                <td data-value="<?php echo esc_attr($slg_val); ?>" class="stat-highlight"><?php echo esc_html($slg); ?></td>
+                                <td data-value="<?php echo esc_attr($ops_val); ?>" class="stat-highlight"><?php echo esc_html($ops); ?></td>
                                 <td data-value="<?php echo esc_attr($b->games); ?>"><?php echo esc_html($b->games); ?></td>
                                 <td data-value="<?php echo esc_attr($b->ab); ?>"><?php echo esc_html($b->ab); ?></td>
                                 <td data-value="<?php echo esc_attr($b->h); ?>"><?php echo esc_html($b->h); ?></td>
@@ -195,7 +203,7 @@ get_header();
                     </table>
                 </div>
                 <div class="table-legend">
-                    <p><strong>Leyenda:</strong> # = Numero, Pos = Posicion, AVG = Promedio de Bateo, OBP = Porcentaje de Embasado, J = Juegos, AB = Turnos al Bate, H = Hits, HR = Home Runs, RBI = Carreras Impulsadas, R = Carreras, BB = Bases por Bolas, HBP = Golpeado por Lanzamiento, SO = Ponches, GIDP = Batea para Doble Play, SF = Fly de Sacrificio, ROE = Embasado por Error, FC = Bola Ocupada, 2B = Dobles, 3B = Triples, E = Errores</p>
+                    <p><strong>Leyenda:</strong> # = Numero, Pos = Posicion, AVG = Promedio de Bateo, OBP = Porcentaje de Embasado, SLG = Slugging, OPS = OBP + SLG, J = Juegos, AB = Turnos al Bate, H = Hits, HR = Home Runs, RBI = Carreras Impulsadas, R = Carreras, BB = Bases por Bolas, HBP = Golpeado por Lanzamiento, SO = Ponches, GIDP = Batea para Doble Play, SF = Fly de Sacrificio, ROE = Embasado por Error, FC = Bola Ocupada, 2B = Dobles, 3B = Triples, E = Errores</p>
                 </div>
                 <?php else : ?>
                     <p class="no-content"><em>No hay estadisticas de bateo registradas en esta temporada.</em></p>

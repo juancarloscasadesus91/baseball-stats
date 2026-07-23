@@ -130,6 +130,8 @@ get_header(); ?>
                         <div class="leaders-filter-tabs">
                             <button class="filter-tab active" data-stat="avg">AVG</button>
                             <button class="filter-tab" data-stat="obp">OBP</button>
+                            <button class="filter-tab" data-stat="slg">SLG</button>
+                            <button class="filter-tab" data-stat="ops">OPS</button>
                             <button class="filter-tab" data-stat="hr">HR</button>
                             <button class="filter-tab" data-stat="runs">R</button>
                             <button class="filter-tab" data-stat="rbis">RBI</button>
@@ -218,6 +220,8 @@ jQuery(document).ready(function($) {
         bateo: {
             avg: { meta: '_batting_avg', order: 'DESC', label: 'AVG', default: '.000' },
             obp: { meta: '_on_base_percentage', order: 'DESC', label: 'OBP', default: '.000' },
+            slg: { meta: '_slugging_percentage', order: 'DESC', label: 'SLG', default: '.000' },
+            ops: { meta: '_on_base_plus_slugging', order: 'DESC', label: 'OPS', default: '.000' },
             hr: { meta: '_home_runs', order: 'DESC', label: 'HR', default: '0' },
             runs: { meta: '_runs', order: 'DESC', label: 'R', default: '0' },
             rbis: { meta: '_rbis', order: 'DESC', label: 'RBI', default: '0' },

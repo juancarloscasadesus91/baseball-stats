@@ -15,6 +15,8 @@ get_header(); ?>
             $team_id = get_post_meta($player_id, '_player_team', true);
             $batting_avg = get_post_meta($player_id, '_batting_avg', true);
             $on_base_percentage = get_post_meta($player_id, '_on_base_percentage', true);
+            $slugging_percentage = get_post_meta($player_id, '_slugging_percentage', true);
+            $on_base_plus_slugging = get_post_meta($player_id, '_on_base_plus_slugging', true);
             $home_runs = get_post_meta($player_id, '_home_runs', true);
             $runs = get_post_meta($player_id, '_runs', true);
             $rbis = get_post_meta($player_id, '_rbis', true);
@@ -171,10 +173,14 @@ get_header(); ?>
                 $hits_total = intval($totals->h ?? 0);
                 $avg = baseball_format_rate($hits_total, $ab);
                 $obp = baseball_calculate_obp($hits_total, intval($totals->bb ?? 0), intval($totals->hbp ?? 0), $ab, intval($totals->sf ?? 0));
+                $slg = baseball_calculate_slg($hits_total, intval($totals->d ?? 0), intval($totals->t ?? 0), intval($totals->hr ?? 0), $ab);
+                $ops = baseball_calculate_ops($hits_total, intval($totals->d ?? 0), intval($totals->t ?? 0), intval($totals->hr ?? 0), intval($totals->bb ?? 0), intval($totals->hbp ?? 0), $ab, intval($totals->sf ?? 0));
                 ?>
                 <div class="stat-boxes">
                     <div class="stat-box"><div class="stat-label">Promedio (AVG)</div><div class="stat-value"><?php echo esc_html($avg); ?></div></div>
                     <div class="stat-box"><div class="stat-label">Embasado (OBP)</div><div class="stat-value"><?php echo esc_html($obp); ?></div></div>
+                    <div class="stat-box"><div class="stat-label">Slugging (SLG)</div><div class="stat-value"><?php echo esc_html($slg); ?></div></div>
+                    <div class="stat-box"><div class="stat-label">OPS</div><div class="stat-value"><?php echo esc_html($ops); ?></div></div>
                     <div class="stat-box"><div class="stat-label">Juegos (J)</div><div class="stat-value"><?php echo esc_html(intval($totals->games ?? 0)); ?></div></div>
                     <div class="stat-box"><div class="stat-label">Turnos al Bate (AB)</div><div class="stat-value"><?php echo esc_html($ab); ?></div></div>
                     <div class="stat-box"><div class="stat-label">Hits (H)</div><div class="stat-value"><?php echo esc_html($hits_total); ?></div></div>
@@ -240,6 +246,14 @@ get_header(); ?>
                 <div class="stat-box">
                     <div class="stat-label">Embasado (OBP)</div>
                     <div class="stat-value"><?php echo esc_html($on_base_percentage ?: '.000'); ?></div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Slugging (SLG)</div>
+                    <div class="stat-value"><?php echo esc_html($slugging_percentage ?: '.000'); ?></div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">OPS</div>
+                    <div class="stat-value"><?php echo esc_html($on_base_plus_slugging ?: '.000'); ?></div>
                 </div>
                 <div class="stat-box">
                     <div class="stat-label">Turnos al Bate (AB)</div>
@@ -542,6 +556,8 @@ get_header(); ?>
                             <th>H</th>
                             <th>AVG</th>
                             <th>OBP</th>
+                            <th>SLG</th>
+                            <th>OPS</th>
                             <th>HR</th>
                             <th>R</th>
                             <th>RBI</th>
@@ -561,6 +577,8 @@ get_header(); ?>
                         <?php foreach ($filtered_game_stats as $stat): 
                             $game_avg = baseball_format_rate($stat->hits, $stat->at_bats);
                             $game_obp = baseball_calculate_obp($stat->hits, $stat->walks, $stat->hit_by_pitch ?? 0, $stat->at_bats, $stat->sacrifice_flies ?? 0);
+                            $game_slg = baseball_calculate_slg($stat->hits, $stat->doubles, $stat->triples, $stat->home_runs, $stat->at_bats);
+                            $game_ops = baseball_calculate_ops($stat->hits, $stat->doubles, $stat->triples, $stat->home_runs, $stat->walks, $stat->hit_by_pitch ?? 0, $stat->at_bats, $stat->sacrifice_flies ?? 0);
                             $opponent_team_id = ($stat->home_team_id == $stat->team_id) ? $stat->away_team_id : $stat->home_team_id;
                             $vs_label = ($stat->home_team_id == $stat->team_id) ? 'vs' : '@';
                         ?>
@@ -576,6 +594,8 @@ get_header(); ?>
                             <td><?php echo $stat->hits; ?></td>
                             <td><?php echo $game_avg; ?></td>
                             <td><?php echo $game_obp; ?></td>
+                            <td><?php echo $game_slg; ?></td>
+                            <td><?php echo $game_ops; ?></td>
                             <td><?php echo $stat->home_runs; ?></td>
                             <td><?php echo $stat->runs; ?></td>
                             <td><?php echo $stat->rbis; ?></td>
@@ -595,7 +615,7 @@ get_header(); ?>
                 </table>
             </div>
             <?php endif; ?>
-            <p><em>AB = Turnos al Bate, H = Hits, AVG = Promedio, OBP = Porcentaje de Embasado, HR = Home Runs, R = Carreras Anotadas, RBI = Carreras Impulsadas, BB = Bases por Bolas, HBP = Golpeado por Lanzamiento, SO = Ponches, GIDP = Batea para Doble Play, SF = Fly de Sacrificio, ROE = Embasado por Error, FC = Bola Ocupada, 2B = Dobles, 3B = Triples, E = Errores</em></p>
+            <p><em>AB = Turnos al Bate, H = Hits, AVG = Promedio, OBP = Porcentaje de Embasado, SLG = Slugging, OPS = OBP + SLG, HR = Home Runs, R = Carreras Anotadas, RBI = Carreras Impulsadas, BB = Bases por Bolas, HBP = Golpeado por Lanzamiento, SO = Ponches, GIDP = Batea para Doble Play, SF = Fly de Sacrificio, ROE = Embasado por Error, FC = Bola Ocupada, 2B = Dobles, 3B = Triples, E = Errores</em></p>
         </div>
         <?php endif; ?>
 

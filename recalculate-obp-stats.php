@@ -1,6 +1,6 @@
 <?php
 /**
- * Recalculate batting cumulative stats after adding OBP fields.
+ * Recalculate batting cumulative stats after adding OBP, SLG, and OPS fields.
  *
  * CLI:
  * php recalculate-obp-stats.php
@@ -43,7 +43,7 @@ function baseball_run_obp_stats_recalculation() {
 
     return array(
         'success' => true,
-        'message' => "Estadisticas de bateo y OBP recalculadas para {$count} jugadores.",
+        'message' => "Estadisticas de bateo, OBP, SLG y OPS recalculadas para {$count} jugadores.",
     );
 }
 
@@ -68,7 +68,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm']) && $_POST[
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Recalcular OBP</title>
+    <title>Recalcular OBP, SLG y OPS</title>
     <style>
         body { font-family: Arial, sans-serif; max-width: 760px; margin: 40px auto; padding: 0 20px; line-height: 1.5; }
         .box { border: 1px solid #ccd0d4; padding: 20px; background: #fff; }
@@ -79,12 +79,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm']) && $_POST[
     </style>
 </head>
 <body>
-    <h1>Recalcular OBP</h1>
+    <h1>Recalcular OBP, SLG y OPS</h1>
     <div class="box">
         <?php if ($result): ?>
             <div class="<?php echo $result['success'] ? 'success' : 'error'; ?>"><?php echo esc_html($result['message']); ?></div>
         <?php else: ?>
-            <p>Este proceso recalcula los acumulados de bateo de todos los jugadores, incluyendo <code>OBP</code>, desde la tabla historica de estadisticas por partido.</p>
+            <p>Este proceso recalcula los acumulados de bateo de todos los jugadores, incluyendo <code>OBP</code>, <code>SLG</code> y <code>OPS</code>, desde la tabla historica de estadisticas por partido.</p>
             <form method="post">
                 <?php wp_nonce_field('baseball_recalculate_obp_stats'); ?>
                 <input type="hidden" name="confirm" value="SI">

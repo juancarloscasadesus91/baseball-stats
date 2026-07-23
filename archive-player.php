@@ -42,6 +42,8 @@ $players = get_posts(array(
                                 <th data-sort="position">Pos</th>
                                 <th data-sort="avg" class="sortable">AVG <span class="sort-arrow">↕</span></th>
                                 <th data-sort="obp" class="sortable">OBP <span class="sort-arrow">&#8597;</span></th>
+                                <th data-sort="slg" class="sortable">SLG <span class="sort-arrow">&#8597;</span></th>
+                                <th data-sort="ops" class="sortable">OPS <span class="sort-arrow">&#8597;</span></th>
                                 <th data-sort="games" class="sortable">J <span class="sort-arrow">↕</span></th>
                                 <th data-sort="ab" class="sortable">AB <span class="sort-arrow">↕</span></th>
                                 <th data-sort="hits" class="sortable">H <span class="sort-arrow">↕</span></th>
@@ -67,6 +69,8 @@ $players = get_posts(array(
                                 $player_number = get_post_meta($player_id, '_player_number', true);
                                 $batting_avg = get_post_meta($player_id, '_batting_avg', true);
                                 $on_base_percentage = get_post_meta($player_id, '_on_base_percentage', true);
+                                $slugging_percentage = get_post_meta($player_id, '_slugging_percentage', true);
+                                $on_base_plus_slugging = get_post_meta($player_id, '_on_base_plus_slugging', true);
                                 $games = get_post_meta($player_id, '_games_played', true);
                                 $at_bats = get_post_meta($player_id, '_at_bats', true);
                                 $hits = get_post_meta($player_id, '_hits', true);
@@ -110,6 +114,8 @@ $players = get_posts(array(
                                 <td data-value="<?php echo esc_attr($position_name); ?>"><?php echo esc_html($position_name); ?></td>
                                 <td data-value="<?php echo esc_attr($batting_avg ?: 0); ?>" class="stat-highlight"><?php echo esc_html($batting_avg ?: '.000'); ?></td>
                                 <td data-value="<?php echo esc_attr($on_base_percentage ?: 0); ?>" class="stat-highlight"><?php echo esc_html($on_base_percentage ?: '.000'); ?></td>
+                                <td data-value="<?php echo esc_attr($slugging_percentage ?: 0); ?>" class="stat-highlight"><?php echo esc_html($slugging_percentage ?: '.000'); ?></td>
+                                <td data-value="<?php echo esc_attr($on_base_plus_slugging ?: 0); ?>" class="stat-highlight"><?php echo esc_html($on_base_plus_slugging ?: '.000'); ?></td>
                                 <td data-value="<?php echo esc_attr($games ?: 0); ?>"><?php echo esc_html($games ?: '0'); ?></td>
                                 <td data-value="<?php echo esc_attr($at_bats ?: 0); ?>"><?php echo esc_html($at_bats ?: '0'); ?></td>
                                 <td data-value="<?php echo esc_attr($hits ?: 0); ?>"><?php echo esc_html($hits ?: '0'); ?></td>
@@ -136,7 +142,7 @@ $players = get_posts(array(
                 </div>
                 
                 <div class="table-legend">
-                    <p><strong>Leyenda:</strong> # = Número, Pos = Posición, AVG = Promedio de Bateo, OBP = Porcentaje de Embasado, J = Juegos, AB = Turnos al Bate, H = Hits, HR = Home Runs, RBI = Carreras Impulsadas, R = Carreras, BB = Bases por Bolas, HBP = Golpeado por Lanzamiento, SO = Ponches, GIDP = Batea para Doble Play, SF = Fly de Sacrificio, ROE = Embasado por Error, FC = Bola Ocupada, 2B = Dobles, 3B = Triples, E = Errores</p>
+                    <p><strong>Leyenda:</strong> # = Número, Pos = Posición, AVG = Promedio de Bateo, OBP = Porcentaje de Embasado, SLG = Slugging, OPS = OBP + SLG, J = Juegos, AB = Turnos al Bate, H = Hits, HR = Home Runs, RBI = Carreras Impulsadas, R = Carreras, BB = Bases por Bolas, HBP = Golpeado por Lanzamiento, SO = Ponches, GIDP = Batea para Doble Play, SF = Fly de Sacrificio, ROE = Embasado por Error, FC = Bola Ocupada, 2B = Dobles, 3B = Triples, E = Errores</p>
                 </div>
             </div>
             

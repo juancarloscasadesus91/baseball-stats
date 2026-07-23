@@ -153,6 +153,8 @@ get_header(); ?>
                                 <th data-sort="position">Pos</th>
                                 <th data-sort="avg" class="sortable">AVG <span class="sort-arrow">↕</span></th>
                                 <th data-sort="obp" class="sortable">OBP <span class="sort-arrow">&#8597;</span></th>
+                                <th data-sort="slg" class="sortable">SLG <span class="sort-arrow">&#8597;</span></th>
+                                <th data-sort="ops" class="sortable">OPS <span class="sort-arrow">&#8597;</span></th>
                                 <th data-sort="ab" class="sortable">AB <span class="sort-arrow">↕</span></th>
                                 <th data-sort="hits" class="sortable">H <span class="sort-arrow">↕</span></th>
                                 <th data-sort="hr" class="sortable">HR <span class="sort-arrow">↕</span></th>
@@ -176,6 +178,8 @@ get_header(); ?>
                                 $player_number = get_post_meta($player_id, '_player_number', true);
                                 $batting_avg = get_post_meta($player_id, '_batting_avg', true);
                                 $on_base_percentage = get_post_meta($player_id, '_on_base_percentage', true);
+                                $slugging_percentage = get_post_meta($player_id, '_slugging_percentage', true);
+                                $on_base_plus_slugging = get_post_meta($player_id, '_on_base_plus_slugging', true);
                                 $at_bats = get_post_meta($player_id, '_at_bats', true);
                                 $hits = get_post_meta($player_id, '_hits', true);
                                 $home_runs = get_post_meta($player_id, '_home_runs', true);
@@ -212,6 +216,8 @@ get_header(); ?>
                                 <td data-value="<?php echo esc_attr($position_name); ?>"><?php echo esc_html($position_name); ?></td>
                                 <td data-value="<?php echo esc_attr($batting_avg ?: 0); ?>" class="stat-highlight"><?php echo esc_html($batting_avg ?: '.000'); ?></td>
                                 <td data-value="<?php echo esc_attr($on_base_percentage ?: 0); ?>" class="stat-highlight"><?php echo esc_html($on_base_percentage ?: '.000'); ?></td>
+                                <td data-value="<?php echo esc_attr($slugging_percentage ?: 0); ?>" class="stat-highlight"><?php echo esc_html($slugging_percentage ?: '.000'); ?></td>
+                                <td data-value="<?php echo esc_attr($on_base_plus_slugging ?: 0); ?>" class="stat-highlight"><?php echo esc_html($on_base_plus_slugging ?: '.000'); ?></td>
                                 <td data-value="<?php echo esc_attr($at_bats ?: 0); ?>"><?php echo esc_html($at_bats ?: '0'); ?></td>
                                 <td data-value="<?php echo esc_attr($hits ?: 0); ?>"><?php echo esc_html($hits ?: '0'); ?></td>
                                 <td data-value="<?php echo esc_attr($home_runs ?: 0); ?>" class="stat-highlight"><?php echo esc_html($home_runs ?: '0'); ?></td>

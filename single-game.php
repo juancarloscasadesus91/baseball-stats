@@ -234,6 +234,8 @@ get_header();
                                                 <th>H</th>
                                                 <th>AVG</th>
                                                 <th>OBP</th>
+                                                <th>SLG</th>
+                                                <th>OPS</th>
                                                 <th>HR</th>
                                                 <th>R</th>
                                                 <th>RBI</th>
@@ -253,6 +255,8 @@ get_header();
                                             <?php foreach ($away_stats as $stat): 
                                                 $avg = baseball_format_rate($stat->hits, $stat->at_bats);
                                                 $obp = baseball_calculate_obp($stat->hits, $stat->walks, $stat->hit_by_pitch ?? 0, $stat->at_bats, $stat->sacrifice_flies ?? 0);
+                                                $slg = baseball_calculate_slg($stat->hits, $stat->doubles, $stat->triples, $stat->home_runs, $stat->at_bats);
+                                                $ops = baseball_calculate_ops($stat->hits, $stat->doubles, $stat->triples, $stat->home_runs, $stat->walks, $stat->hit_by_pitch ?? 0, $stat->at_bats, $stat->sacrifice_flies ?? 0);
                                             ?>
                                             <tr>
                                                 <td>
@@ -277,6 +281,8 @@ get_header();
                                                 <td><?php echo $stat->hits; ?></td>
                                                 <td><?php echo $avg; ?></td>
                                                 <td><?php echo $obp; ?></td>
+                                                <td><?php echo $slg; ?></td>
+                                                <td><?php echo $ops; ?></td>
                                                 <td><?php echo $stat->home_runs; ?></td>
                                                 <td><?php echo $stat->runs; ?></td>
                                                 <td><?php echo $stat->rbis; ?></td>
@@ -376,6 +382,8 @@ get_header();
                                                 <th>H</th>
                                                 <th>AVG</th>
                                                 <th>OBP</th>
+                                                <th>SLG</th>
+                                                <th>OPS</th>
                                                 <th>HR</th>
                                                 <th>R</th>
                                                 <th>RBI</th>
@@ -395,6 +403,8 @@ get_header();
                                             <?php foreach ($home_stats as $stat): 
                                                 $avg = baseball_format_rate($stat->hits, $stat->at_bats);
                                                 $obp = baseball_calculate_obp($stat->hits, $stat->walks, $stat->hit_by_pitch ?? 0, $stat->at_bats, $stat->sacrifice_flies ?? 0);
+                                                $slg = baseball_calculate_slg($stat->hits, $stat->doubles, $stat->triples, $stat->home_runs, $stat->at_bats);
+                                                $ops = baseball_calculate_ops($stat->hits, $stat->doubles, $stat->triples, $stat->home_runs, $stat->walks, $stat->hit_by_pitch ?? 0, $stat->at_bats, $stat->sacrifice_flies ?? 0);
                                             ?>
                                             <tr>
                                                 <td>
@@ -419,6 +429,8 @@ get_header();
                                                 <td><?php echo $stat->hits; ?></td>
                                                 <td><?php echo $avg; ?></td>
                                                 <td><?php echo $obp; ?></td>
+                                                <td><?php echo $slg; ?></td>
+                                                <td><?php echo $ops; ?></td>
                                                 <td><?php echo $stat->home_runs; ?></td>
                                                 <td><?php echo $stat->runs; ?></td>
                                                 <td><?php echo $stat->rbis; ?></td>

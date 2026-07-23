@@ -122,6 +122,9 @@ Temporada (Season)
 ```
 Estadísticas disponibles:
 - `batting_avg`: Promedio de bateo
+- `on_base_percentage`: Porcentaje de embasado
+- `slugging_percentage`: Slugging
+- `on_base_plus_slugging`: OPS
 - `home_runs`: Home runs
 - `rbis`: Carreras impulsadas
 - `hits`: Hits

@@ -62,6 +62,41 @@ function baseball_calculate_obp($hits, $walks, $hit_by_pitch, $at_bats, $sacrifi
     );
 }
 
+function baseball_calculate_total_bases($hits, $doubles, $triples, $home_runs) {
+    $hits = intval($hits);
+    $doubles = intval($doubles);
+    $triples = intval($triples);
+    $home_runs = intval($home_runs);
+    $singles = max(0, $hits - $doubles - $triples - $home_runs);
+
+    return $singles + ($doubles * 2) + ($triples * 3) + ($home_runs * 4);
+}
+
+function baseball_calculate_slg_value($hits, $doubles, $triples, $home_runs, $at_bats) {
+    $at_bats = intval($at_bats);
+
+    return $at_bats > 0 ? baseball_calculate_total_bases($hits, $doubles, $triples, $home_runs) / $at_bats : 0;
+}
+
+function baseball_calculate_slg($hits, $doubles, $triples, $home_runs, $at_bats) {
+    return baseball_format_rate(baseball_calculate_total_bases($hits, $doubles, $triples, $home_runs), intval($at_bats));
+}
+
+function baseball_calculate_obp_value($hits, $walks, $hit_by_pitch, $at_bats, $sacrifice_flies) {
+    $denominator = intval($at_bats) + intval($walks) + intval($hit_by_pitch) + intval($sacrifice_flies);
+
+    return $denominator > 0 ? (intval($hits) + intval($walks) + intval($hit_by_pitch)) / $denominator : 0;
+}
+
+function baseball_calculate_ops_value($hits, $doubles, $triples, $home_runs, $walks, $hit_by_pitch, $at_bats, $sacrifice_flies) {
+    return baseball_calculate_obp_value($hits, $walks, $hit_by_pitch, $at_bats, $sacrifice_flies)
+        + baseball_calculate_slg_value($hits, $doubles, $triples, $home_runs, $at_bats);
+}
+
+function baseball_calculate_ops($hits, $doubles, $triples, $home_runs, $walks, $hit_by_pitch, $at_bats, $sacrifice_flies) {
+    return number_format(baseball_calculate_ops_value($hits, $doubles, $triples, $home_runs, $walks, $hit_by_pitch, $at_bats, $sacrifice_flies), 3);
+}
+
 /**
  * Flush Rewrite Rules on Theme Activation
  */
@@ -368,6 +403,8 @@ function baseball_player_stats_callback($post) {
     $team_id = get_post_meta($post->ID, '_player_team', true);
     $batting_avg = get_post_meta($post->ID, '_batting_avg', true);
     $on_base_percentage = get_post_meta($post->ID, '_on_base_percentage', true);
+    $slugging_percentage = get_post_meta($post->ID, '_slugging_percentage', true);
+    $on_base_plus_slugging = get_post_meta($post->ID, '_on_base_plus_slugging', true);
     $home_runs = get_post_meta($post->ID, '_home_runs', true);
     $runs = get_post_meta($post->ID, '_runs', true);
     $rbis = get_post_meta($post->ID, '_rbis', true);
@@ -428,6 +465,14 @@ function baseball_player_stats_callback($post) {
             <p>
                 <label for="on_base_percentage"><strong>Porcentaje de Embasado (OBP):</strong></label><br>
                 <input type="text" id="on_base_percentage" name="on_base_percentage" value="<?php echo esc_attr($on_base_percentage); ?>" placeholder="0.000" style="width: 100%;">
+            </p>
+            <p>
+                <label for="slugging_percentage"><strong>Slugging (SLG):</strong></label><br>
+                <input type="text" id="slugging_percentage" name="slugging_percentage" value="<?php echo esc_attr($slugging_percentage); ?>" placeholder="0.000" style="width: 100%;">
+            </p>
+            <p>
+                <label for="on_base_plus_slugging"><strong>OPS:</strong></label><br>
+                <input type="text" id="on_base_plus_slugging" name="on_base_plus_slugging" value="<?php echo esc_attr($on_base_plus_slugging); ?>" placeholder="0.000" style="width: 100%;">
             </p>
             <p>
                 <label for="home_runs"><strong>Home Runs (HR):</strong></label><br>
@@ -522,7 +567,8 @@ function baseball_save_player_stats($post_id) {
 
     // Save fields
     $fields = array(
-        'player_number', 'player_team', 'batting_avg', 'on_base_percentage', 'home_runs', 'runs', 'rbis',
+        'player_number', 'player_team', 'batting_avg', 'on_base_percentage', 'slugging_percentage',
+        'on_base_plus_slugging', 'home_runs', 'runs', 'rbis',
         'hits', 'at_bats', 'doubles', 'triples', 'walks', 'hit_by_pitch', 'grounded_into_dp',
         'sacrifice_flies', 'reached_on_error', 'fielders_choice', 'errors', 'era', 'wins', 'losses', 'strikeouts'
     );
@@ -2143,6 +2189,8 @@ function baseball_update_player_cumulative_stats($game_id) {
         // Calculate batting average
         update_post_meta($player_id, '_batting_avg', baseball_format_rate($stats->total_hits, $stats->total_ab));
         update_post_meta($player_id, '_on_base_percentage', baseball_calculate_obp($stats->total_hits, $stats->total_bb, $stats->total_hbp, $stats->total_ab, $stats->total_sf));
+        update_post_meta($player_id, '_slugging_percentage', baseball_calculate_slg($stats->total_hits, $stats->total_2b, $stats->total_3b, $stats->total_hr, $stats->total_ab));
+        update_post_meta($player_id, '_on_base_plus_slugging', baseball_calculate_ops($stats->total_hits, $stats->total_2b, $stats->total_3b, $stats->total_hr, $stats->total_bb, $stats->total_hbp, $stats->total_ab, $stats->total_sf));
     }
 }
 
@@ -2400,6 +2448,8 @@ function baseball_player_stats_shortcode($atts) {
             $player_number = get_post_meta($player_id, '_player_number', true);
             $batting_avg = get_post_meta($player_id, '_batting_avg', true);
             $on_base_percentage = get_post_meta($player_id, '_on_base_percentage', true);
+            $slugging_percentage = get_post_meta($player_id, '_slugging_percentage', true);
+            $on_base_plus_slugging = get_post_meta($player_id, '_on_base_plus_slugging', true);
             $home_runs = get_post_meta($player_id, '_home_runs', true);
             $rbis = get_post_meta($player_id, '_rbis', true);
             $positions = wp_get_post_terms($player_id, 'position');
@@ -2421,6 +2471,14 @@ function baseball_player_stats_shortcode($atts) {
                     <div class="stat-box">
                         <div class="stat-label">OBP</div>
                         <div class="stat-value"><?php echo esc_html($on_base_percentage ?: '.000'); ?></div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">SLG</div>
+                        <div class="stat-value"><?php echo esc_html($slugging_percentage ?: '.000'); ?></div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">OPS</div>
+                        <div class="stat-value"><?php echo esc_html($on_base_plus_slugging ?: '.000'); ?></div>
                     </div>
                     <div class="stat-box">
                         <div class="stat-label">HR</div>
@@ -2514,6 +2572,8 @@ function baseball_batting_leaders_shortcode($atts) {
     $stat_labels = array(
         'batting_avg' => 'Promedio de Bateo',
         'on_base_percentage' => 'Porcentaje de Embasado',
+        'slugging_percentage' => 'Slugging',
+        'on_base_plus_slugging' => 'OPS',
         'home_runs' => 'Home Runs',
         'rbis' => 'Carreras Impulsadas',
         'hits' => 'Hits',
@@ -2594,6 +2654,8 @@ function baseball_leaders_compact_shortcode($atts) {
     $stat_labels = array(
         'batting_avg' => 'AVG',
         'on_base_percentage' => 'OBP',
+        'slugging_percentage' => 'SLG',
+        'on_base_plus_slugging' => 'OPS',
         'home_runs' => 'HR',
         'rbis' => 'RBI',
         'hits' => 'H',
@@ -3182,6 +3244,17 @@ function baseball_get_leaders_ajax() {
                     $obp = (intval($row->h) + intval($row->bb) + intval($row->hbp)) / $denominator;
                     $leaders[] = array('id' => $pid, 'sort' => $obp, 'display' => number_format($obp, 3));
                     break;
+                case 'slg':
+                    if (intval($row->ab) <= 0) { continue 2; }
+                    $slg = baseball_calculate_slg_value($row->h, $row->d, $row->t, $row->hr, $row->ab);
+                    $leaders[] = array('id' => $pid, 'sort' => $slg, 'display' => number_format($slg, 3));
+                    break;
+                case 'ops':
+                    $obp_denominator = intval($row->ab) + intval($row->bb) + intval($row->hbp) + intval($row->sf);
+                    if ($obp_denominator <= 0 && intval($row->ab) <= 0) { continue 2; }
+                    $ops = baseball_calculate_ops_value($row->h, $row->d, $row->t, $row->hr, $row->bb, $row->hbp, $row->ab, $row->sf);
+                    $leaders[] = array('id' => $pid, 'sort' => $ops, 'display' => number_format($ops, 3));
+                    break;
                 case 'hr':
                     $leaders[] = array('id' => $pid, 'sort' => intval($row->hr), 'display' => intval($row->hr));
                     break;
@@ -3326,6 +3399,8 @@ function baseball_recalculate_single_player_stats($player_id) {
         "SELECT 
             SUM(at_bats) as total_ab,
             SUM(hits) as total_hits,
+            SUM(doubles) as total_2b,
+            SUM(triples) as total_3b,
             SUM(home_runs) as total_hr,
             SUM(rbis) as total_rbi,
             SUM(walks) as total_bb,
@@ -3344,6 +3419,8 @@ function baseball_recalculate_single_player_stats($player_id) {
     // Update player meta (use 0 if no stats found)
     update_post_meta($player_id, '_at_bats', $stats->total_ab ?: 0);
     update_post_meta($player_id, '_hits', $stats->total_hits ?: 0);
+    update_post_meta($player_id, '_doubles', $stats->total_2b ?: 0);
+    update_post_meta($player_id, '_triples', $stats->total_3b ?: 0);
     update_post_meta($player_id, '_home_runs', $stats->total_hr ?: 0);
     update_post_meta($player_id, '_rbis', $stats->total_rbi ?: 0);
     update_post_meta($player_id, '_walks', $stats->total_bb ?: 0);
@@ -3358,6 +3435,8 @@ function baseball_recalculate_single_player_stats($player_id) {
     // Calculate batting average
     update_post_meta($player_id, '_batting_avg', baseball_format_rate($stats->total_hits, $stats->total_ab));
     update_post_meta($player_id, '_on_base_percentage', baseball_calculate_obp($stats->total_hits, $stats->total_bb, $stats->total_hbp, $stats->total_ab, $stats->total_sf));
+    update_post_meta($player_id, '_slugging_percentage', baseball_calculate_slg($stats->total_hits, $stats->total_2b, $stats->total_3b, $stats->total_hr, $stats->total_ab));
+    update_post_meta($player_id, '_on_base_plus_slugging', baseball_calculate_ops($stats->total_hits, $stats->total_2b, $stats->total_3b, $stats->total_hr, $stats->total_bb, $stats->total_hbp, $stats->total_ab, $stats->total_sf));
 }
 
 /**

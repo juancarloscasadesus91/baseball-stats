@@ -190,6 +190,8 @@ if ($selected_team && $selected_vs_team) {
         'run_diff' => 0,
         'avg' => '.000',
         'obp' => '.000',
+        'slg' => '.000',
+        'ops' => '.000',
         'h' => 0,
         'doubles' => 0,
         'triples' => 0,
@@ -250,6 +252,8 @@ if ($selected_team && $selected_vs_team) {
             $hits = intval($summary_stats->h);
             $vs_summary['avg'] = baseball_format_rate($hits, $ab);
             $vs_summary['obp'] = baseball_calculate_obp($hits, intval($summary_stats->bb), intval($summary_stats->hbp), $ab, intval($summary_stats->sf));
+            $vs_summary['slg'] = baseball_calculate_slg($hits, intval($summary_stats->doubles), intval($summary_stats->triples), intval($summary_stats->hr), $ab);
+            $vs_summary['ops'] = baseball_calculate_ops($hits, intval($summary_stats->doubles), intval($summary_stats->triples), intval($summary_stats->hr), intval($summary_stats->bb), intval($summary_stats->hbp), $ab, intval($summary_stats->sf));
             $vs_summary['h'] = $hits;
             $vs_summary['doubles'] = intval($summary_stats->doubles);
             $vs_summary['triples'] = intval($summary_stats->triples);
@@ -350,6 +354,8 @@ $games_query = new WP_Query($games_query_args);
                     <div class="summary-stat"><span>DIF</span><strong><?php echo esc_html($vs_summary['run_diff'] > 0 ? '+' . $vs_summary['run_diff'] : $vs_summary['run_diff']); ?></strong></div>
                     <div class="summary-stat"><span>AVG</span><strong><?php echo esc_html($vs_summary['avg']); ?></strong></div>
                     <div class="summary-stat"><span>OBP</span><strong><?php echo esc_html($vs_summary['obp']); ?></strong></div>
+                    <div class="summary-stat"><span>SLG</span><strong><?php echo esc_html($vs_summary['slg']); ?></strong></div>
+                    <div class="summary-stat"><span>OPS</span><strong><?php echo esc_html($vs_summary['ops']); ?></strong></div>
                     <div class="summary-stat"><span>H</span><strong><?php echo esc_html($vs_summary['h']); ?></strong></div>
                     <div class="summary-stat"><span>2B</span><strong><?php echo esc_html($vs_summary['doubles']); ?></strong></div>
                     <div class="summary-stat"><span>3B</span><strong><?php echo esc_html($vs_summary['triples']); ?></strong></div>

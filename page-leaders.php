@@ -19,6 +19,8 @@ get_header();
         <div class="leaders-tabs">
             <button class="tab-button active" data-stat="batting_avg">Promedio de Bateo</button>
             <button class="tab-button" data-stat="on_base_percentage">Porcentaje de Embasado</button>
+            <button class="tab-button" data-stat="slugging_percentage">Slugging</button>
+            <button class="tab-button" data-stat="on_base_plus_slugging">OPS</button>
             <button class="tab-button" data-stat="home_runs">Home Runs</button>
             <button class="tab-button" data-stat="rbis">Carreras Impulsadas</button>
             <button class="tab-button" data-stat="hits">Hits</button>
@@ -32,6 +34,8 @@ get_header();
             $stats = array(
                 'batting_avg' => 'Promedio de Bateo',
                 'on_base_percentage' => 'Porcentaje de Embasado',
+                'slugging_percentage' => 'Slugging',
+                'on_base_plus_slugging' => 'OPS',
                 'home_runs' => 'Home Runs',
                 'rbis' => 'Carreras Impulsadas',
                 'hits' => 'Hits',
@@ -81,7 +85,7 @@ get_header();
                                     <div class="leader-team"><?php echo esc_html($team_name); ?></div>
                                 </div>
                                 <div class="leader-stat">
-                                    <div class="stat-value"><?php echo esc_html($stat_value ?: '0'); ?></div>
+                                    <div class="stat-value"><?php echo esc_html($stat_value ?: (in_array($stat_key, array('batting_avg', 'on_base_percentage', 'slugging_percentage', 'on_base_plus_slugging'), true) ? '.000' : '0')); ?></div>
                                     <div class="stat-label"><?php echo esc_html($stat_label); ?></div>
                                 </div>
                             </a>
