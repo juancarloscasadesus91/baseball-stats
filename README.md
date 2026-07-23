@@ -200,10 +200,18 @@ OBP = (H + BB + HBP) / (AB + BB + HBP + SF)
 
 ### Actualización de Producción
 
-Para una instalación existente:
+Para una instalación existente desde navegador:
 
-1. Ejecuta `php update-obp-stats-production.php` desde el directorio del tema para agregar las columnas faltantes.
-2. Ejecuta `php recalculate-obp-stats.php` desde el directorio del tema para recalcular acumulados históricos y OBP.
+1. Inicia sesión en WordPress como administrador.
+2. Abre `/wp-content/themes/baseball-stats/update-obp-stats-production.php` y ejecuta la actualización de base de datos.
+3. Abre `/wp-content/themes/baseball-stats/recalculate-obp-stats.php` y recalcula los acumulados históricos y OBP.
+
+Si tienes acceso por consola, también puedes ejecutar:
+
+```bash
+php update-obp-stats-production.php
+php recalculate-obp-stats.php
+```
 
 ## 🎨 Personalización
 
