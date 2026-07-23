@@ -233,11 +233,17 @@ get_header();
                                                 <th>AB</th>
                                                 <th>H</th>
                                                 <th>AVG</th>
+                                                <th>OBP</th>
                                                 <th>HR</th>
                                                 <th>R</th>
                                                 <th>RBI</th>
                                                 <th>BB</th>
+                                                <th>HBP</th>
                                                 <th>SO</th>
+                                                <th>GIDP</th>
+                                                <th>SF</th>
+                                                <th>ROE</th>
+                                                <th>FC</th>
                                                 <th>2B</th>
                                                 <th>3B</th>
                                                 <th>E</th>
@@ -245,7 +251,8 @@ get_header();
                                         </thead>
                                         <tbody>
                                             <?php foreach ($away_stats as $stat): 
-                                                $avg = $stat->at_bats > 0 ? number_format($stat->hits / $stat->at_bats, 3) : '.000';
+                                                $avg = baseball_format_rate($stat->hits, $stat->at_bats);
+                                                $obp = baseball_calculate_obp($stat->hits, $stat->walks, $stat->hit_by_pitch ?? 0, $stat->at_bats, $stat->sacrifice_flies ?? 0);
                                             ?>
                                             <tr>
                                                 <td>
@@ -269,11 +276,17 @@ get_header();
                                                 <td><?php echo $stat->at_bats; ?></td>
                                                 <td><?php echo $stat->hits; ?></td>
                                                 <td><?php echo $avg; ?></td>
+                                                <td><?php echo $obp; ?></td>
                                                 <td><?php echo $stat->home_runs; ?></td>
                                                 <td><?php echo $stat->runs; ?></td>
                                                 <td><?php echo $stat->rbis; ?></td>
                                                 <td><?php echo $stat->walks; ?></td>
+                                                <td><?php echo intval($stat->hit_by_pitch ?? 0); ?></td>
                                                 <td><?php echo $stat->strikeouts; ?></td>
+                                                <td><?php echo intval($stat->grounded_into_dp ?? 0); ?></td>
+                                                <td><?php echo intval($stat->sacrifice_flies ?? 0); ?></td>
+                                                <td><?php echo intval($stat->reached_on_error ?? 0); ?></td>
+                                                <td><?php echo intval($stat->fielders_choice ?? 0); ?></td>
                                                 <td><?php echo $stat->doubles; ?></td>
                                                 <td><?php echo $stat->triples; ?></td>
                                                 <td><?php echo $stat->errors; ?></td>
@@ -362,11 +375,17 @@ get_header();
                                                 <th>AB</th>
                                                 <th>H</th>
                                                 <th>AVG</th>
+                                                <th>OBP</th>
                                                 <th>HR</th>
                                                 <th>R</th>
                                                 <th>RBI</th>
                                                 <th>BB</th>
+                                                <th>HBP</th>
                                                 <th>SO</th>
+                                                <th>GIDP</th>
+                                                <th>SF</th>
+                                                <th>ROE</th>
+                                                <th>FC</th>
                                                 <th>2B</th>
                                                 <th>3B</th>
                                                 <th>E</th>
@@ -374,7 +393,8 @@ get_header();
                                         </thead>
                                         <tbody>
                                             <?php foreach ($home_stats as $stat): 
-                                                $avg = $stat->at_bats > 0 ? number_format($stat->hits / $stat->at_bats, 3) : '.000';
+                                                $avg = baseball_format_rate($stat->hits, $stat->at_bats);
+                                                $obp = baseball_calculate_obp($stat->hits, $stat->walks, $stat->hit_by_pitch ?? 0, $stat->at_bats, $stat->sacrifice_flies ?? 0);
                                             ?>
                                             <tr>
                                                 <td>
@@ -398,11 +418,17 @@ get_header();
                                                 <td><?php echo $stat->at_bats; ?></td>
                                                 <td><?php echo $stat->hits; ?></td>
                                                 <td><?php echo $avg; ?></td>
+                                                <td><?php echo $obp; ?></td>
                                                 <td><?php echo $stat->home_runs; ?></td>
                                                 <td><?php echo $stat->runs; ?></td>
                                                 <td><?php echo $stat->rbis; ?></td>
                                                 <td><?php echo $stat->walks; ?></td>
+                                                <td><?php echo intval($stat->hit_by_pitch ?? 0); ?></td>
                                                 <td><?php echo $stat->strikeouts; ?></td>
+                                                <td><?php echo intval($stat->grounded_into_dp ?? 0); ?></td>
+                                                <td><?php echo intval($stat->sacrifice_flies ?? 0); ?></td>
+                                                <td><?php echo intval($stat->reached_on_error ?? 0); ?></td>
+                                                <td><?php echo intval($stat->fielders_choice ?? 0); ?></td>
                                                 <td><?php echo $stat->doubles; ?></td>
                                                 <td><?php echo $stat->triples; ?></td>
                                                 <td><?php echo $stat->errors; ?></td>

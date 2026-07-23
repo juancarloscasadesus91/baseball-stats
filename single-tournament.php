@@ -204,6 +204,7 @@ get_header();
                                 <th data-sort="team">Equipo</th>
                                 <th data-sort="position">Pos</th>
                                 <th class="sortable">AVG <span class="sort-arrow">↕</span></th>
+                                <th class="sortable">OBP <span class="sort-arrow">&#8597;</span></th>
                                 <th class="sortable">J <span class="sort-arrow">↕</span></th>
                                 <th class="sortable">AB <span class="sort-arrow">↕</span></th>
                                 <th class="sortable">H <span class="sort-arrow">↕</span></th>
@@ -211,7 +212,12 @@ get_header();
                                 <th class="sortable">RBI <span class="sort-arrow">↕</span></th>
                                 <th class="sortable">R <span class="sort-arrow">↕</span></th>
                                 <th class="sortable">BB <span class="sort-arrow">↕</span></th>
+                                <th class="sortable">HBP <span class="sort-arrow">&#8597;</span></th>
                                 <th class="sortable">SO <span class="sort-arrow">↕</span></th>
+                                <th class="sortable">GIDP <span class="sort-arrow">&#8597;</span></th>
+                                <th class="sortable">SF <span class="sort-arrow">&#8597;</span></th>
+                                <th class="sortable">ROE <span class="sort-arrow">&#8597;</span></th>
+                                <th class="sortable">FC <span class="sort-arrow">&#8597;</span></th>
                                 <th class="sortable">2B <span class="sort-arrow">↕</span></th>
                                 <th class="sortable">3B <span class="sort-arrow">↕</span></th>
                                 <th class="sortable">E <span class="sort-arrow">↕</span></th>
@@ -224,8 +230,11 @@ get_header();
                                 $player = get_post($player_id);
                                 if (!$player) continue;
                                 $player_number = get_post_meta($player_id, '_player_number', true);
-                                $avg = intval($b->ab) > 0 ? number_format(intval($b->h) / intval($b->ab), 3) : '.000';
+                                $avg = baseball_format_rate($b->h, $b->ab);
                                 $avg_val = intval($b->ab) > 0 ? intval($b->h) / intval($b->ab) : 0;
+                                $obp = baseball_calculate_obp($b->h, $b->bb, $b->hbp, $b->ab, $b->sf);
+                                $obp_denominator = intval($b->ab) + intval($b->bb) + intval($b->hbp) + intval($b->sf);
+                                $obp_val = $obp_denominator > 0 ? (intval($b->h) + intval($b->bb) + intval($b->hbp)) / $obp_denominator : 0;
                                 $positions = wp_get_post_terms($player_id, 'position');
                                 $position_name = !empty($positions) ? $positions[0]->name : 'N/A';
                                 $team_id = get_post_meta($player_id, '_player_team', true);
@@ -249,6 +258,7 @@ get_header();
                                 <td data-value="<?php echo esc_attr($team_name); ?>"><?php echo esc_html($team_abbr); ?></td>
                                 <td data-value="<?php echo esc_attr($position_name); ?>"><?php echo esc_html($position_name); ?></td>
                                 <td data-value="<?php echo esc_attr($avg_val); ?>" class="stat-highlight"><?php echo esc_html($avg); ?></td>
+                                <td data-value="<?php echo esc_attr($obp_val); ?>" class="stat-highlight"><?php echo esc_html($obp); ?></td>
                                 <td data-value="<?php echo esc_attr($b->games); ?>"><?php echo esc_html($b->games); ?></td>
                                 <td data-value="<?php echo esc_attr($b->ab); ?>"><?php echo esc_html($b->ab); ?></td>
                                 <td data-value="<?php echo esc_attr($b->h); ?>"><?php echo esc_html($b->h); ?></td>
@@ -256,7 +266,12 @@ get_header();
                                 <td data-value="<?php echo esc_attr($b->rbi); ?>" class="stat-highlight"><?php echo esc_html($b->rbi); ?></td>
                                 <td data-value="<?php echo esc_attr($b->r); ?>"><?php echo esc_html($b->r); ?></td>
                                 <td data-value="<?php echo esc_attr($b->bb); ?>"><?php echo esc_html($b->bb); ?></td>
+                                <td data-value="<?php echo esc_attr($b->hbp); ?>"><?php echo esc_html($b->hbp); ?></td>
                                 <td data-value="<?php echo esc_attr($b->so); ?>"><?php echo esc_html($b->so); ?></td>
+                                <td data-value="<?php echo esc_attr($b->gidp); ?>"><?php echo esc_html($b->gidp); ?></td>
+                                <td data-value="<?php echo esc_attr($b->sf); ?>"><?php echo esc_html($b->sf); ?></td>
+                                <td data-value="<?php echo esc_attr($b->roe); ?>"><?php echo esc_html($b->roe); ?></td>
+                                <td data-value="<?php echo esc_attr($b->fc); ?>"><?php echo esc_html($b->fc); ?></td>
                                 <td data-value="<?php echo esc_attr($b->d); ?>" class="stat-highlight"><?php echo esc_html($b->d); ?></td>
                                 <td data-value="<?php echo esc_attr($b->t); ?>" class="stat-highlight"><?php echo esc_html($b->t); ?></td>
                                 <td data-value="<?php echo esc_attr($b->e); ?>" class="stat-highlight"><?php echo esc_html($b->e); ?></td>
@@ -267,7 +282,7 @@ get_header();
                     </table>
                 </div>
                 <div class="table-legend">
-                    <p><strong>Leyenda:</strong> # = Número, Pos = Posición, AVG = Promedio de Bateo, J = Juegos, AB = Turnos al Bate, H = Hits, HR = Home Runs, RBI = Carreras Impulsadas, R = Carreras, BB = Bases por Bolas, SO = Ponches, 2B = Dobles, 3B = Triples, E = Errores</p>
+                    <p><strong>Leyenda:</strong> # = Número, Pos = Posición, AVG = Promedio de Bateo, OBP = Porcentaje de Embasado, J = Juegos, AB = Turnos al Bate, H = Hits, HR = Home Runs, RBI = Carreras Impulsadas, R = Carreras, BB = Bases por Bolas, HBP = Golpeado por Lanzamiento, SO = Ponches, GIDP = Batea para Doble Play, SF = Fly de Sacrificio, ROE = Embasado por Error, FC = Bola Ocupada, 2B = Dobles, 3B = Triples, E = Errores</p>
                 </div>
                 <?php else: ?>
                     <p class="no-content"><em>No hay estadísticas de bateo registradas en este torneo.</em></p>

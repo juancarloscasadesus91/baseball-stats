@@ -152,12 +152,18 @@ get_header(); ?>
                                 <th data-sort="name">Jugador</th>
                                 <th data-sort="position">Pos</th>
                                 <th data-sort="avg" class="sortable">AVG <span class="sort-arrow">↕</span></th>
+                                <th data-sort="obp" class="sortable">OBP <span class="sort-arrow">&#8597;</span></th>
                                 <th data-sort="ab" class="sortable">AB <span class="sort-arrow">↕</span></th>
                                 <th data-sort="hits" class="sortable">H <span class="sort-arrow">↕</span></th>
                                 <th data-sort="hr" class="sortable">HR <span class="sort-arrow">↕</span></th>
                                 <th data-sort="rbi" class="sortable">RBI <span class="sort-arrow">↕</span></th>
                                 <th data-sort="bb" class="sortable">BB <span class="sort-arrow">↕</span></th>
+                                <th data-sort="hbp" class="sortable">HBP <span class="sort-arrow">&#8597;</span></th>
                                 <th data-sort="so" class="sortable">SO <span class="sort-arrow">↕</span></th>
+                                <th data-sort="gidp" class="sortable">GIDP <span class="sort-arrow">&#8597;</span></th>
+                                <th data-sort="sf" class="sortable">SF <span class="sort-arrow">&#8597;</span></th>
+                                <th data-sort="roe" class="sortable">ROE <span class="sort-arrow">&#8597;</span></th>
+                                <th data-sort="fc" class="sortable">FC <span class="sort-arrow">&#8597;</span></th>
                                 <th data-sort="doubles" class="sortable">2B <span class="sort-arrow">↕</span></th>
                                 <th data-sort="triples" class="sortable">3B <span class="sort-arrow">↕</span></th>
                                 <th data-sort="errors" class="sortable">E <span class="sort-arrow">↕</span></th>
@@ -169,11 +175,17 @@ get_header(); ?>
                                 $player_id = $player->ID;
                                 $player_number = get_post_meta($player_id, '_player_number', true);
                                 $batting_avg = get_post_meta($player_id, '_batting_avg', true);
+                                $on_base_percentage = get_post_meta($player_id, '_on_base_percentage', true);
                                 $at_bats = get_post_meta($player_id, '_at_bats', true);
                                 $hits = get_post_meta($player_id, '_hits', true);
                                 $home_runs = get_post_meta($player_id, '_home_runs', true);
                                 $rbis = get_post_meta($player_id, '_rbis', true);
                                 $walks = get_post_meta($player_id, '_walks', true);
+                                $hit_by_pitch = get_post_meta($player_id, '_hit_by_pitch', true);
+                                $grounded_into_dp = get_post_meta($player_id, '_grounded_into_dp', true);
+                                $sacrifice_flies = get_post_meta($player_id, '_sacrifice_flies', true);
+                                $reached_on_error = get_post_meta($player_id, '_reached_on_error', true);
+                                $fielders_choice = get_post_meta($player_id, '_fielders_choice', true);
                                 $strikeouts = get_post_meta($player_id, '_strikeouts', true);
                                 $doubles = get_post_meta($player_id, '_doubles', true);
                                 $triples = get_post_meta($player_id, '_triples', true);
@@ -199,12 +211,18 @@ get_header(); ?>
                                 </td>
                                 <td data-value="<?php echo esc_attr($position_name); ?>"><?php echo esc_html($position_name); ?></td>
                                 <td data-value="<?php echo esc_attr($batting_avg ?: 0); ?>" class="stat-highlight"><?php echo esc_html($batting_avg ?: '.000'); ?></td>
+                                <td data-value="<?php echo esc_attr($on_base_percentage ?: 0); ?>" class="stat-highlight"><?php echo esc_html($on_base_percentage ?: '.000'); ?></td>
                                 <td data-value="<?php echo esc_attr($at_bats ?: 0); ?>"><?php echo esc_html($at_bats ?: '0'); ?></td>
                                 <td data-value="<?php echo esc_attr($hits ?: 0); ?>"><?php echo esc_html($hits ?: '0'); ?></td>
                                 <td data-value="<?php echo esc_attr($home_runs ?: 0); ?>" class="stat-highlight"><?php echo esc_html($home_runs ?: '0'); ?></td>
                                 <td data-value="<?php echo esc_attr($rbis ?: 0); ?>" class="stat-highlight"><?php echo esc_html($rbis ?: '0'); ?></td>
                                 <td data-value="<?php echo esc_attr($walks ?: 0); ?>"><?php echo esc_html($walks ?: '0'); ?></td>
+                                <td data-value="<?php echo esc_attr($hit_by_pitch ?: 0); ?>"><?php echo esc_html($hit_by_pitch ?: '0'); ?></td>
                                 <td data-value="<?php echo esc_attr($strikeouts ?: 0); ?>"><?php echo esc_html($strikeouts ?: '0'); ?></td>
+                                <td data-value="<?php echo esc_attr($grounded_into_dp ?: 0); ?>"><?php echo esc_html($grounded_into_dp ?: '0'); ?></td>
+                                <td data-value="<?php echo esc_attr($sacrifice_flies ?: 0); ?>"><?php echo esc_html($sacrifice_flies ?: '0'); ?></td>
+                                <td data-value="<?php echo esc_attr($reached_on_error ?: 0); ?>"><?php echo esc_html($reached_on_error ?: '0'); ?></td>
+                                <td data-value="<?php echo esc_attr($fielders_choice ?: 0); ?>"><?php echo esc_html($fielders_choice ?: '0'); ?></td>
                                 <td data-value="<?php echo esc_attr($doubles ?: 0); ?>" class="stat-highlight"><?php echo esc_html($doubles ?: '0'); ?></td>
                                 <td data-value="<?php echo esc_attr($triples ?: 0); ?>" class="stat-highlight"><?php echo esc_html($triples ?: '0'); ?></td>
                                 <td data-value="<?php echo esc_attr($errors ?: 0); ?>" class="stat-highlight"><?php echo esc_html($errors ?: '0'); ?></td>
@@ -234,7 +252,7 @@ get_header(); ?>
                                 <th data-sort="hits" class="sortable">H <span class="sort-arrow">↕</span></th>
                                 <th data-sort="er" class="sortable">ER <span class="sort-arrow">↕</span></th>
                                 <th data-sort="bb" class="sortable">BB <span class="sort-arrow">↕</span></th>
-                                <th data-sort="so" class="sortable">SO <span class="sort-arrow">↕</span></th>
+<th data-sort="so" class="sortable">SO <span class="sort-arrow">↕</span></th>
                                 <th>Acciones</th>
                             </tr>
                         </thead>
@@ -483,9 +501,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 this.classList.add(currentSort.direction === 'asc' ? 'sorted-asc' : 'sorted-desc');
                 
                 // Sort rows
+                const columnIndex = Array.prototype.indexOf.call(this.parentNode.children, this) + 1;
                 rows.sort((a, b) => {
-                    const aCell = a.querySelector(`td[data-value]:nth-child(${getColumnIndex(sortType)})`);
-                    const bCell = b.querySelector(`td[data-value]:nth-child(${getColumnIndex(sortType)})`);
+                    const aCell = a.querySelector(`td[data-value]:nth-child(${columnIndex})`);
+                    const bCell = b.querySelector(`td[data-value]:nth-child(${columnIndex})`);
                     
                     let aVal = aCell.getAttribute('data-value');
                     let bVal = bCell.getAttribute('data-value');
@@ -512,41 +531,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    function getColumnIndex(sortType) {
-        // Mapping for batting table
-        const battingMapping = {
-            'number': 1,
-            'name': 2,
-            'position': 3,
-            'avg': 4,
-            'ab': 5,
-            'hits': 6,
-            'hr': 7,
-            'rbi': 8,
-            'bb': 9,
-            'so': 10,
-            'doubles': 11,
-            'triples': 12,
-            'errors': 13
-        };
-        
-        // Mapping for pitching table
-        const pitchingMapping = {
-            'number': 1,
-            'name': 2,
-            'era': 3,
-            'wins': 4,
-            'losses': 5,
-            'saves': 6,
-            'ip': 7,
-            'hits': 8,
-            'er': 9,
-            'bb': 10,
-            'so': 11
-        };
-        
-        return battingMapping[sortType] || pitchingMapping[sortType] || 1;
-    }
 });
 </script>
 

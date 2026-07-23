@@ -41,6 +41,7 @@ $players = get_posts(array(
                                 <th data-sort="team">Equipo</th>
                                 <th data-sort="position">Pos</th>
                                 <th data-sort="avg" class="sortable">AVG <span class="sort-arrow">↕</span></th>
+                                <th data-sort="obp" class="sortable">OBP <span class="sort-arrow">&#8597;</span></th>
                                 <th data-sort="games" class="sortable">J <span class="sort-arrow">↕</span></th>
                                 <th data-sort="ab" class="sortable">AB <span class="sort-arrow">↕</span></th>
                                 <th data-sort="hits" class="sortable">H <span class="sort-arrow">↕</span></th>
@@ -48,7 +49,12 @@ $players = get_posts(array(
                                 <th data-sort="rbi" class="sortable">RBI <span class="sort-arrow">↕</span></th>
                                 <th data-sort="runs" class="sortable">R <span class="sort-arrow">↕</span></th>
                                 <th data-sort="bb" class="sortable">BB <span class="sort-arrow">↕</span></th>
+                                <th data-sort="hbp" class="sortable">HBP <span class="sort-arrow">&#8597;</span></th>
                                 <th data-sort="so" class="sortable">SO <span class="sort-arrow">↕</span></th>
+                                <th data-sort="gidp" class="sortable">GIDP <span class="sort-arrow">&#8597;</span></th>
+                                <th data-sort="sf" class="sortable">SF <span class="sort-arrow">&#8597;</span></th>
+                                <th data-sort="roe" class="sortable">ROE <span class="sort-arrow">&#8597;</span></th>
+                                <th data-sort="fc" class="sortable">FC <span class="sort-arrow">&#8597;</span></th>
                                 <th data-sort="doubles" class="sortable">2B <span class="sort-arrow">↕</span></th>
                                 <th data-sort="triples" class="sortable">3B <span class="sort-arrow">↕</span></th>
                                 <th data-sort="errors" class="sortable">E <span class="sort-arrow">↕</span></th>
@@ -60,6 +66,7 @@ $players = get_posts(array(
                                 $player_id = $player->ID;
                                 $player_number = get_post_meta($player_id, '_player_number', true);
                                 $batting_avg = get_post_meta($player_id, '_batting_avg', true);
+                                $on_base_percentage = get_post_meta($player_id, '_on_base_percentage', true);
                                 $games = get_post_meta($player_id, '_games_played', true);
                                 $at_bats = get_post_meta($player_id, '_at_bats', true);
                                 $hits = get_post_meta($player_id, '_hits', true);
@@ -67,6 +74,11 @@ $players = get_posts(array(
                                 $rbis = get_post_meta($player_id, '_rbis', true);
                                 $runs = get_post_meta($player_id, '_runs', true);
                                 $walks = get_post_meta($player_id, '_walks', true);
+                                $hit_by_pitch = get_post_meta($player_id, '_hit_by_pitch', true);
+                                $grounded_into_dp = get_post_meta($player_id, '_grounded_into_dp', true);
+                                $sacrifice_flies = get_post_meta($player_id, '_sacrifice_flies', true);
+                                $reached_on_error = get_post_meta($player_id, '_reached_on_error', true);
+                                $fielders_choice = get_post_meta($player_id, '_fielders_choice', true);
                                 $strikeouts = get_post_meta($player_id, '_strikeouts', true);
                                 $doubles = get_post_meta($player_id, '_doubles', true);
                                 $triples = get_post_meta($player_id, '_triples', true);
@@ -97,6 +109,7 @@ $players = get_posts(array(
                                 <td data-value="<?php echo esc_attr($team_name); ?>"><?php echo esc_html($team_abbr); ?></td>
                                 <td data-value="<?php echo esc_attr($position_name); ?>"><?php echo esc_html($position_name); ?></td>
                                 <td data-value="<?php echo esc_attr($batting_avg ?: 0); ?>" class="stat-highlight"><?php echo esc_html($batting_avg ?: '.000'); ?></td>
+                                <td data-value="<?php echo esc_attr($on_base_percentage ?: 0); ?>" class="stat-highlight"><?php echo esc_html($on_base_percentage ?: '.000'); ?></td>
                                 <td data-value="<?php echo esc_attr($games ?: 0); ?>"><?php echo esc_html($games ?: '0'); ?></td>
                                 <td data-value="<?php echo esc_attr($at_bats ?: 0); ?>"><?php echo esc_html($at_bats ?: '0'); ?></td>
                                 <td data-value="<?php echo esc_attr($hits ?: 0); ?>"><?php echo esc_html($hits ?: '0'); ?></td>
@@ -104,7 +117,12 @@ $players = get_posts(array(
                                 <td data-value="<?php echo esc_attr($rbis ?: 0); ?>" class="stat-highlight"><?php echo esc_html($rbis ?: '0'); ?></td>
                                 <td data-value="<?php echo esc_attr($runs ?: 0); ?>"><?php echo esc_html($runs ?: '0'); ?></td>
                                 <td data-value="<?php echo esc_attr($walks ?: 0); ?>"><?php echo esc_html($walks ?: '0'); ?></td>
+                                <td data-value="<?php echo esc_attr($hit_by_pitch ?: 0); ?>"><?php echo esc_html($hit_by_pitch ?: '0'); ?></td>
                                 <td data-value="<?php echo esc_attr($strikeouts ?: 0); ?>"><?php echo esc_html($strikeouts ?: '0'); ?></td>
+                                <td data-value="<?php echo esc_attr($grounded_into_dp ?: 0); ?>"><?php echo esc_html($grounded_into_dp ?: '0'); ?></td>
+                                <td data-value="<?php echo esc_attr($sacrifice_flies ?: 0); ?>"><?php echo esc_html($sacrifice_flies ?: '0'); ?></td>
+                                <td data-value="<?php echo esc_attr($reached_on_error ?: 0); ?>"><?php echo esc_html($reached_on_error ?: '0'); ?></td>
+                                <td data-value="<?php echo esc_attr($fielders_choice ?: 0); ?>"><?php echo esc_html($fielders_choice ?: '0'); ?></td>
                                 <td data-value="<?php echo esc_attr($doubles ?: 0); ?>" class="stat-highlight"><?php echo esc_html($doubles ?: '0'); ?></td>
                                 <td data-value="<?php echo esc_attr($triples ?: 0); ?>" class="stat-highlight"><?php echo esc_html($triples ?: '0'); ?></td>
                                 <td data-value="<?php echo esc_attr($errors ?: 0); ?>" class="stat-highlight"><?php echo esc_html($errors ?: '0'); ?></td>
@@ -118,7 +136,7 @@ $players = get_posts(array(
                 </div>
                 
                 <div class="table-legend">
-                    <p><strong>Leyenda:</strong> # = Número, Pos = Posición, AVG = Promedio de Bateo, J = Juegos, AB = Turnos al Bate, H = Hits, HR = Home Runs, RBI = Carreras Impulsadas, R = Carreras, BB = Bases por Bolas, SO = Ponches, 2B = Dobles, 3B = Triples, E = Errores</p>
+                    <p><strong>Leyenda:</strong> # = Número, Pos = Posición, AVG = Promedio de Bateo, OBP = Porcentaje de Embasado, J = Juegos, AB = Turnos al Bate, H = Hits, HR = Home Runs, RBI = Carreras Impulsadas, R = Carreras, BB = Bases por Bolas, HBP = Golpeado por Lanzamiento, SO = Ponches, GIDP = Batea para Doble Play, SF = Fly de Sacrificio, ROE = Embasado por Error, FC = Bola Ocupada, 2B = Dobles, 3B = Triples, E = Errores</p>
                 </div>
             </div>
             
@@ -140,7 +158,7 @@ $players = get_posts(array(
                                 <th data-sort="runs" class="sortable">R <span class="sort-arrow">↕</span></th>
                                 <th data-sort="er" class="sortable">ER <span class="sort-arrow">↕</span></th>
                                 <th data-sort="bb" class="sortable">BB <span class="sort-arrow">↕</span></th>
-                                <th data-sort="so" class="sortable">SO <span class="sort-arrow">↕</span></th>
+<th data-sort="so" class="sortable">SO <span class="sort-arrow">↕</span></th>
                                 <th>Acciones</th>
                             </tr>
                         </thead>

@@ -189,11 +189,14 @@ if ($selected_team && $selected_vs_team) {
         'losses' => 0,
         'run_diff' => 0,
         'avg' => '.000',
+        'obp' => '.000',
         'h' => 0,
         'doubles' => 0,
         'triples' => 0,
         'hr' => 0,
         'bb' => 0,
+        'hbp' => 0,
+        'sf' => 0,
         'e' => 0,
     );
 
@@ -233,6 +236,8 @@ if ($selected_team && $selected_vs_team) {
                 SUM(triples) AS triples,
                 SUM(home_runs) AS hr,
                 SUM(walks) AS bb,
+                SUM(hit_by_pitch) AS hbp,
+                SUM(sacrifice_flies) AS sf,
                 SUM(errors) AS e
             FROM $stats_table
             WHERE team_id = %d
@@ -243,12 +248,15 @@ if ($selected_team && $selected_vs_team) {
         if ($summary_stats) {
             $ab = intval($summary_stats->ab);
             $hits = intval($summary_stats->h);
-            $vs_summary['avg'] = $ab > 0 ? number_format($hits / $ab, 3) : '.000';
+            $vs_summary['avg'] = baseball_format_rate($hits, $ab);
+            $vs_summary['obp'] = baseball_calculate_obp($hits, intval($summary_stats->bb), intval($summary_stats->hbp), $ab, intval($summary_stats->sf));
             $vs_summary['h'] = $hits;
             $vs_summary['doubles'] = intval($summary_stats->doubles);
             $vs_summary['triples'] = intval($summary_stats->triples);
             $vs_summary['hr'] = intval($summary_stats->hr);
             $vs_summary['bb'] = intval($summary_stats->bb);
+            $vs_summary['hbp'] = intval($summary_stats->hbp);
+            $vs_summary['sf'] = intval($summary_stats->sf);
             $vs_summary['e'] = intval($summary_stats->e);
         }
     }
@@ -341,11 +349,14 @@ $games_query = new WP_Query($games_query_args);
                     <div class="summary-stat"><span>D</span><strong><?php echo esc_html($vs_summary['losses']); ?></strong></div>
                     <div class="summary-stat"><span>DIF</span><strong><?php echo esc_html($vs_summary['run_diff'] > 0 ? '+' . $vs_summary['run_diff'] : $vs_summary['run_diff']); ?></strong></div>
                     <div class="summary-stat"><span>AVG</span><strong><?php echo esc_html($vs_summary['avg']); ?></strong></div>
+                    <div class="summary-stat"><span>OBP</span><strong><?php echo esc_html($vs_summary['obp']); ?></strong></div>
                     <div class="summary-stat"><span>H</span><strong><?php echo esc_html($vs_summary['h']); ?></strong></div>
                     <div class="summary-stat"><span>2B</span><strong><?php echo esc_html($vs_summary['doubles']); ?></strong></div>
                     <div class="summary-stat"><span>3B</span><strong><?php echo esc_html($vs_summary['triples']); ?></strong></div>
                     <div class="summary-stat"><span>HR</span><strong><?php echo esc_html($vs_summary['hr']); ?></strong></div>
                     <div class="summary-stat"><span>BB</span><strong><?php echo esc_html($vs_summary['bb']); ?></strong></div>
+                    <div class="summary-stat"><span>HBP</span><strong><?php echo esc_html($vs_summary['hbp']); ?></strong></div>
+                    <div class="summary-stat"><span>SF</span><strong><?php echo esc_html($vs_summary['sf']); ?></strong></div>
                     <div class="summary-stat"><span>E</span><strong><?php echo esc_html($vs_summary['e']); ?></strong></div>
                 </div>
             </div>

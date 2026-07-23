@@ -18,6 +18,7 @@ get_header();
 
         <div class="leaders-tabs">
             <button class="tab-button active" data-stat="batting_avg">Promedio de Bateo</button>
+            <button class="tab-button" data-stat="on_base_percentage">Porcentaje de Embasado</button>
             <button class="tab-button" data-stat="home_runs">Home Runs</button>
             <button class="tab-button" data-stat="rbis">Carreras Impulsadas</button>
             <button class="tab-button" data-stat="hits">Hits</button>
@@ -30,6 +31,7 @@ get_header();
             <?php
             $stats = array(
                 'batting_avg' => 'Promedio de Bateo',
+                'on_base_percentage' => 'Porcentaje de Embasado',
                 'home_runs' => 'Home Runs',
                 'rbis' => 'Carreras Impulsadas',
                 'hits' => 'Hits',

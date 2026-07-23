@@ -32,7 +32,12 @@ function baseball_create_tables() {
         runs int(11) DEFAULT 0,
         rbis int(11) DEFAULT 0,
         walks int(11) DEFAULT 0,
+        hit_by_pitch int(11) DEFAULT 0,
         strikeouts int(11) DEFAULT 0,
+        grounded_into_dp int(11) DEFAULT 0,
+        sacrifice_flies int(11) DEFAULT 0,
+        reached_on_error int(11) DEFAULT 0,
+        fielders_choice int(11) DEFAULT 0,
         errors int(11) DEFAULT 0,
         created_at datetime DEFAULT CURRENT_TIMESTAMP,
         PRIMARY KEY  (id),
@@ -45,6 +50,17 @@ function baseball_create_tables() {
     dbDelta($sql);
 }
 add_action('after_switch_theme', 'baseball_create_tables');
+
+function baseball_format_rate($numerator, $denominator) {
+    return $denominator > 0 ? number_format($numerator / $denominator, 3) : '.000';
+}
+
+function baseball_calculate_obp($hits, $walks, $hit_by_pitch, $at_bats, $sacrifice_flies) {
+    return baseball_format_rate(
+        intval($hits) + intval($walks) + intval($hit_by_pitch),
+        intval($at_bats) + intval($walks) + intval($hit_by_pitch) + intval($sacrifice_flies)
+    );
+}
 
 /**
  * Flush Rewrite Rules on Theme Activation
@@ -351,6 +367,7 @@ function baseball_player_stats_callback($post) {
     $player_number = get_post_meta($post->ID, '_player_number', true);
     $team_id = get_post_meta($post->ID, '_player_team', true);
     $batting_avg = get_post_meta($post->ID, '_batting_avg', true);
+    $on_base_percentage = get_post_meta($post->ID, '_on_base_percentage', true);
     $home_runs = get_post_meta($post->ID, '_home_runs', true);
     $runs = get_post_meta($post->ID, '_runs', true);
     $rbis = get_post_meta($post->ID, '_rbis', true);
@@ -358,6 +375,12 @@ function baseball_player_stats_callback($post) {
     $at_bats = get_post_meta($post->ID, '_at_bats', true);
     $doubles = get_post_meta($post->ID, '_doubles', true);
     $triples = get_post_meta($post->ID, '_triples', true);
+    $walks = get_post_meta($post->ID, '_walks', true);
+    $hit_by_pitch = get_post_meta($post->ID, '_hit_by_pitch', true);
+    $grounded_into_dp = get_post_meta($post->ID, '_grounded_into_dp', true);
+    $sacrifice_flies = get_post_meta($post->ID, '_sacrifice_flies', true);
+    $reached_on_error = get_post_meta($post->ID, '_reached_on_error', true);
+    $fielders_choice = get_post_meta($post->ID, '_fielders_choice', true);
     $errors = get_post_meta($post->ID, '_errors', true);
     $era = get_post_meta($post->ID, '_era', true);
     $wins = get_post_meta($post->ID, '_wins', true);
@@ -403,6 +426,10 @@ function baseball_player_stats_callback($post) {
                 <input type="text" id="batting_avg" name="batting_avg" value="<?php echo esc_attr($batting_avg); ?>" placeholder="0.000" style="width: 100%;">
             </p>
             <p>
+                <label for="on_base_percentage"><strong>Porcentaje de Embasado (OBP):</strong></label><br>
+                <input type="text" id="on_base_percentage" name="on_base_percentage" value="<?php echo esc_attr($on_base_percentage); ?>" placeholder="0.000" style="width: 100%;">
+            </p>
+            <p>
                 <label for="home_runs"><strong>Home Runs (HR):</strong></label><br>
                 <input type="number" id="home_runs" name="home_runs" value="<?php echo esc_attr($home_runs); ?>" style="width: 100%;">
             </p>
@@ -421,6 +448,30 @@ function baseball_player_stats_callback($post) {
             <p>
                 <label for="triples"><strong>Triples (3B):</strong></label><br>
                 <input type="number" id="triples" name="triples" value="<?php echo esc_attr($triples); ?>" style="width: 100%;">
+            </p>
+            <p>
+                <label for="walks"><strong>Bases por Bolas (BB):</strong></label><br>
+                <input type="number" id="walks" name="walks" value="<?php echo esc_attr($walks); ?>" style="width: 100%;">
+            </p>
+            <p>
+                <label for="hit_by_pitch"><strong>Golpeado por Lanzamiento (HBP):</strong></label><br>
+                <input type="number" id="hit_by_pitch" name="hit_by_pitch" value="<?php echo esc_attr($hit_by_pitch); ?>" style="width: 100%;">
+            </p>
+            <p>
+                <label for="grounded_into_dp"><strong>Batea para Doble Play (GIDP):</strong></label><br>
+                <input type="number" id="grounded_into_dp" name="grounded_into_dp" value="<?php echo esc_attr($grounded_into_dp); ?>" style="width: 100%;">
+            </p>
+            <p>
+                <label for="sacrifice_flies"><strong>Fly de Sacrificio (SF):</strong></label><br>
+                <input type="number" id="sacrifice_flies" name="sacrifice_flies" value="<?php echo esc_attr($sacrifice_flies); ?>" style="width: 100%;">
+            </p>
+            <p>
+                <label for="reached_on_error"><strong>Embasado por Error (ROE):</strong></label><br>
+                <input type="number" id="reached_on_error" name="reached_on_error" value="<?php echo esc_attr($reached_on_error); ?>" style="width: 100%;">
+            </p>
+            <p>
+                <label for="fielders_choice"><strong>Bola Ocupada (FC):</strong></label><br>
+                <input type="number" id="fielders_choice" name="fielders_choice" value="<?php echo esc_attr($fielders_choice); ?>" style="width: 100%;">
             </p>
             <p>
                 <label for="errors"><strong>Errores (E):</strong></label><br>
@@ -471,8 +522,9 @@ function baseball_save_player_stats($post_id) {
 
     // Save fields
     $fields = array(
-        'player_number', 'player_team', 'batting_avg', 'home_runs', 'runs', 'rbis',
-        'hits', 'at_bats', 'doubles', 'triples', 'errors', 'era', 'wins', 'losses', 'strikeouts'
+        'player_number', 'player_team', 'batting_avg', 'on_base_percentage', 'home_runs', 'runs', 'rbis',
+        'hits', 'at_bats', 'doubles', 'triples', 'walks', 'hit_by_pitch', 'grounded_into_dp',
+        'sacrifice_flies', 'reached_on_error', 'fielders_choice', 'errors', 'era', 'wins', 'losses', 'strikeouts'
     );
 
     foreach ($fields as $field) {
@@ -1074,7 +1126,12 @@ function baseball_game_stats_callback($post) {
                     <th>R</th>
                     <th>RBI</th>
                     <th>BB</th>
+                    <th>HBP</th>
                     <th>SO</th>
+                    <th>GIDP</th>
+                    <th>SF</th>
+                    <th>ROE</th>
+                    <th>FC</th>
                     <th>E</th>
                     <th></th>
                 </tr>
@@ -1099,7 +1156,12 @@ function baseball_game_stats_callback($post) {
                     <td><input type="number" name="stats[<?php echo $player->ID; ?>][runs]" value="<?php echo $stat ? esc_attr($stat->runs) : '0'; ?>" style="width: 50px;" min="0"></td>
                     <td><input type="number" name="stats[<?php echo $player->ID; ?>][rbis]" value="<?php echo $stat ? esc_attr($stat->rbis) : '0'; ?>" style="width: 50px;" min="0"></td>
                     <td><input type="number" name="stats[<?php echo $player->ID; ?>][walks]" value="<?php echo $stat ? esc_attr($stat->walks) : '0'; ?>" style="width: 50px;" min="0"></td>
+                    <td><input type="number" name="stats[<?php echo $player->ID; ?>][hit_by_pitch]" value="<?php echo $stat ? esc_attr($stat->hit_by_pitch ?? 0) : '0'; ?>" style="width: 50px;" min="0"></td>
                     <td><input type="number" name="stats[<?php echo $player->ID; ?>][strikeouts]" value="<?php echo $stat ? esc_attr($stat->strikeouts) : '0'; ?>" style="width: 50px;" min="0"></td>
+                    <td><input type="number" name="stats[<?php echo $player->ID; ?>][grounded_into_dp]" value="<?php echo $stat ? esc_attr($stat->grounded_into_dp ?? 0) : '0'; ?>" style="width: 50px;" min="0"></td>
+                    <td><input type="number" name="stats[<?php echo $player->ID; ?>][sacrifice_flies]" value="<?php echo $stat ? esc_attr($stat->sacrifice_flies ?? 0) : '0'; ?>" style="width: 50px;" min="0"></td>
+                    <td><input type="number" name="stats[<?php echo $player->ID; ?>][reached_on_error]" value="<?php echo $stat ? esc_attr($stat->reached_on_error ?? 0) : '0'; ?>" style="width: 50px;" min="0"></td>
+                    <td><input type="number" name="stats[<?php echo $player->ID; ?>][fielders_choice]" value="<?php echo $stat ? esc_attr($stat->fielders_choice ?? 0) : '0'; ?>" style="width: 50px;" min="0"></td>
                     <td><input type="number" name="stats[<?php echo $player->ID; ?>][errors]" value="<?php echo $stat ? esc_attr($stat->errors) : '0'; ?>" style="width: 50px;" min="0"></td>
                     <input type="hidden" name="stats[<?php echo $player->ID; ?>][team_id]" value="<?php echo esc_attr($home_team_id); ?>">
                     <td><button type="button" class="button" onclick="this.closest('tr').remove()">Eliminar</button></td>
@@ -1122,7 +1184,12 @@ function baseball_game_stats_callback($post) {
                     <th>R</th>
                     <th>RBI</th>
                     <th>BB</th>
+                    <th>HBP</th>
                     <th>SO</th>
+                    <th>GIDP</th>
+                    <th>SF</th>
+                    <th>ROE</th>
+                    <th>FC</th>
                     <th>E</th>
                     <th></th>
                 </tr>
@@ -1147,7 +1214,12 @@ function baseball_game_stats_callback($post) {
                     <td><input type="number" name="stats[<?php echo $player->ID; ?>][runs]" value="<?php echo $stat ? esc_attr($stat->runs) : '0'; ?>" style="width: 50px;" min="0"></td>
                     <td><input type="number" name="stats[<?php echo $player->ID; ?>][rbis]" value="<?php echo $stat ? esc_attr($stat->rbis) : '0'; ?>" style="width: 50px;" min="0"></td>
                     <td><input type="number" name="stats[<?php echo $player->ID; ?>][walks]" value="<?php echo $stat ? esc_attr($stat->walks) : '0'; ?>" style="width: 50px;" min="0"></td>
+                    <td><input type="number" name="stats[<?php echo $player->ID; ?>][hit_by_pitch]" value="<?php echo $stat ? esc_attr($stat->hit_by_pitch ?? 0) : '0'; ?>" style="width: 50px;" min="0"></td>
                     <td><input type="number" name="stats[<?php echo $player->ID; ?>][strikeouts]" value="<?php echo $stat ? esc_attr($stat->strikeouts) : '0'; ?>" style="width: 50px;" min="0"></td>
+                    <td><input type="number" name="stats[<?php echo $player->ID; ?>][grounded_into_dp]" value="<?php echo $stat ? esc_attr($stat->grounded_into_dp ?? 0) : '0'; ?>" style="width: 50px;" min="0"></td>
+                    <td><input type="number" name="stats[<?php echo $player->ID; ?>][sacrifice_flies]" value="<?php echo $stat ? esc_attr($stat->sacrifice_flies ?? 0) : '0'; ?>" style="width: 50px;" min="0"></td>
+                    <td><input type="number" name="stats[<?php echo $player->ID; ?>][reached_on_error]" value="<?php echo $stat ? esc_attr($stat->reached_on_error ?? 0) : '0'; ?>" style="width: 50px;" min="0"></td>
+                    <td><input type="number" name="stats[<?php echo $player->ID; ?>][fielders_choice]" value="<?php echo $stat ? esc_attr($stat->fielders_choice ?? 0) : '0'; ?>" style="width: 50px;" min="0"></td>
                     <td><input type="number" name="stats[<?php echo $player->ID; ?>][errors]" value="<?php echo $stat ? esc_attr($stat->errors) : '0'; ?>" style="width: 50px;" min="0"></td>
                     <input type="hidden" name="stats[<?php echo $player->ID; ?>][team_id]" value="<?php echo esc_attr($away_team_id); ?>">
                     <td><button type="button" class="button" onclick="this.closest('tr').remove()">Eliminar</button></td>
@@ -1155,7 +1227,7 @@ function baseball_game_stats_callback($post) {
                 <?php endforeach; ?>
             </tbody>
         </table>
-        <p><em>AB = Turnos al Bate, H = Hits, 2B = Dobles, 3B = Triples, HR = Home Runs, R = Carreras Anotadas, RBI = Carreras Impulsadas, BB = Bases por Bolas, SO = Ponches, E = Errores</em></p>
+        <p><em>AB = Turnos al Bate, H = Hits, 2B = Dobles, 3B = Triples, HR = Home Runs, R = Carreras Anotadas, RBI = Carreras Impulsadas, BB = Bases por Bolas, HBP = Golpeado por Lanzamiento, SO = Ponches, GIDP = Batea para Doble Play, SF = Fly de Sacrificio, ROE = Embasado por Error, FC = Bola Ocupada, E = Errores</em></p>
     </div>
     
     <script>
@@ -1238,7 +1310,12 @@ function baseball_game_stats_callback($post) {
             <td><input type="number" name="stats[${playerId}][runs]" value="0" style="width: 50px;" min="0"></td>
             <td><input type="number" name="stats[${playerId}][rbis]" value="0" style="width: 50px;" min="0"></td>
             <td><input type="number" name="stats[${playerId}][walks]" value="0" style="width: 50px;" min="0"></td>
+            <td><input type="number" name="stats[${playerId}][hit_by_pitch]" value="0" style="width: 50px;" min="0"></td>
             <td><input type="number" name="stats[${playerId}][strikeouts]" value="0" style="width: 50px;" min="0"></td>
+            <td><input type="number" name="stats[${playerId}][grounded_into_dp]" value="0" style="width: 50px;" min="0"></td>
+            <td><input type="number" name="stats[${playerId}][sacrifice_flies]" value="0" style="width: 50px;" min="0"></td>
+            <td><input type="number" name="stats[${playerId}][reached_on_error]" value="0" style="width: 50px;" min="0"></td>
+            <td><input type="number" name="stats[${playerId}][fielders_choice]" value="0" style="width: 50px;" min="0"></td>
             <td><input type="number" name="stats[${playerId}][errors]" value="0" style="width: 50px;" min="0"></td>
             <input type="hidden" name="stats[${playerId}][team_id]" value="${teamId}">
             <td><button type="button" class="button" onclick="this.closest('tr').remove(); updateAvailablePlayers();">Eliminar</button></td>
@@ -1554,14 +1631,19 @@ function baseball_save_game_info($post_id) {
                 'runs' => intval($stats['runs'] ?? 0),
                 'rbis' => intval($stats['rbis'] ?? 0),
                 'walks' => intval($stats['walks'] ?? 0),
+                'hit_by_pitch' => intval($stats['hit_by_pitch'] ?? 0),
                 'strikeouts' => intval($stats['strikeouts'] ?? 0),
+                'grounded_into_dp' => intval($stats['grounded_into_dp'] ?? 0),
+                'sacrifice_flies' => intval($stats['sacrifice_flies'] ?? 0),
+                'reached_on_error' => intval($stats['reached_on_error'] ?? 0),
+                'fielders_choice' => intval($stats['fielders_choice'] ?? 0),
                 'errors' => intval($stats['errors'] ?? 0)
             );
             
             $result = $wpdb->insert(
                 $table_name,
                 $data,
-                array('%d', '%d', '%d', '%d', '%d', '%d', '%d', '%d', '%d', '%d', '%d', '%d', '%d')
+                array('%d', '%d', '%d', '%d', '%d', '%d', '%d', '%d', '%d', '%d', '%d', '%d', '%d', '%d', '%d', '%d', '%d', '%d')
             );
             
             if ($result) {
@@ -2028,7 +2110,12 @@ function baseball_update_player_cumulative_stats($game_id) {
                 SUM(runs) as total_r,
                 SUM(rbis) as total_rbi,
                 SUM(walks) as total_bb,
+                SUM(hit_by_pitch) as total_hbp,
                 SUM(strikeouts) as total_so,
+                SUM(grounded_into_dp) as total_gidp,
+                SUM(sacrifice_flies) as total_sf,
+                SUM(reached_on_error) as total_roe,
+                SUM(fielders_choice) as total_fc,
                 SUM(errors) as total_e
             FROM $table_name 
             WHERE player_id = %d",
@@ -2045,14 +2132,17 @@ function baseball_update_player_cumulative_stats($game_id) {
         update_post_meta($player_id, '_runs', $stats->total_r);
         update_post_meta($player_id, '_rbis', $stats->total_rbi);
         update_post_meta($player_id, '_walks', $stats->total_bb);
+        update_post_meta($player_id, '_hit_by_pitch', $stats->total_hbp);
         update_post_meta($player_id, '_strikeouts', $stats->total_so);
+        update_post_meta($player_id, '_grounded_into_dp', $stats->total_gidp);
+        update_post_meta($player_id, '_sacrifice_flies', $stats->total_sf);
+        update_post_meta($player_id, '_reached_on_error', $stats->total_roe);
+        update_post_meta($player_id, '_fielders_choice', $stats->total_fc);
         update_post_meta($player_id, '_errors', $stats->total_e);
         
         // Calculate batting average
-        if ($stats->total_ab > 0) {
-            $avg = number_format($stats->total_hits / $stats->total_ab, 3);
-            update_post_meta($player_id, '_batting_avg', $avg);
-        }
+        update_post_meta($player_id, '_batting_avg', baseball_format_rate($stats->total_hits, $stats->total_ab));
+        update_post_meta($player_id, '_on_base_percentage', baseball_calculate_obp($stats->total_hits, $stats->total_bb, $stats->total_hbp, $stats->total_ab, $stats->total_sf));
     }
 }
 
@@ -2309,6 +2399,7 @@ function baseball_player_stats_shortcode($atts) {
             $player_id = get_the_ID();
             $player_number = get_post_meta($player_id, '_player_number', true);
             $batting_avg = get_post_meta($player_id, '_batting_avg', true);
+            $on_base_percentage = get_post_meta($player_id, '_on_base_percentage', true);
             $home_runs = get_post_meta($player_id, '_home_runs', true);
             $rbis = get_post_meta($player_id, '_rbis', true);
             $positions = wp_get_post_terms($player_id, 'position');
@@ -2326,6 +2417,10 @@ function baseball_player_stats_shortcode($atts) {
                     <div class="stat-box">
                         <div class="stat-label">AVG</div>
                         <div class="stat-value"><?php echo esc_html($batting_avg ?: '.000'); ?></div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">OBP</div>
+                        <div class="stat-value"><?php echo esc_html($on_base_percentage ?: '.000'); ?></div>
                     </div>
                     <div class="stat-box">
                         <div class="stat-label">HR</div>
@@ -2418,6 +2513,7 @@ function baseball_batting_leaders_shortcode($atts) {
 
     $stat_labels = array(
         'batting_avg' => 'Promedio de Bateo',
+        'on_base_percentage' => 'Porcentaje de Embasado',
         'home_runs' => 'Home Runs',
         'rbis' => 'Carreras Impulsadas',
         'hits' => 'Hits',
@@ -2497,6 +2593,7 @@ function baseball_leaders_compact_shortcode($atts) {
 
     $stat_labels = array(
         'batting_avg' => 'AVG',
+        'on_base_percentage' => 'OBP',
         'home_runs' => 'HR',
         'rbis' => 'RBI',
         'hits' => 'H',
@@ -2872,7 +2969,12 @@ function baseball_get_season_player_batting_totals($game_ids) {
                 SUM(doubles)   AS d,
                 SUM(triples)   AS t,
                 SUM(walks)     AS bb,
+                SUM(hit_by_pitch) AS hbp,
                 SUM(strikeouts) AS so,
+                SUM(grounded_into_dp) AS gidp,
+                SUM(sacrifice_flies) AS sf,
+                SUM(reached_on_error) AS roe,
+                SUM(fielders_choice) AS fc,
                 SUM(errors)    AS e
             FROM $table
             WHERE game_id IN ($placeholders)
@@ -2966,9 +3068,14 @@ function baseball_get_batting_stats_for_games($game_ids) {
                 SUM(rbis)      AS rbi,
                 SUM(runs)      AS r,
                 SUM(walks)     AS bb,
+                SUM(hit_by_pitch) AS hbp,
                 SUM(strikeouts) AS so,
                 SUM(doubles)   AS d,
                 SUM(triples)   AS t,
+                SUM(grounded_into_dp) AS gidp,
+                SUM(sacrifice_flies) AS sf,
+                SUM(reached_on_error) AS roe,
+                SUM(fielders_choice) AS fc,
                 SUM(errors)    AS e
             FROM $table
             WHERE game_id IN ($placeholders)
@@ -3068,6 +3175,12 @@ function baseball_get_leaders_ajax() {
                     if (intval($row->ab) <= 0) { continue 2; }
                     $avg = intval($row->h) / intval($row->ab);
                     $leaders[] = array('id' => $pid, 'sort' => $avg, 'display' => number_format($avg, 3));
+                    break;
+                case 'obp':
+                    $denominator = intval($row->ab) + intval($row->bb) + intval($row->hbp) + intval($row->sf);
+                    if ($denominator <= 0) { continue 2; }
+                    $obp = (intval($row->h) + intval($row->bb) + intval($row->hbp)) / $denominator;
+                    $leaders[] = array('id' => $pid, 'sort' => $obp, 'display' => number_format($obp, 3));
                     break;
                 case 'hr':
                     $leaders[] = array('id' => $pid, 'sort' => intval($row->hr), 'display' => intval($row->hr));
@@ -3216,8 +3329,13 @@ function baseball_recalculate_single_player_stats($player_id) {
             SUM(home_runs) as total_hr,
             SUM(rbis) as total_rbi,
             SUM(walks) as total_bb,
+            SUM(hit_by_pitch) as total_hbp,
             SUM(strikeouts) as total_so,
-            SUM(stolen_bases) as total_sb
+            SUM(grounded_into_dp) as total_gidp,
+            SUM(sacrifice_flies) as total_sf,
+            SUM(reached_on_error) as total_roe,
+            SUM(fielders_choice) as total_fc,
+            SUM(errors) as total_e
         FROM $table_name 
         WHERE player_id = %d",
         $player_id
@@ -3229,16 +3347,17 @@ function baseball_recalculate_single_player_stats($player_id) {
     update_post_meta($player_id, '_home_runs', $stats->total_hr ?: 0);
     update_post_meta($player_id, '_rbis', $stats->total_rbi ?: 0);
     update_post_meta($player_id, '_walks', $stats->total_bb ?: 0);
+    update_post_meta($player_id, '_hit_by_pitch', $stats->total_hbp ?: 0);
     update_post_meta($player_id, '_strikeouts', $stats->total_so ?: 0);
-    update_post_meta($player_id, '_stolen_bases', $stats->total_sb ?: 0);
+    update_post_meta($player_id, '_grounded_into_dp', $stats->total_gidp ?: 0);
+    update_post_meta($player_id, '_sacrifice_flies', $stats->total_sf ?: 0);
+    update_post_meta($player_id, '_reached_on_error', $stats->total_roe ?: 0);
+    update_post_meta($player_id, '_fielders_choice', $stats->total_fc ?: 0);
+    update_post_meta($player_id, '_errors', $stats->total_e ?: 0);
     
     // Calculate batting average
-    if ($stats->total_ab > 0) {
-        $avg = number_format($stats->total_hits / $stats->total_ab, 3);
-        update_post_meta($player_id, '_batting_avg', $avg);
-    } else {
-        update_post_meta($player_id, '_batting_avg', '.000');
-    }
+    update_post_meta($player_id, '_batting_avg', baseball_format_rate($stats->total_hits, $stats->total_ab));
+    update_post_meta($player_id, '_on_base_percentage', baseball_calculate_obp($stats->total_hits, $stats->total_bb, $stats->total_hbp, $stats->total_ab, $stats->total_sf));
 }
 
 /**

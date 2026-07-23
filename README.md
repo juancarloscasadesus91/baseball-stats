@@ -14,7 +14,7 @@ Un tema completo de WordPress para gestionar estadísticas de baseball con una j
 ### Gestión de Estadísticas
 - ✅ **Estadísticas por Partido**: Ingresa estadísticas individuales de cada jugador por partido
 - ✅ **Cálculo Automático**: Las estadísticas acumuladas se calculan automáticamente
-- ✅ **Estadísticas de Bateo**: AB, H, HR, RBI, BB, SO, SB, AVG
+- ✅ **Estadísticas de Bateo**: AB, H, HR, RBI, BB, HBP, SO, GIDP, SF, ROE, FC, AVG, OBP
 - ✅ **Estadísticas de Pitcheo**: W, L, ERA, K
 - ✅ **Estadísticas de Equipos**: Victorias, derrotas, porcentaje, carreras
 - ✅ **Trazabilidad de Jugadores**: Sistema de cambio de equipos con historial completo
@@ -168,16 +168,42 @@ CREATE TABLE wp_baseball_game_stats (
     id bigint(20) AUTO_INCREMENT PRIMARY KEY,
     game_id bigint(20) NOT NULL,
     player_id bigint(20) NOT NULL,
+    team_id bigint(20) NOT NULL,
     at_bats int(11) DEFAULT 0,
     hits int(11) DEFAULT 0,
+    doubles int(11) DEFAULT 0,
+    triples int(11) DEFAULT 0,
     home_runs int(11) DEFAULT 0,
+    runs int(11) DEFAULT 0,
     rbis int(11) DEFAULT 0,
     walks int(11) DEFAULT 0,
+    hit_by_pitch int(11) DEFAULT 0,
     strikeouts int(11) DEFAULT 0,
-    stolen_bases int(11) DEFAULT 0,
+    grounded_into_dp int(11) DEFAULT 0,
+    sacrifice_flies int(11) DEFAULT 0,
+    reached_on_error int(11) DEFAULT 0,
+    fielders_choice int(11) DEFAULT 0,
+    errors int(11) DEFAULT 0,
     created_at datetime DEFAULT CURRENT_TIMESTAMP
 );
 ```
+
+### Porcentaje de Embasado (OBP)
+
+El tema calcula OBP con la fórmula oficial:
+
+```text
+OBP = (H + BB + HBP) / (AB + BB + HBP + SF)
+```
+
+`ROE` (embasado por error) y `FC` (fielder's choice / bola ocupada) se registran para trazabilidad, pero no aumentan el OBP.
+
+### Actualización de Producción
+
+Para una instalación existente:
+
+1. Ejecuta `php update-obp-stats-production.php` desde el directorio del tema para agregar las columnas faltantes.
+2. Ejecuta `php recalculate-obp-stats.php` desde el directorio del tema para recalcular acumulados históricos y OBP.
 
 ## 🎨 Personalización
 
