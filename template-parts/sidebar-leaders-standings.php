@@ -45,6 +45,10 @@ $sidebar_active_season_name = $sidebar_active_season_id ? get_the_title($sidebar
         <div class="leaders-filter-tabs">
             <button class="filter-tab active" data-stat="era">ERA</button>
             <button class="filter-tab" data-stat="wins">W</button>
+            <button class="filter-tab" data-stat="saves">SV</button>
+            <button class="filter-tab" data-stat="hits_allowed">H</button>
+            <button class="filter-tab" data-stat="walks_allowed">BB</button>
+            <button class="filter-tab" data-stat="runs_allowed">R</button>
             <button class="filter-tab" data-stat="so">K</button>
             <button class="filter-tab" data-stat="ip">IP</button>
         </div>
@@ -121,6 +125,10 @@ jQuery(document).ready(function($) {
         pitcheo: {
             era: { meta: '_era', order: 'ASC' },
             wins: { meta: '_pitching_wins', order: 'DESC' },
+            saves: { meta: '_pitching_saves', order: 'DESC' },
+            hits_allowed: { meta: '_pitching_hits', order: 'ASC' },
+            walks_allowed: { meta: '_pitching_walks', order: 'ASC' },
+            runs_allowed: { meta: '_pitching_runs', order: 'ASC' },
             so: { meta: '_pitching_strikeouts', order: 'DESC' },
             ip: { meta: '_innings_pitched', order: 'DESC' }
         }

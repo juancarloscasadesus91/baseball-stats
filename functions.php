@@ -3471,13 +3471,28 @@ function baseball_get_season_pitching_totals($game_ids) {
             }
             $pid = intval($p['player_id']);
             if (!isset($totals[$pid])) {
-                $totals[$pid] = array('ip' => 0, 'er' => 0, 'wins' => 0, 'so' => 0);
+                $totals[$pid] = array(
+                    'ip' => 0,
+                    'h' => 0,
+                    'r' => 0,
+                    'er' => 0,
+                    'bb' => 0,
+                    'so' => 0,
+                    'wins' => 0,
+                    'saves' => 0,
+                );
             }
             $totals[$pid]['ip'] += floatval($p['ip']);
+            $totals[$pid]['h'] += intval($p['h']);
+            $totals[$pid]['r'] += intval($p['r']);
             $totals[$pid]['er'] += intval($p['er']);
+            $totals[$pid]['bb'] += intval($p['bb']);
             $totals[$pid]['so'] += intval($p['so']);
-            if (isset($p['decision']) && $p['decision'] === 'W') {
+            $decision = isset($p['decision']) ? $p['decision'] : '';
+            if ($decision === 'W') {
                 $totals[$pid]['wins']++;
+            } elseif ($decision === 'S') {
+                $totals[$pid]['saves']++;
             }
         }
     }
@@ -3634,6 +3649,18 @@ function baseball_get_leaders_ajax() {
                     break;
                 case 'wins':
                     $leaders[] = array('id' => $pid, 'sort' => $tot['wins'], 'display' => intval($tot['wins']));
+                    break;
+                case 'saves':
+                    $leaders[] = array('id' => $pid, 'sort' => $tot['saves'], 'display' => intval($tot['saves']));
+                    break;
+                case 'hits_allowed':
+                    $leaders[] = array('id' => $pid, 'sort' => $tot['h'], 'display' => intval($tot['h']));
+                    break;
+                case 'walks_allowed':
+                    $leaders[] = array('id' => $pid, 'sort' => $tot['bb'], 'display' => intval($tot['bb']));
+                    break;
+                case 'runs_allowed':
+                    $leaders[] = array('id' => $pid, 'sort' => $tot['r'], 'display' => intval($tot['r']));
                     break;
                 case 'so':
                     $leaders[] = array('id' => $pid, 'sort' => $tot['so'], 'display' => intval($tot['so']));

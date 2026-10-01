@@ -154,6 +154,10 @@ get_header(); ?>
                         <div class="leaders-filter-tabs">
                             <button class="filter-tab active" data-stat="era">ERA</button>
                             <button class="filter-tab" data-stat="wins">W</button>
+                            <button class="filter-tab" data-stat="saves">SV</button>
+                            <button class="filter-tab" data-stat="hits_allowed">H</button>
+                            <button class="filter-tab" data-stat="walks_allowed">BB</button>
+                            <button class="filter-tab" data-stat="runs_allowed">R</button>
                             <button class="filter-tab" data-stat="so">K</button>
                             <button class="filter-tab" data-stat="ip">IP</button>
                         </div>
@@ -235,6 +239,10 @@ jQuery(document).ready(function($) {
         pitcheo: {
             era: { meta: '_era', order: 'ASC', label: 'ERA', default: '0.00' },
             wins: { meta: '_pitching_wins', order: 'DESC', label: 'W', default: '0' },
+            saves: { meta: '_pitching_saves', order: 'DESC', label: 'SV', default: '0' },
+            hits_allowed: { meta: '_pitching_hits', order: 'ASC', label: 'H', default: '0' },
+            walks_allowed: { meta: '_pitching_walks', order: 'ASC', label: 'BB', default: '0' },
+            runs_allowed: { meta: '_pitching_runs', order: 'ASC', label: 'R', default: '0' },
             so: { meta: '_pitching_strikeouts', order: 'DESC', label: 'K', default: '0' },
             ip: { meta: '_innings_pitched', order: 'DESC', label: 'IP', default: '0.0' }
         }
