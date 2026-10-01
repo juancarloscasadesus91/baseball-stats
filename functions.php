@@ -3673,7 +3673,7 @@ function baseball_get_leaders_ajax() {
     } else {
         $rows = baseball_get_season_player_batting_totals($game_ids);
         $max_ab = 0;
-        $rate_stats_with_ab_minimum = array('avg', 'slg', 'ops');
+        $rate_stats_with_ab_minimum = array('avg', 'obp', 'slg', 'ops');
 
         foreach ($rows as $row) {
             $max_ab = max($max_ab, intval($row->ab));
