@@ -3672,12 +3672,27 @@ function baseball_get_leaders_ajax() {
         }
     } else {
         $rows = baseball_get_season_player_batting_totals($game_ids);
+        $max_ab = 0;
+        $rate_stats_with_ab_minimum = array('avg', 'slg', 'ops');
+
+        foreach ($rows as $row) {
+            $max_ab = max($max_ab, intval($row->ab));
+        }
+
+        $minimum_ab = $max_ab > 0 ? ($max_ab / 2) : 0;
+
         foreach ($rows as $row) {
             $pid = intval($row->player_id);
+            $player_ab = intval($row->ab);
+
+            if (in_array($stat, $rate_stats_with_ab_minimum, true) && $player_ab < $minimum_ab) {
+                continue;
+            }
+
             switch ($stat) {
                 case 'avg':
-                    if (intval($row->ab) <= 0) { continue 2; }
-                    $avg = intval($row->h) / intval($row->ab);
+                    if ($player_ab <= 0) { continue 2; }
+                    $avg = intval($row->h) / $player_ab;
                     $leaders[] = array('id' => $pid, 'sort' => $avg, 'display' => number_format($avg, 3));
                     break;
                 case 'obp':
@@ -3687,13 +3702,13 @@ function baseball_get_leaders_ajax() {
                     $leaders[] = array('id' => $pid, 'sort' => $obp, 'display' => number_format($obp, 3));
                     break;
                 case 'slg':
-                    if (intval($row->ab) <= 0) { continue 2; }
+                    if ($player_ab <= 0) { continue 2; }
                     $slg = baseball_calculate_slg_value($row->h, $row->d, $row->t, $row->hr, $row->ab);
                     $leaders[] = array('id' => $pid, 'sort' => $slg, 'display' => number_format($slg, 3));
                     break;
                 case 'ops':
                     $obp_denominator = intval($row->ab) + intval($row->bb) + intval($row->hbp) + intval($row->sf);
-                    if ($obp_denominator <= 0 && intval($row->ab) <= 0) { continue 2; }
+                    if ($obp_denominator <= 0 && $player_ab <= 0) { continue 2; }
                     $ops = baseball_calculate_ops_value($row->h, $row->d, $row->t, $row->hr, $row->bb, $row->hbp, $row->ab, $row->sf);
                     $leaders[] = array('id' => $pid, 'sort' => $ops, 'display' => number_format($ops, 3));
                     break;
