@@ -25,6 +25,7 @@ $game_ids = get_posts(array(
 $team_batting_defaults = baseball_get_team_batting_defaults();
 $team_batting_stats = baseball_get_team_batting_stats_for_games($game_ids);
 $team_pitching_stats = baseball_get_team_pitching_stats_for_games($game_ids);
+$team_record_stats = baseball_get_team_records_for_games($game_ids);
 $comparison_batting_metrics = baseball_get_team_comparison_batting_metrics();
 $comparison_pitching_metrics = baseball_get_team_comparison_pitching_metrics();
 $standings = array();
@@ -56,7 +57,8 @@ $comparison_teams = array_map(function ($standing) {
 }, $standings);
 $comparison_team_a = !empty($comparison_teams) ? intval($comparison_teams[0]->ID) : 0;
 $comparison_team_b = isset($comparison_teams[1]) ? intval($comparison_teams[1]->ID) : $comparison_team_a;
-$comparison_data = baseball_get_team_comparison_data($comparison_teams, $team_batting_stats, $team_pitching_stats);
+$comparison_data = baseball_get_team_comparison_data($comparison_teams, $team_batting_stats, $team_pitching_stats, $team_record_stats);
+$comparison_matchup_data = baseball_get_team_matchup_comparison_data($comparison_teams, $game_ids);
 ?>
 
 <main class="site-content">
@@ -179,6 +181,11 @@ $comparison_data = baseball_get_team_comparison_data($comparison_teams, $team_ba
                                 </label>
                             </div>
 
+                            <label class="team-comparison-toggle">
+                                <input type="checkbox" id="comparison-head-to-head">
+                                <span>Enfrentamiento directo</span>
+                            </label>
+
                             <div class="players-tabs team-comparison-tabs">
                                 <button class="players-tab active" data-comparison-tab="comparison-batting">Bateo</button>
                                 <button class="players-tab" data-comparison-tab="comparison-pitching">Pitcheo</button>
@@ -255,16 +262,36 @@ $comparison_data = baseball_get_team_comparison_data($comparison_teams, $team_ba
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     var teamComparisonData = <?php echo wp_json_encode($comparison_data); ?>;
+    var teamComparisonMatchups = <?php echo wp_json_encode($comparison_matchup_data); ?>;
     var comparisonTeamA = document.getElementById('comparison-team-a');
     var comparisonTeamB = document.getElementById('comparison-team-b');
+    var comparisonHeadToHead = document.getElementById('comparison-head-to-head');
 
-    function getComparisonValue(teamId, group, metric) {
-        if (!teamComparisonData[teamId] || !teamComparisonData[teamId][group]) {
+    function getComparisonGroup(teamId, opponentId, group) {
+        if (
+            comparisonHeadToHead &&
+            comparisonHeadToHead.checked &&
+            teamComparisonMatchups[teamId] &&
+            teamComparisonMatchups[teamId][opponentId] &&
+            teamComparisonMatchups[teamId][opponentId][group]
+        ) {
+            return teamComparisonMatchups[teamId][opponentId][group];
+        }
+
+        return teamComparisonData[teamId] && teamComparisonData[teamId][group]
+            ? teamComparisonData[teamId][group]
+            : null;
+    }
+
+    function getComparisonValue(teamId, opponentId, group, metric) {
+        var stats = getComparisonGroup(teamId, opponentId, group);
+
+        if (!stats) {
             return '0';
         }
 
-        return teamComparisonData[teamId][group][metric] !== undefined
-            ? String(teamComparisonData[teamId][group][metric])
+        return stats[metric] !== undefined
+            ? String(stats[metric])
             : '0';
     }
 
@@ -301,8 +328,8 @@ document.addEventListener('DOMContentLoaded', function () {
             table.querySelectorAll('tbody tr[data-metric]').forEach(function (row) {
                 var metric = row.getAttribute('data-metric');
                 var higherIsBetter = row.getAttribute('data-higher') === '1';
-                var valueA = getComparisonValue(teamA, group, metric);
-                var valueB = getComparisonValue(teamB, group, metric);
+                var valueA = getComparisonValue(teamA, teamB, group, metric);
+                var valueB = getComparisonValue(teamB, teamA, group, metric);
                 var numberA = getComparisonNumber(valueA);
                 var numberB = getComparisonNumber(valueB);
                 var cellA = row.querySelector('[data-side="a"]');
@@ -340,6 +367,9 @@ document.addEventListener('DOMContentLoaded', function () {
     if (comparisonTeamA && comparisonTeamB) {
         comparisonTeamA.addEventListener('change', updateTeamComparison);
         comparisonTeamB.addEventListener('change', updateTeamComparison);
+        if (comparisonHeadToHead) {
+            comparisonHeadToHead.addEventListener('change', updateTeamComparison);
+        }
         updateTeamComparison();
     }
 

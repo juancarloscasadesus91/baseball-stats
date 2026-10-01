@@ -2461,6 +2461,8 @@ function baseball_get_team_stats($team_id, $tournament_id = null) {
 function baseball_get_team_batting_defaults() {
     return array(
         'games' => 0,
+        'wins' => 0,
+        'losses' => 0,
         'ab' => 0,
         'avg' => '.000',
         'h' => 0,
@@ -2501,6 +2503,8 @@ function baseball_get_team_pitching_defaults() {
 function baseball_get_team_comparison_batting_metrics() {
     return array(
         array('key' => 'games', 'label' => 'J', 'description' => 'Juegos', 'higher' => true),
+        array('key' => 'wins', 'label' => 'G', 'description' => 'Victorias', 'higher' => true),
+        array('key' => 'losses', 'label' => 'P', 'description' => 'Derrotas', 'higher' => false),
         array('key' => 'ab', 'label' => 'AB', 'description' => 'Turnos al bate', 'higher' => true),
         array('key' => 'avg', 'label' => 'AVG', 'description' => 'Promedio de bateo', 'higher' => true),
         array('key' => 'obp', 'label' => 'OBP', 'description' => 'Porcentaje de embasado', 'higher' => true),
@@ -2666,7 +2670,99 @@ function baseball_get_team_pitching_stats_for_games($game_ids) {
     return $stats;
 }
 
-function baseball_get_team_comparison_data($teams, $team_batting_stats, $team_pitching_stats) {
+function baseball_get_team_records_for_games($game_ids) {
+    if (empty($game_ids)) {
+        return array();
+    }
+
+    $records = array();
+
+    foreach ($game_ids as $game_id) {
+        $home_team = intval(get_post_meta($game_id, '_game_home_team', true));
+        $away_team = intval(get_post_meta($game_id, '_game_away_team', true));
+        $home_score = get_post_meta($game_id, '_game_home_score', true);
+        $away_score = get_post_meta($game_id, '_game_away_score', true);
+
+        if (!$home_team || !$away_team || $home_score === '' || $away_score === '') {
+            continue;
+        }
+
+        $home_score = intval($home_score);
+        $away_score = intval($away_score);
+
+        foreach (array($home_team, $away_team) as $team_id) {
+            if (!isset($records[$team_id])) {
+                $records[$team_id] = array(
+                    'games' => 0,
+                    'wins' => 0,
+                    'losses' => 0,
+                    'runs_scored' => 0,
+                    'runs_allowed' => 0,
+                    'win_pct' => '.000',
+                );
+            }
+        }
+
+        $records[$home_team]['games']++;
+        $records[$away_team]['games']++;
+        $records[$home_team]['runs_scored'] += $home_score;
+        $records[$home_team]['runs_allowed'] += $away_score;
+        $records[$away_team]['runs_scored'] += $away_score;
+        $records[$away_team]['runs_allowed'] += $home_score;
+
+        if ($home_score > $away_score) {
+            $records[$home_team]['wins']++;
+            $records[$away_team]['losses']++;
+        } elseif ($away_score > $home_score) {
+            $records[$away_team]['wins']++;
+            $records[$home_team]['losses']++;
+        }
+    }
+
+    foreach ($records as $team_id => $record) {
+        $decided_games = $record['wins'] + $record['losses'];
+        $records[$team_id]['win_pct'] = $decided_games > 0 ? number_format($record['wins'] / $decided_games, 3) : '.000';
+    }
+
+    return $records;
+}
+
+function baseball_get_team_matchup_game_ids($game_ids, $team_a_id, $team_b_id) {
+    if (empty($game_ids) || !$team_a_id || !$team_b_id || $team_a_id === $team_b_id) {
+        return array();
+    }
+
+    $matchup_game_ids = array();
+
+    foreach ($game_ids as $game_id) {
+        $home_team = intval(get_post_meta($game_id, '_game_home_team', true));
+        $away_team = intval(get_post_meta($game_id, '_game_away_team', true));
+
+        if (
+            ($home_team === $team_a_id && $away_team === $team_b_id)
+            || ($home_team === $team_b_id && $away_team === $team_a_id)
+        ) {
+            $matchup_game_ids[] = intval($game_id);
+        }
+    }
+
+    return $matchup_game_ids;
+}
+
+function baseball_merge_team_batting_comparison_stats($batting_stats, $record_stats) {
+    $defaults = baseball_get_team_batting_defaults();
+    $batting = array_merge($defaults, $batting_stats ?: array());
+
+    if (!empty($record_stats)) {
+        $batting['games'] = max(intval($batting['games']), intval($record_stats['games'] ?? 0));
+        $batting['wins'] = intval($record_stats['wins'] ?? 0);
+        $batting['losses'] = intval($record_stats['losses'] ?? 0);
+    }
+
+    return $batting;
+}
+
+function baseball_get_team_comparison_data($teams, $team_batting_stats, $team_pitching_stats, $team_record_stats = array()) {
     $batting_defaults = baseball_get_team_batting_defaults();
     $pitching_defaults = baseball_get_team_pitching_defaults();
     $comparison_data = array();
@@ -2675,12 +2771,54 @@ function baseball_get_team_comparison_data($teams, $team_batting_stats, $team_pi
         $team_id = intval($team->ID);
         $comparison_data[$team_id] = array(
             'name' => $team->post_title,
-            'batting' => array_merge($batting_defaults, isset($team_batting_stats[$team_id]) ? $team_batting_stats[$team_id] : array()),
+            'batting' => baseball_merge_team_batting_comparison_stats(
+                isset($team_batting_stats[$team_id]) ? $team_batting_stats[$team_id] : $batting_defaults,
+                isset($team_record_stats[$team_id]) ? $team_record_stats[$team_id] : array()
+            ),
             'pitching' => array_merge($pitching_defaults, isset($team_pitching_stats[$team_id]) ? $team_pitching_stats[$team_id] : array()),
         );
     }
 
     return $comparison_data;
+}
+
+function baseball_get_team_matchup_comparison_data($teams, $game_ids) {
+    $matchups = array();
+
+    foreach ($teams as $team) {
+        $team_id = intval($team->ID);
+        $matchups[$team_id] = array();
+    }
+
+    foreach ($teams as $team) {
+        $team_id = intval($team->ID);
+
+        foreach ($teams as $opponent) {
+            $opponent_id = intval($opponent->ID);
+
+            if ($team_id === $opponent_id) {
+                continue;
+            }
+
+            $matchup_game_ids = baseball_get_team_matchup_game_ids($game_ids, $team_id, $opponent_id);
+            $matchup_batting = baseball_get_team_batting_stats_for_games($matchup_game_ids);
+            $matchup_pitching = baseball_get_team_pitching_stats_for_games($matchup_game_ids);
+            $matchup_records = baseball_get_team_records_for_games($matchup_game_ids);
+
+            $matchups[$team_id][$opponent_id] = array(
+                'batting' => baseball_merge_team_batting_comparison_stats(
+                    isset($matchup_batting[$team_id]) ? $matchup_batting[$team_id] : array(),
+                    isset($matchup_records[$team_id]) ? $matchup_records[$team_id] : array()
+                ),
+                'pitching' => array_merge(
+                    baseball_get_team_pitching_defaults(),
+                    isset($matchup_pitching[$team_id]) ? $matchup_pitching[$team_id] : array()
+                ),
+            );
+        }
+    }
+
+    return $matchups;
 }
 
 /**

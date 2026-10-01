@@ -1450,6 +1450,24 @@ body {
     padding: 10px 0 !important;
 }
 
+.team-comparison-toggle {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    margin: -8px 0 20px !important;
+    color: var(--text-color) !important;
+    font-size: 0.9rem !important;
+    font-weight: 700 !important;
+    cursor: pointer !important;
+}
+
+.team-comparison-toggle input {
+    width: 16px !important;
+    height: 16px !important;
+    accent-color: var(--primary-color) !important;
+    cursor: pointer !important;
+}
+
 .team-comparison-tabs {
     margin-bottom: 18px !important;
 }

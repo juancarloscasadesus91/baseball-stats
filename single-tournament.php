@@ -196,50 +196,11 @@ get_header();
         $comparison_teams = array_values($teams);
         $comparison_team_a = !empty($comparison_teams) ? intval($comparison_teams[0]->ID) : 0;
         $comparison_team_b = isset($comparison_teams[1]) ? intval($comparison_teams[1]->ID) : $comparison_team_a;
-        $comparison_batting_metrics = array(
-            array('key' => 'games', 'label' => 'J', 'description' => 'Juegos', 'higher' => true),
-            array('key' => 'ab', 'label' => 'AB', 'description' => 'Turnos al bate', 'higher' => true),
-            array('key' => 'avg', 'label' => 'AVG', 'description' => 'Promedio de bateo', 'higher' => true),
-            array('key' => 'obp', 'label' => 'OBP', 'description' => 'Porcentaje de embasado', 'higher' => true),
-            array('key' => 'slg', 'label' => 'SLG', 'description' => 'Slugging', 'higher' => true),
-            array('key' => 'ops', 'label' => 'OPS', 'description' => 'OBP + SLG', 'higher' => true),
-            array('key' => 'h', 'label' => 'H', 'description' => 'Hits', 'higher' => true),
-            array('key' => 'hr', 'label' => 'HR', 'description' => 'Jonrones', 'higher' => true),
-            array('key' => 'rbi', 'label' => 'RBI', 'description' => 'Carreras impulsadas', 'higher' => true),
-            array('key' => 'r', 'label' => 'R', 'description' => 'Carreras anotadas', 'higher' => true),
-            array('key' => 'bb', 'label' => 'BB', 'description' => 'Bases por bolas', 'higher' => true),
-            array('key' => 'hbp', 'label' => 'HBP', 'description' => 'Golpeados', 'higher' => true),
-            array('key' => 'so', 'label' => 'SO', 'description' => 'Ponches recibidos', 'higher' => false),
-            array('key' => 'gidp', 'label' => 'GIDP', 'description' => 'Doble play', 'higher' => false),
-            array('key' => 'sf', 'label' => 'SF', 'description' => 'Fly de sacrificio', 'higher' => true),
-            array('key' => 'roe', 'label' => 'ROE', 'description' => 'Embasado por error', 'higher' => true),
-            array('key' => 'fc', 'label' => 'FC', 'description' => 'Bola ocupada', 'higher' => true),
-            array('key' => 'd', 'label' => '2B', 'description' => 'Dobles', 'higher' => true),
-            array('key' => 't', 'label' => '3B', 'description' => 'Triples', 'higher' => true),
-            array('key' => 'e', 'label' => 'E', 'description' => 'Errores', 'higher' => false),
-        );
-        $comparison_pitching_metrics = array(
-            array('key' => 'era', 'label' => 'ERA', 'description' => 'Efectividad', 'higher' => false),
-            array('key' => 'wins', 'label' => 'W', 'description' => 'Victorias', 'higher' => true),
-            array('key' => 'losses', 'label' => 'L', 'description' => 'Derrotas', 'higher' => false),
-            array('key' => 'saves', 'label' => 'SV', 'description' => 'Salvados', 'higher' => true),
-            array('key' => 'ip', 'label' => 'IP', 'description' => 'Innings lanzados', 'higher' => true),
-            array('key' => 'h', 'label' => 'H', 'description' => 'Hits permitidos', 'higher' => false),
-            array('key' => 'r', 'label' => 'R', 'description' => 'Carreras permitidas', 'higher' => false),
-            array('key' => 'er', 'label' => 'ER', 'description' => 'Carreras limpias', 'higher' => false),
-            array('key' => 'bb', 'label' => 'BB', 'description' => 'Bases por bolas', 'higher' => false),
-            array('key' => 'so', 'label' => 'SO', 'description' => 'Ponches', 'higher' => true),
-        );
-        $comparison_data = array();
-
-        foreach ($comparison_teams as $team) {
-            $team_id = intval($team->ID);
-            $comparison_data[$team_id] = array(
-                'name' => $team->post_title,
-                'batting' => array_merge($team_batting_defaults, isset($team_batting_stats[$team_id]) ? $team_batting_stats[$team_id] : array()),
-                'pitching' => array_merge($team_pitching_defaults, isset($team_pitching_stats[$team_id]) ? $team_pitching_stats[$team_id] : array()),
-            );
-        }
+        $comparison_batting_metrics = baseball_get_team_comparison_batting_metrics();
+        $comparison_pitching_metrics = baseball_get_team_comparison_pitching_metrics();
+        $team_record_stats = baseball_get_team_records_for_games($tournament_game_ids);
+        $comparison_data = baseball_get_team_comparison_data($comparison_teams, $team_batting_stats, $team_pitching_stats, $team_record_stats);
+        $comparison_matchup_data = baseball_get_team_matchup_comparison_data($comparison_teams, $tournament_game_ids);
         
     ?>
     
@@ -409,6 +370,11 @@ get_header();
                                 </select>
                             </label>
                         </div>
+
+                        <label class="team-comparison-toggle">
+                            <input type="checkbox" id="comparison-head-to-head">
+                            <span>Enfrentamiento directo</span>
+                        </label>
 
                         <div class="players-tabs team-comparison-tabs">
                             <button class="players-tab active" data-comparison-tab="comparison-batting">Bateo</button>
@@ -769,16 +735,36 @@ get_header();
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     var teamComparisonData = <?php echo wp_json_encode($comparison_data); ?>;
+    var teamComparisonMatchups = <?php echo wp_json_encode($comparison_matchup_data); ?>;
     var comparisonTeamA = document.getElementById('comparison-team-a');
     var comparisonTeamB = document.getElementById('comparison-team-b');
+    var comparisonHeadToHead = document.getElementById('comparison-head-to-head');
 
-    function getComparisonValue(teamId, group, metric) {
-        if (!teamComparisonData[teamId] || !teamComparisonData[teamId][group]) {
+    function getComparisonGroup(teamId, opponentId, group) {
+        if (
+            comparisonHeadToHead &&
+            comparisonHeadToHead.checked &&
+            teamComparisonMatchups[teamId] &&
+            teamComparisonMatchups[teamId][opponentId] &&
+            teamComparisonMatchups[teamId][opponentId][group]
+        ) {
+            return teamComparisonMatchups[teamId][opponentId][group];
+        }
+
+        return teamComparisonData[teamId] && teamComparisonData[teamId][group]
+            ? teamComparisonData[teamId][group]
+            : null;
+    }
+
+    function getComparisonValue(teamId, opponentId, group, metric) {
+        var stats = getComparisonGroup(teamId, opponentId, group);
+
+        if (!stats) {
             return '0';
         }
 
-        return teamComparisonData[teamId][group][metric] !== undefined
-            ? String(teamComparisonData[teamId][group][metric])
+        return stats[metric] !== undefined
+            ? String(stats[metric])
             : '0';
     }
 
@@ -815,8 +801,8 @@ document.addEventListener('DOMContentLoaded', function () {
             table.querySelectorAll('tbody tr[data-metric]').forEach(function (row) {
                 var metric = row.getAttribute('data-metric');
                 var higherIsBetter = row.getAttribute('data-higher') === '1';
-                var valueA = getComparisonValue(teamA, group, metric);
-                var valueB = getComparisonValue(teamB, group, metric);
+                var valueA = getComparisonValue(teamA, teamB, group, metric);
+                var valueB = getComparisonValue(teamB, teamA, group, metric);
                 var numberA = getComparisonNumber(valueA);
                 var numberB = getComparisonNumber(valueB);
                 var cellA = row.querySelector('[data-side="a"]');
@@ -854,6 +840,9 @@ document.addEventListener('DOMContentLoaded', function () {
     if (comparisonTeamA && comparisonTeamB) {
         comparisonTeamA.addEventListener('change', updateTeamComparison);
         comparisonTeamB.addEventListener('change', updateTeamComparison);
+        if (comparisonHeadToHead) {
+            comparisonHeadToHead.addEventListener('change', updateTeamComparison);
+        }
         updateTeamComparison();
     }
 
