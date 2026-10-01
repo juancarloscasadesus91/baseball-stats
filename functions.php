@@ -51,6 +51,58 @@ function baseball_create_tables() {
 }
 add_action('after_switch_theme', 'baseball_create_tables');
 
+/**
+ * Keep the custom stats table in sync when the theme is already active.
+ */
+function baseball_ensure_game_stats_schema() {
+    global $wpdb;
+
+    $table_name = $wpdb->prefix . 'baseball_game_stats';
+    $table_exists = $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $table_name));
+
+    if (!$table_exists) {
+        baseball_create_tables();
+        return;
+    }
+
+    $existing_columns = $wpdb->get_col("SHOW COLUMNS FROM $table_name", 0);
+    $existing_columns = array_fill_keys($existing_columns ?: array(), true);
+
+    $columns = array(
+        'doubles' => array('definition' => 'int(11) DEFAULT 0', 'after' => 'hits'),
+        'triples' => array('definition' => 'int(11) DEFAULT 0', 'after' => 'doubles'),
+        'hit_by_pitch' => array('definition' => 'int(11) DEFAULT 0', 'after' => 'walks'),
+        'grounded_into_dp' => array('definition' => 'int(11) DEFAULT 0', 'after' => 'strikeouts'),
+        'sacrifice_flies' => array('definition' => 'int(11) DEFAULT 0', 'after' => 'grounded_into_dp'),
+        'reached_on_error' => array('definition' => 'int(11) DEFAULT 0', 'after' => 'sacrifice_flies'),
+        'fielders_choice' => array('definition' => 'int(11) DEFAULT 0', 'after' => 'reached_on_error'),
+        'errors' => array('definition' => 'int(11) DEFAULT 0', 'after' => 'fielders_choice'),
+    );
+
+    foreach ($columns as $column => $schema) {
+        if (isset($existing_columns[$column])) {
+            continue;
+        }
+
+        $after = isset($existing_columns[$schema['after']]) ? " AFTER {$schema['after']}" : '';
+        $wpdb->query("ALTER TABLE $table_name ADD COLUMN $column {$schema['definition']}$after");
+        $existing_columns[$column] = true;
+    }
+}
+
+function baseball_maybe_update_game_stats_schema() {
+    $schema_version = '2026-10-01-obp-fields';
+
+    if (get_option('baseball_game_stats_schema_version') === $schema_version) {
+        return;
+    }
+
+    baseball_ensure_game_stats_schema();
+    update_option('baseball_game_stats_schema_version', $schema_version);
+}
+add_action('init', 'baseball_maybe_update_game_stats_schema');
+add_action('after_switch_theme', 'baseball_ensure_game_stats_schema');
+
 function baseball_format_rate($numerator, $denominator) {
     return $denominator > 0 ? number_format($numerator / $denominator, 3) : '.000';
 }
@@ -147,8 +199,8 @@ add_action('after_setup_theme', 'baseball_stats_setup');
  * Enqueue scripts and styles
  */
 function baseball_stats_scripts() {
-    wp_enqueue_style('baseball-stats-style', get_stylesheet_uri(), array(), '1.0.0');
-    wp_enqueue_script('baseball-stats-script', get_template_directory_uri() . '/js/main.js', array('jquery'), '1.0.0', true);
+    wp_enqueue_style('baseball-stats-style', get_stylesheet_uri(), array(), filemtime(get_stylesheet_directory() . '/style.css'));
+    wp_enqueue_script('baseball-stats-script', get_template_directory_uri() . '/js/main.js', array('jquery'), filemtime(get_template_directory() . '/js/main.js'), true);
 }
 add_action('wp_enqueue_scripts', 'baseball_stats_scripts');
 
@@ -2404,6 +2456,231 @@ function baseball_get_team_stats($team_id, $tournament_id = null) {
         'runs_allowed' => $runs_allowed,
         'win_pct' => ($wins + $losses) > 0 ? number_format($wins / ($wins + $losses), 3) : '.000'
     );
+}
+
+function baseball_get_team_batting_defaults() {
+    return array(
+        'games' => 0,
+        'ab' => 0,
+        'avg' => '.000',
+        'h' => 0,
+        'hr' => 0,
+        'rbi' => 0,
+        'r' => 0,
+        'd' => 0,
+        't' => 0,
+        'bb' => 0,
+        'hbp' => 0,
+        'obp' => '.000',
+        'slg' => '.000',
+        'ops' => '.000',
+        'so' => 0,
+        'gidp' => 0,
+        'sf' => 0,
+        'roe' => 0,
+        'fc' => 0,
+        'e' => 0,
+    );
+}
+
+function baseball_get_team_pitching_defaults() {
+    return array(
+        'era' => '0.00',
+        'wins' => 0,
+        'losses' => 0,
+        'saves' => 0,
+        'ip' => 0,
+        'h' => 0,
+        'r' => 0,
+        'er' => 0,
+        'bb' => 0,
+        'so' => 0,
+    );
+}
+
+function baseball_get_team_comparison_batting_metrics() {
+    return array(
+        array('key' => 'games', 'label' => 'J', 'description' => 'Juegos', 'higher' => true),
+        array('key' => 'ab', 'label' => 'AB', 'description' => 'Turnos al bate', 'higher' => true),
+        array('key' => 'avg', 'label' => 'AVG', 'description' => 'Promedio de bateo', 'higher' => true),
+        array('key' => 'obp', 'label' => 'OBP', 'description' => 'Porcentaje de embasado', 'higher' => true),
+        array('key' => 'slg', 'label' => 'SLG', 'description' => 'Slugging', 'higher' => true),
+        array('key' => 'ops', 'label' => 'OPS', 'description' => 'OBP + SLG', 'higher' => true),
+        array('key' => 'h', 'label' => 'H', 'description' => 'Hits', 'higher' => true),
+        array('key' => 'hr', 'label' => 'HR', 'description' => 'Jonrones', 'higher' => true),
+        array('key' => 'rbi', 'label' => 'RBI', 'description' => 'Carreras impulsadas', 'higher' => true),
+        array('key' => 'r', 'label' => 'R', 'description' => 'Carreras anotadas', 'higher' => true),
+        array('key' => 'bb', 'label' => 'BB', 'description' => 'Bases por bolas', 'higher' => true),
+        array('key' => 'hbp', 'label' => 'HBP', 'description' => 'Golpeados', 'higher' => true),
+        array('key' => 'so', 'label' => 'SO', 'description' => 'Ponches recibidos', 'higher' => false),
+        array('key' => 'gidp', 'label' => 'GIDP', 'description' => 'Doble play', 'higher' => false),
+        array('key' => 'sf', 'label' => 'SF', 'description' => 'Fly de sacrificio', 'higher' => true),
+        array('key' => 'roe', 'label' => 'ROE', 'description' => 'Embasado por error', 'higher' => true),
+        array('key' => 'fc', 'label' => 'FC', 'description' => 'Bola ocupada', 'higher' => true),
+        array('key' => 'd', 'label' => '2B', 'description' => 'Dobles', 'higher' => true),
+        array('key' => 't', 'label' => '3B', 'description' => 'Triples', 'higher' => true),
+        array('key' => 'e', 'label' => 'E', 'description' => 'Errores', 'higher' => false),
+    );
+}
+
+function baseball_get_team_comparison_pitching_metrics() {
+    return array(
+        array('key' => 'era', 'label' => 'ERA', 'description' => 'Efectividad', 'higher' => false),
+        array('key' => 'wins', 'label' => 'W', 'description' => 'Victorias', 'higher' => true),
+        array('key' => 'losses', 'label' => 'L', 'description' => 'Derrotas', 'higher' => false),
+        array('key' => 'saves', 'label' => 'SV', 'description' => 'Salvados', 'higher' => true),
+        array('key' => 'ip', 'label' => 'IP', 'description' => 'Innings lanzados', 'higher' => true),
+        array('key' => 'h', 'label' => 'H', 'description' => 'Hits permitidos', 'higher' => false),
+        array('key' => 'r', 'label' => 'R', 'description' => 'Carreras permitidas', 'higher' => false),
+        array('key' => 'er', 'label' => 'ER', 'description' => 'Carreras limpias', 'higher' => false),
+        array('key' => 'bb', 'label' => 'BB', 'description' => 'Bases por bolas', 'higher' => false),
+        array('key' => 'so', 'label' => 'SO', 'description' => 'Ponches', 'higher' => true),
+    );
+}
+
+function baseball_get_team_batting_stats_for_games($game_ids) {
+    global $wpdb;
+
+    if (empty($game_ids)) {
+        return array();
+    }
+
+    $stats_table = $wpdb->prefix . 'baseball_game_stats';
+    $game_placeholders = implode(',', array_fill(0, count($game_ids), '%d'));
+    $rows = $wpdb->get_results($wpdb->prepare(
+        "SELECT team_id,
+            COUNT(DISTINCT game_id) AS games,
+            SUM(at_bats) AS ab,
+            SUM(hits) AS h,
+            SUM(home_runs) AS hr,
+            SUM(rbis) AS rbi,
+            SUM(runs) AS r,
+            SUM(doubles) AS d,
+            SUM(triples) AS t,
+            SUM(walks) AS bb,
+            SUM(hit_by_pitch) AS hbp,
+            SUM(strikeouts) AS so,
+            SUM(grounded_into_dp) AS gidp,
+            SUM(sacrifice_flies) AS sf,
+            SUM(reached_on_error) AS roe,
+            SUM(fielders_choice) AS fc,
+            SUM(errors) AS e
+        FROM $stats_table
+        WHERE game_id IN ($game_placeholders)
+        GROUP BY team_id",
+        array_map('intval', $game_ids)
+    ));
+
+    $stats = array();
+    foreach ($rows as $row) {
+        $team_id = intval($row->team_id);
+        $stats[$team_id] = array(
+            'games' => intval($row->games),
+            'ab' => intval($row->ab),
+            'avg' => baseball_format_rate(intval($row->h), intval($row->ab)),
+            'h' => intval($row->h),
+            'hr' => intval($row->hr),
+            'rbi' => intval($row->rbi),
+            'r' => intval($row->r),
+            'd' => intval($row->d),
+            't' => intval($row->t),
+            'bb' => intval($row->bb),
+            'hbp' => intval($row->hbp),
+            'obp' => baseball_calculate_obp($row->h, $row->bb, $row->hbp, $row->ab, $row->sf),
+            'slg' => baseball_calculate_slg($row->h, $row->d, $row->t, $row->hr, $row->ab),
+            'ops' => baseball_calculate_ops($row->h, $row->d, $row->t, $row->hr, $row->bb, $row->hbp, $row->ab, $row->sf),
+            'so' => intval($row->so),
+            'gidp' => intval($row->gidp),
+            'sf' => intval($row->sf),
+            'roe' => intval($row->roe),
+            'fc' => intval($row->fc),
+            'e' => intval($row->e),
+        );
+    }
+
+    return $stats;
+}
+
+function baseball_get_team_pitching_stats_for_games($game_ids) {
+    if (empty($game_ids)) {
+        return array();
+    }
+
+    $defaults = baseball_get_team_pitching_defaults();
+    $stats = array();
+
+    foreach ($game_ids as $game_id) {
+        $home_team_id = intval(get_post_meta($game_id, '_game_home_team', true));
+        $away_team_id = intval(get_post_meta($game_id, '_game_away_team', true));
+        $home_pitchers = get_post_meta($game_id, '_game_home_pitchers', true) ?: array();
+        $away_pitchers = get_post_meta($game_id, '_game_away_pitchers', true) ?: array();
+
+        if (!is_array($home_pitchers)) {
+            $home_pitchers = array();
+        }
+        if (!is_array($away_pitchers)) {
+            $away_pitchers = array();
+        }
+
+        $pitching_groups = array(
+            $home_team_id => $home_pitchers,
+            $away_team_id => $away_pitchers,
+        );
+
+        foreach ($pitching_groups as $team_id => $pitchers) {
+            if (!$team_id) {
+                continue;
+            }
+
+            if (!isset($stats[$team_id])) {
+                $stats[$team_id] = $defaults;
+            }
+
+            foreach ($pitchers as $pitcher) {
+                $stats[$team_id]['ip'] += floatval($pitcher['ip'] ?? 0);
+                $stats[$team_id]['h'] += intval($pitcher['h'] ?? 0);
+                $stats[$team_id]['r'] += intval($pitcher['r'] ?? 0);
+                $stats[$team_id]['er'] += intval($pitcher['er'] ?? 0);
+                $stats[$team_id]['bb'] += intval($pitcher['bb'] ?? 0);
+                $stats[$team_id]['so'] += intval($pitcher['so'] ?? 0);
+
+                $decision = isset($pitcher['decision']) ? $pitcher['decision'] : '';
+                if ($decision === 'W') {
+                    $stats[$team_id]['wins']++;
+                } elseif ($decision === 'L') {
+                    $stats[$team_id]['losses']++;
+                } elseif ($decision === 'S') {
+                    $stats[$team_id]['saves']++;
+                }
+            }
+        }
+    }
+
+    foreach ($stats as $team_id => $pitching_stats) {
+        $stats[$team_id]['era'] = $pitching_stats['ip'] > 0
+            ? number_format(($pitching_stats['er'] * 9) / $pitching_stats['ip'], 2)
+            : '0.00';
+        $stats[$team_id]['ip'] = number_format($pitching_stats['ip'], 1);
+    }
+
+    return $stats;
+}
+
+function baseball_get_team_comparison_data($teams, $team_batting_stats, $team_pitching_stats) {
+    $batting_defaults = baseball_get_team_batting_defaults();
+    $pitching_defaults = baseball_get_team_pitching_defaults();
+    $comparison_data = array();
+
+    foreach ($teams as $team) {
+        $team_id = intval($team->ID);
+        $comparison_data[$team_id] = array(
+            'name' => $team->post_title,
+            'batting' => array_merge($batting_defaults, isset($team_batting_stats[$team_id]) ? $team_batting_stats[$team_id] : array()),
+            'pitching' => array_merge($pitching_defaults, isset($team_pitching_stats[$team_id]) ? $team_pitching_stats[$team_id] : array()),
+        );
+    }
+
+    return $comparison_data;
 }
 
 /**

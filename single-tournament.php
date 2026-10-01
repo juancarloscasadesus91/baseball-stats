@@ -54,6 +54,192 @@ get_header();
                 'order' => 'ASC'
             ));
         }
+
+        $team_batting_defaults = array(
+            'games' => 0,
+            'ab' => 0,
+            'avg' => '.000',
+            'h' => 0,
+            'hr' => 0,
+            'rbi' => 0,
+            'r' => 0,
+            'd' => 0,
+            't' => 0,
+            'bb' => 0,
+            'hbp' => 0,
+            'obp' => '.000',
+            'slg' => '.000',
+            'ops' => '.000',
+            'so' => 0,
+            'gidp' => 0,
+            'sf' => 0,
+            'roe' => 0,
+            'fc' => 0,
+            'e' => 0,
+        );
+        $team_batting_stats = array();
+        $team_pitching_defaults = array(
+            'era' => '0.00',
+            'wins' => 0,
+            'losses' => 0,
+            'saves' => 0,
+            'ip' => 0,
+            'h' => 0,
+            'r' => 0,
+            'er' => 0,
+            'bb' => 0,
+            'so' => 0,
+        );
+        $team_pitching_stats = array();
+
+        if (!empty($tournament_game_ids)) {
+            global $wpdb;
+
+            $stats_table = $wpdb->prefix . 'baseball_game_stats';
+            $game_placeholders = implode(',', array_fill(0, count($tournament_game_ids), '%d'));
+            $team_batting_rows = $wpdb->get_results($wpdb->prepare(
+                "SELECT team_id,
+                    COUNT(DISTINCT game_id) AS games,
+                    SUM(at_bats) AS ab,
+                    SUM(hits) AS h,
+                    SUM(home_runs) AS hr,
+                    SUM(rbis) AS rbi,
+                    SUM(runs) AS r,
+                    SUM(doubles) AS d,
+                    SUM(triples) AS t,
+                    SUM(walks) AS bb,
+                    SUM(hit_by_pitch) AS hbp,
+                    SUM(strikeouts) AS so,
+                    SUM(grounded_into_dp) AS gidp,
+                    SUM(sacrifice_flies) AS sf,
+                    SUM(reached_on_error) AS roe,
+                    SUM(fielders_choice) AS fc,
+                    SUM(errors) AS e
+                FROM $stats_table
+                WHERE game_id IN ($game_placeholders)
+                GROUP BY team_id",
+                array_map('intval', $tournament_game_ids)
+            ));
+
+            foreach ($team_batting_rows as $row) {
+                $team_batting_stats[intval($row->team_id)] = array(
+                    'games' => intval($row->games),
+                    'ab' => intval($row->ab),
+                    'avg' => baseball_format_rate(intval($row->h), intval($row->ab)),
+                    'h' => intval($row->h),
+                    'hr' => intval($row->hr),
+                    'rbi' => intval($row->rbi),
+                    'r' => intval($row->r),
+                    'd' => intval($row->d),
+                    't' => intval($row->t),
+                    'bb' => intval($row->bb),
+                    'hbp' => intval($row->hbp),
+                    'obp' => baseball_calculate_obp($row->h, $row->bb, $row->hbp, $row->ab, $row->sf),
+                    'slg' => baseball_calculate_slg($row->h, $row->d, $row->t, $row->hr, $row->ab),
+                    'ops' => baseball_calculate_ops($row->h, $row->d, $row->t, $row->hr, $row->bb, $row->hbp, $row->ab, $row->sf),
+                    'so' => intval($row->so),
+                    'gidp' => intval($row->gidp),
+                    'sf' => intval($row->sf),
+                    'roe' => intval($row->roe),
+                    'fc' => intval($row->fc),
+                    'e' => intval($row->e),
+                );
+            }
+
+            foreach ($games as $game) {
+                $home_team_id = intval(get_post_meta($game->ID, '_game_home_team', true));
+                $away_team_id = intval(get_post_meta($game->ID, '_game_away_team', true));
+                $home_pitchers = get_post_meta($game->ID, '_game_home_pitchers', true) ?: array();
+                $away_pitchers = get_post_meta($game->ID, '_game_away_pitchers', true) ?: array();
+                $pitching_groups = array(
+                    $home_team_id => $home_pitchers,
+                    $away_team_id => $away_pitchers,
+                );
+
+                foreach ($pitching_groups as $team_id => $pitchers) {
+                    if (!$team_id) {
+                        continue;
+                    }
+
+                    if (!isset($team_pitching_stats[$team_id])) {
+                        $team_pitching_stats[$team_id] = $team_pitching_defaults;
+                    }
+
+                    foreach ($pitchers as $pitcher) {
+                        $team_pitching_stats[$team_id]['ip'] += floatval($pitcher['ip'] ?? 0);
+                        $team_pitching_stats[$team_id]['h'] += intval($pitcher['h'] ?? 0);
+                        $team_pitching_stats[$team_id]['r'] += intval($pitcher['r'] ?? 0);
+                        $team_pitching_stats[$team_id]['er'] += intval($pitcher['er'] ?? 0);
+                        $team_pitching_stats[$team_id]['bb'] += intval($pitcher['bb'] ?? 0);
+                        $team_pitching_stats[$team_id]['so'] += intval($pitcher['so'] ?? 0);
+
+                        $decision = isset($pitcher['decision']) ? $pitcher['decision'] : '';
+                        if ($decision === 'W') {
+                            $team_pitching_stats[$team_id]['wins']++;
+                        } elseif ($decision === 'L') {
+                            $team_pitching_stats[$team_id]['losses']++;
+                        } elseif ($decision === 'S') {
+                            $team_pitching_stats[$team_id]['saves']++;
+                        }
+                    }
+                }
+            }
+
+            foreach ($team_pitching_stats as $team_id => $pitching_stats) {
+                $team_pitching_stats[$team_id]['era'] = $pitching_stats['ip'] > 0
+                    ? number_format(($pitching_stats['er'] * 9) / $pitching_stats['ip'], 2)
+                    : '0.00';
+                $team_pitching_stats[$team_id]['ip'] = number_format($pitching_stats['ip'], 1);
+            }
+        }
+
+        $comparison_teams = array_values($teams);
+        $comparison_team_a = !empty($comparison_teams) ? intval($comparison_teams[0]->ID) : 0;
+        $comparison_team_b = isset($comparison_teams[1]) ? intval($comparison_teams[1]->ID) : $comparison_team_a;
+        $comparison_batting_metrics = array(
+            array('key' => 'games', 'label' => 'J', 'description' => 'Juegos', 'higher' => true),
+            array('key' => 'ab', 'label' => 'AB', 'description' => 'Turnos al bate', 'higher' => true),
+            array('key' => 'avg', 'label' => 'AVG', 'description' => 'Promedio de bateo', 'higher' => true),
+            array('key' => 'obp', 'label' => 'OBP', 'description' => 'Porcentaje de embasado', 'higher' => true),
+            array('key' => 'slg', 'label' => 'SLG', 'description' => 'Slugging', 'higher' => true),
+            array('key' => 'ops', 'label' => 'OPS', 'description' => 'OBP + SLG', 'higher' => true),
+            array('key' => 'h', 'label' => 'H', 'description' => 'Hits', 'higher' => true),
+            array('key' => 'hr', 'label' => 'HR', 'description' => 'Jonrones', 'higher' => true),
+            array('key' => 'rbi', 'label' => 'RBI', 'description' => 'Carreras impulsadas', 'higher' => true),
+            array('key' => 'r', 'label' => 'R', 'description' => 'Carreras anotadas', 'higher' => true),
+            array('key' => 'bb', 'label' => 'BB', 'description' => 'Bases por bolas', 'higher' => true),
+            array('key' => 'hbp', 'label' => 'HBP', 'description' => 'Golpeados', 'higher' => true),
+            array('key' => 'so', 'label' => 'SO', 'description' => 'Ponches recibidos', 'higher' => false),
+            array('key' => 'gidp', 'label' => 'GIDP', 'description' => 'Doble play', 'higher' => false),
+            array('key' => 'sf', 'label' => 'SF', 'description' => 'Fly de sacrificio', 'higher' => true),
+            array('key' => 'roe', 'label' => 'ROE', 'description' => 'Embasado por error', 'higher' => true),
+            array('key' => 'fc', 'label' => 'FC', 'description' => 'Bola ocupada', 'higher' => true),
+            array('key' => 'd', 'label' => '2B', 'description' => 'Dobles', 'higher' => true),
+            array('key' => 't', 'label' => '3B', 'description' => 'Triples', 'higher' => true),
+            array('key' => 'e', 'label' => 'E', 'description' => 'Errores', 'higher' => false),
+        );
+        $comparison_pitching_metrics = array(
+            array('key' => 'era', 'label' => 'ERA', 'description' => 'Efectividad', 'higher' => false),
+            array('key' => 'wins', 'label' => 'W', 'description' => 'Victorias', 'higher' => true),
+            array('key' => 'losses', 'label' => 'L', 'description' => 'Derrotas', 'higher' => false),
+            array('key' => 'saves', 'label' => 'SV', 'description' => 'Salvados', 'higher' => true),
+            array('key' => 'ip', 'label' => 'IP', 'description' => 'Innings lanzados', 'higher' => true),
+            array('key' => 'h', 'label' => 'H', 'description' => 'Hits permitidos', 'higher' => false),
+            array('key' => 'r', 'label' => 'R', 'description' => 'Carreras permitidas', 'higher' => false),
+            array('key' => 'er', 'label' => 'ER', 'description' => 'Carreras limpias', 'higher' => false),
+            array('key' => 'bb', 'label' => 'BB', 'description' => 'Bases por bolas', 'higher' => false),
+            array('key' => 'so', 'label' => 'SO', 'description' => 'Ponches', 'higher' => true),
+        );
+        $comparison_data = array();
+
+        foreach ($comparison_teams as $team) {
+            $team_id = intval($team->ID);
+            $comparison_data[$team_id] = array(
+                'name' => $team->post_title,
+                'batting' => array_merge($team_batting_defaults, isset($team_batting_stats[$team_id]) ? $team_batting_stats[$team_id] : array()),
+                'pitching' => array_merge($team_pitching_defaults, isset($team_pitching_stats[$team_id]) ? $team_pitching_stats[$team_id] : array()),
+            );
+        }
         
     ?>
     
@@ -110,6 +296,15 @@ get_header();
                                     <th>%</th>
                                     <th>CF</th>
                                     <th>CC</th>
+                                    <th>AVG</th>
+                                    <th>H</th>
+                                    <th>HR</th>
+                                    <th>2B</th>
+                                    <th>3B</th>
+                                    <th>BB</th>
+                                    <th>SLG</th>
+                                    <th>SO</th>
+                                    <th>E</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -137,10 +332,11 @@ get_header();
                                     $stats = $standing['stats'];
                                     $team_name = $team->post_title;
                                     $team_abbr = strtoupper(substr($team_name, 0, 3));
+                                    $batting_stats = isset($team_batting_stats[$team->ID]) ? $team_batting_stats[$team->ID] : $team_batting_defaults;
                                 ?>
                                 <tr>
-                                    <td><?php echo $pos++; ?></td>
-                                    <td>
+                                    <td data-value="<?php echo esc_attr($pos); ?>"><?php echo $pos++; ?></td>
+                                    <td data-value="<?php echo esc_attr($team_name); ?>">
                                         <div class="team-name-cell">
                                             <?php if (has_post_thumbnail($team->ID)): ?>
                                                 <div class="team-mini-logo">
@@ -155,19 +351,127 @@ get_header();
                                             </div>
                                         </div>
                                     </td>
-                                    <td><?php echo $stats['games']; ?></td>
-                                    <td><?php echo $stats['wins']; ?></td>
-                                    <td><?php echo $stats['losses']; ?></td>
-                                    <td><?php echo $stats['win_pct']; ?></td>
-                                    <td><?php echo $stats['runs_scored']; ?></td>
-                                    <td><?php echo $stats['runs_allowed']; ?></td>
+                                    <td data-value="<?php echo esc_attr($stats['games']); ?>"><?php echo $stats['games']; ?></td>
+                                    <td data-value="<?php echo esc_attr($stats['wins']); ?>"><?php echo $stats['wins']; ?></td>
+                                    <td data-value="<?php echo esc_attr($stats['losses']); ?>"><?php echo $stats['losses']; ?></td>
+                                    <td data-value="<?php echo esc_attr($stats['win_pct']); ?>"><?php echo $stats['win_pct']; ?></td>
+                                    <td data-value="<?php echo esc_attr($stats['runs_scored']); ?>"><?php echo $stats['runs_scored']; ?></td>
+                                    <td data-value="<?php echo esc_attr($stats['runs_allowed']); ?>"><?php echo $stats['runs_allowed']; ?></td>
+                                    <td data-value="<?php echo esc_attr($batting_stats['avg']); ?>"><?php echo esc_html($batting_stats['avg']); ?></td>
+                                    <td data-value="<?php echo esc_attr($batting_stats['h']); ?>"><?php echo esc_html($batting_stats['h']); ?></td>
+                                    <td data-value="<?php echo esc_attr($batting_stats['hr']); ?>"><?php echo esc_html($batting_stats['hr']); ?></td>
+                                    <td data-value="<?php echo esc_attr($batting_stats['d']); ?>"><?php echo esc_html($batting_stats['d']); ?></td>
+                                    <td data-value="<?php echo esc_attr($batting_stats['t']); ?>"><?php echo esc_html($batting_stats['t']); ?></td>
+                                    <td data-value="<?php echo esc_attr($batting_stats['bb']); ?>"><?php echo esc_html($batting_stats['bb']); ?></td>
+                                    <td data-value="<?php echo esc_attr($batting_stats['slg']); ?>"><?php echo esc_html($batting_stats['slg']); ?></td>
+                                    <td data-value="<?php echo esc_attr($batting_stats['so']); ?>"><?php echo esc_html($batting_stats['so']); ?></td>
+                                    <td data-value="<?php echo esc_attr($batting_stats['e']); ?>"><?php echo esc_html($batting_stats['e']); ?></td>
                                 </tr>
                                 <?php endforeach; ?>
                             </tbody>
                         </table>
                     </div>
-                    <p><em>PJ = Partidos Jugados, G = Ganados, P = Perdidos, % = Porcentaje, CF = Carreras a Favor, CC = Carreras en Contra</em></p>
+                    <p><em>PJ = Partidos Jugados, G = Ganados, P = Perdidos, % = Porcentaje, CF = Carreras a Favor, CC = Carreras en Contra, AVG = Promedio de Bateo, H = Hits, HR = Jonrones, 2B = Dobles, 3B = Triples, BB = Bases por Bolas, SLG = Slugging, SO = Ponches, E = Errores</em></p>
                 </section>
+            </div>
+        <?php endif; ?>
+
+        <?php if (count($comparison_teams) >= 2): ?>
+            <div class="stats-card tournament-section-card team-comparison-card">
+                <details class="team-comparison-details">
+                    <summary>
+                        <span>Comparativa de Equipos</span>
+                    </summary>
+
+                    <section class="team-comparison">
+                        <div class="team-comparison-controls">
+                            <label>
+                                <span>Equipo 1</span>
+                                <select id="comparison-team-a" class="team-comparison-select">
+                                    <?php foreach ($comparison_teams as $team): ?>
+                                        <option value="<?php echo esc_attr($team->ID); ?>" <?php selected($comparison_team_a, intval($team->ID)); ?>>
+                                            <?php echo esc_html($team->post_title); ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </label>
+
+                            <span class="team-comparison-vs">VS</span>
+
+                            <label>
+                                <span>Equipo 2</span>
+                                <select id="comparison-team-b" class="team-comparison-select">
+                                    <?php foreach ($comparison_teams as $team): ?>
+                                        <option value="<?php echo esc_attr($team->ID); ?>" <?php selected($comparison_team_b, intval($team->ID)); ?>>
+                                            <?php echo esc_html($team->post_title); ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </label>
+                        </div>
+
+                        <div class="players-tabs team-comparison-tabs">
+                            <button class="players-tab active" data-comparison-tab="comparison-batting">Bateo</button>
+                            <button class="players-tab" data-comparison-tab="comparison-pitching">Pitcheo</button>
+                        </div>
+
+                        <div class="team-comparison-tab-content active" id="comparison-batting-panel">
+                            <div class="table-responsive">
+                                <table class="stats-table team-comparison-table" data-comparison-group="batting">
+                                    <thead>
+                                        <tr>
+                                            <th>Estad&iacute;stica</th>
+                                            <th data-side-heading="a"><?php echo esc_html(get_the_title($comparison_team_a)); ?></th>
+                                            <th data-side-heading="b"><?php echo esc_html(get_the_title($comparison_team_b)); ?></th>
+                                            <th>Ganador</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php foreach ($comparison_batting_metrics as $metric): ?>
+                                            <tr data-metric="<?php echo esc_attr($metric['key']); ?>" data-higher="<?php echo $metric['higher'] ? '1' : '0'; ?>">
+                                                <td>
+                                                    <strong><?php echo esc_html($metric['label']); ?></strong>
+                                                    <span><?php echo esc_html($metric['description']); ?></span>
+                                                </td>
+                                                <td data-side="a"></td>
+                                                <td data-side="b"></td>
+                                                <td data-side="winner"></td>
+                                            </tr>
+                                        <?php endforeach; ?>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div class="team-comparison-tab-content" id="comparison-pitching-panel">
+                            <div class="table-responsive">
+                                <table class="stats-table team-comparison-table" data-comparison-group="pitching">
+                                    <thead>
+                                        <tr>
+                                            <th>Estad&iacute;stica</th>
+                                            <th data-side-heading="a"><?php echo esc_html(get_the_title($comparison_team_a)); ?></th>
+                                            <th data-side-heading="b"><?php echo esc_html(get_the_title($comparison_team_b)); ?></th>
+                                            <th>Ganador</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php foreach ($comparison_pitching_metrics as $metric): ?>
+                                            <tr data-metric="<?php echo esc_attr($metric['key']); ?>" data-higher="<?php echo $metric['higher'] ? '1' : '0'; ?>">
+                                                <td>
+                                                    <strong><?php echo esc_html($metric['label']); ?></strong>
+                                                    <span><?php echo esc_html($metric['description']); ?></span>
+                                                </td>
+                                                <td data-side="a"></td>
+                                                <td data-side="b"></td>
+                                                <td data-side="winner"></td>
+                                            </tr>
+                                        <?php endforeach; ?>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </section>
+                </details>
             </div>
         <?php endif; ?>
 
@@ -175,7 +479,6 @@ get_header();
         $tournament_batting = baseball_get_batting_stats_for_games($tournament_game_ids);
         $tournament_pitching = baseball_get_pitching_stats_for_games($tournament_game_ids);
 
-        // Ordenar bateo por AVG desc por defecto
         usort($tournament_batting, function ($a, $b) {
             $avg_a = intval($a->ab) > 0 ? intval($a->h) / intval($a->ab) : 0;
             $avg_b = intval($b->ab) > 0 ? intval($b->h) / intval($b->ab) : 0;
@@ -185,14 +488,14 @@ get_header();
 
         <?php if (!empty($tournament_batting) || !empty($tournament_pitching) || $games): ?>
         <div class="stats-card tournament-stats-card">
-            <h2>Estadísticas del Torneo</h2>
+            <h2>Estad&iacute;sticas del Torneo</h2>
+
             <div class="players-tabs tournament-tabs">
                 <button class="players-tab active" data-tab="tournament-batting">Bateo</button>
                 <button class="players-tab" data-tab="tournament-pitching">Pitcheo</button>
                 <button class="players-tab" data-tab="tournament-games">Partidos <?php if ($games): ?>(<?php echo count($games); ?>)<?php endif; ?></button>
             </div>
 
-            <!-- Bateo -->
             <div class="players-tab-content active" id="tournament-batting-stats">
                 <?php if (!empty($tournament_batting)): ?>
                 <div class="table-responsive">
@@ -203,26 +506,26 @@ get_header();
                                 <th data-sort="name">Jugador</th>
                                 <th data-sort="team">Equipo</th>
                                 <th data-sort="position">Pos</th>
-                                <th class="sortable">AVG <span class="sort-arrow">↕</span></th>
+                                <th class="sortable">AVG <span class="sort-arrow">&#8597;</span></th>
                                 <th class="sortable">OBP <span class="sort-arrow">&#8597;</span></th>
                                 <th class="sortable">SLG <span class="sort-arrow">&#8597;</span></th>
                                 <th class="sortable">OPS <span class="sort-arrow">&#8597;</span></th>
-                                <th class="sortable">J <span class="sort-arrow">↕</span></th>
-                                <th class="sortable">AB <span class="sort-arrow">↕</span></th>
-                                <th class="sortable">H <span class="sort-arrow">↕</span></th>
-                                <th class="sortable">HR <span class="sort-arrow">↕</span></th>
-                                <th class="sortable">RBI <span class="sort-arrow">↕</span></th>
-                                <th class="sortable">R <span class="sort-arrow">↕</span></th>
-                                <th class="sortable">BB <span class="sort-arrow">↕</span></th>
+                                <th class="sortable">J <span class="sort-arrow">&#8597;</span></th>
+                                <th class="sortable">AB <span class="sort-arrow">&#8597;</span></th>
+                                <th class="sortable">H <span class="sort-arrow">&#8597;</span></th>
+                                <th class="sortable">HR <span class="sort-arrow">&#8597;</span></th>
+                                <th class="sortable">RBI <span class="sort-arrow">&#8597;</span></th>
+                                <th class="sortable">R <span class="sort-arrow">&#8597;</span></th>
+                                <th class="sortable">BB <span class="sort-arrow">&#8597;</span></th>
                                 <th class="sortable">HBP <span class="sort-arrow">&#8597;</span></th>
-                                <th class="sortable">SO <span class="sort-arrow">↕</span></th>
+                                <th class="sortable">SO <span class="sort-arrow">&#8597;</span></th>
                                 <th class="sortable">GIDP <span class="sort-arrow">&#8597;</span></th>
                                 <th class="sortable">SF <span class="sort-arrow">&#8597;</span></th>
                                 <th class="sortable">ROE <span class="sort-arrow">&#8597;</span></th>
                                 <th class="sortable">FC <span class="sort-arrow">&#8597;</span></th>
-                                <th class="sortable">2B <span class="sort-arrow">↕</span></th>
-                                <th class="sortable">3B <span class="sort-arrow">↕</span></th>
-                                <th class="sortable">E <span class="sort-arrow">↕</span></th>
+                                <th class="sortable">2B <span class="sort-arrow">&#8597;</span></th>
+                                <th class="sortable">3B <span class="sort-arrow">&#8597;</span></th>
+                                <th class="sortable">E <span class="sort-arrow">&#8597;</span></th>
                                 <th>Acciones</th>
                             </tr>
                         </thead>
@@ -250,7 +553,7 @@ get_header();
                             <tr>
                                 <td data-value="<?php echo esc_attr($player_number ?: 0); ?>"><?php echo esc_html($player_number ?: '-'); ?></td>
                                 <td data-value="<?php echo esc_attr($player->post_title); ?>">
-                                    <div class="player-name-cell">
+                                    <a href="<?php echo esc_url(get_permalink($player_id)); ?>" class="player-name-cell player-name-link">
                                         <div class="player-mini-photo">
                                             <?php if (has_post_thumbnail($player_id)): ?>
                                                 <?php echo get_the_post_thumbnail($player_id, 'thumbnail'); ?>
@@ -259,7 +562,7 @@ get_header();
                                             <?php endif; ?>
                                         </div>
                                         <strong><?php echo esc_html($player->post_title); ?></strong>
-                                    </div>
+                                    </a>
                                 </td>
                                 <td data-value="<?php echo esc_attr($team_name); ?>"><?php echo esc_html($team_abbr); ?></td>
                                 <td data-value="<?php echo esc_attr($position_name); ?>"><?php echo esc_html($position_name); ?></td>
@@ -290,14 +593,13 @@ get_header();
                     </table>
                 </div>
                 <div class="table-legend">
-                    <p><strong>Leyenda:</strong> # = Número, Pos = Posición, AVG = Promedio de Bateo, OBP = Porcentaje de Embasado, SLG = Slugging, OPS = OBP + SLG, J = Juegos, AB = Turnos al Bate, H = Hits, HR = Home Runs, RBI = Carreras Impulsadas, R = Carreras, BB = Bases por Bolas, HBP = Golpeado por Lanzamiento, SO = Ponches, GIDP = Batea para Doble Play, SF = Fly de Sacrificio, ROE = Embasado por Error, FC = Bola Ocupada, 2B = Dobles, 3B = Triples, E = Errores</p>
+                    <p><strong>Leyenda:</strong> # = N&uacute;mero, Pos = Posici&oacute;n, AVG = Promedio de Bateo, OBP = Porcentaje de Embasado, SLG = Slugging, OPS = OBP + SLG, J = Juegos, AB = Turnos al Bate, H = Hits, HR = Home Runs, RBI = Carreras Impulsadas, R = Carreras, BB = Bases por Bolas, HBP = Golpeado por Lanzamiento, SO = Ponches, GIDP = Batea para Doble Play, SF = Fly de Sacrificio, ROE = Embasado por Error, FC = Bola Ocupada, 2B = Dobles, 3B = Triples, E = Errores</p>
                 </div>
                 <?php else: ?>
-                    <p class="no-content"><em>No hay estadísticas de bateo registradas en este torneo.</em></p>
+                    <p class="no-content"><em>No hay estad&iacute;sticas de bateo registradas en este torneo.</em></p>
                 <?php endif; ?>
             </div>
 
-            <!-- Pitcheo -->
             <div class="players-tab-content" id="tournament-pitching-stats">
                 <?php if (!empty($tournament_pitching)):
                     uasort($tournament_pitching, function ($a, $b) {
@@ -313,16 +615,16 @@ get_header();
                                 <th data-sort="number">#</th>
                                 <th data-sort="name">Jugador</th>
                                 <th data-sort="team">Equipo</th>
-                                <th class="sortable">ERA <span class="sort-arrow">↕</span></th>
-                                <th class="sortable">W <span class="sort-arrow">↕</span></th>
-                                <th class="sortable">L <span class="sort-arrow">↕</span></th>
-                                <th class="sortable">SV <span class="sort-arrow">↕</span></th>
-                                <th class="sortable">IP <span class="sort-arrow">↕</span></th>
-                                <th class="sortable">H <span class="sort-arrow">↕</span></th>
-                                <th class="sortable">R <span class="sort-arrow">↕</span></th>
-                                <th class="sortable">ER <span class="sort-arrow">↕</span></th>
-                                <th class="sortable">BB <span class="sort-arrow">↕</span></th>
-                                <th class="sortable">SO <span class="sort-arrow">↕</span></th>
+                                <th class="sortable">ERA <span class="sort-arrow">&#8597;</span></th>
+                                <th class="sortable">W <span class="sort-arrow">&#8597;</span></th>
+                                <th class="sortable">L <span class="sort-arrow">&#8597;</span></th>
+                                <th class="sortable">SV <span class="sort-arrow">&#8597;</span></th>
+                                <th class="sortable">IP <span class="sort-arrow">&#8597;</span></th>
+                                <th class="sortable">H <span class="sort-arrow">&#8597;</span></th>
+                                <th class="sortable">R <span class="sort-arrow">&#8597;</span></th>
+                                <th class="sortable">ER <span class="sort-arrow">&#8597;</span></th>
+                                <th class="sortable">BB <span class="sort-arrow">&#8597;</span></th>
+                                <th class="sortable">SO <span class="sort-arrow">&#8597;</span></th>
                                 <th>Acciones</th>
                             </tr>
                         </thead>
@@ -340,7 +642,7 @@ get_header();
                             <tr>
                                 <td data-value="<?php echo esc_attr($player_number ?: 0); ?>"><?php echo esc_html($player_number ?: '-'); ?></td>
                                 <td data-value="<?php echo esc_attr($player->post_title); ?>">
-                                    <div class="player-name-cell">
+                                    <a href="<?php echo esc_url(get_permalink($pid)); ?>" class="player-name-cell player-name-link">
                                         <div class="player-mini-photo">
                                             <?php if (has_post_thumbnail($pid)): ?>
                                                 <?php echo get_the_post_thumbnail($pid, 'thumbnail'); ?>
@@ -349,7 +651,7 @@ get_header();
                                             <?php endif; ?>
                                         </div>
                                         <strong><?php echo esc_html($player->post_title); ?></strong>
-                                    </div>
+                                    </a>
                                 </td>
                                 <td data-value="<?php echo esc_attr($team_name); ?>"><?php echo esc_html($team_abbr); ?></td>
                                 <td data-value="<?php echo esc_attr($era_val); ?>" class="stat-highlight"><?php echo esc_html($era); ?></td>
@@ -372,16 +674,15 @@ get_header();
                     <p><strong>Leyenda:</strong> ERA = Efectividad, W = Victorias, L = Derrotas, SV = Salvados, IP = Innings Lanzados, H = Hits Permitidos, R = Carreras Permitidas, ER = Carreras Limpias, BB = Bases por Bolas, SO = Ponches</p>
                 </div>
                 <?php else: ?>
-                    <p class="no-content"><em>No hay estadísticas de pitcheo registradas en este torneo.</em></p>
+                    <p class="no-content"><em>No hay estad&iacute;sticas de pitcheo registradas en este torneo.</em></p>
                 <?php endif; ?>
             </div>
 
-            <!-- Partidos -->
             <div class="players-tab-content" id="tournament-games-stats">
                 <?php if ($games): ?>
                     <section class="tournament-games tournament-games-tab">
                         <div class="tournament-games-grid">
-                            <?php foreach ($games as $game): 
+                            <?php foreach ($games as $game):
                                 $home_team_id = get_post_meta($game->ID, '_game_home_team', true);
                                 $away_team_id = get_post_meta($game->ID, '_game_away_team', true);
                                 $home_score = get_post_meta($game->ID, '_game_home_score', true);
@@ -389,7 +690,6 @@ get_header();
                                 $game_date = get_post_meta($game->ID, '_game_date', true);
                                 $game_time = get_post_meta($game->ID, '_game_time', true);
                                 $location = get_post_meta($game->ID, '_game_location', true);
-                                
                                 $away_team_name = get_the_title($away_team_id);
                                 $home_team_name = get_the_title($home_team_id);
                                 $away_abbr = strtoupper(substr($away_team_name, 0, 3));
@@ -409,7 +709,7 @@ get_header();
                                             <span class="game-location-badge"><?php echo esc_html($location); ?></span>
                                         <?php endif; ?>
                                     </div>
-                                    
+
                                     <div class="game-card-teams">
                                         <div class="game-team away">
                                             <?php if (has_post_thumbnail($away_team_id)): ?>
@@ -426,9 +726,9 @@ get_header();
                                                 <?php echo $away_score !== '' ? $away_score : '-'; ?>
                                             </div>
                                         </div>
-                                        
+
                                         <div class="vs-divider">VS</div>
-                                        
+
                                         <div class="game-team home">
                                             <?php if (has_post_thumbnail($home_team_id)): ?>
                                                 <div class="team-logo-small">
@@ -445,11 +745,9 @@ get_header();
                                             </div>
                                         </div>
                                     </div>
-                                    
+
                                     <div class="game-card-footer">
-                                        <a href="<?php echo get_permalink($game->ID); ?>" class="btn-view-game">
-                                            Ver Detalles
-                                        </a>
+                                        <a href="<?php echo get_permalink($game->ID); ?>" class="btn-view-game">Ver Detalles</a>
                                     </div>
                                 </div>
                             <?php endforeach; ?>
@@ -461,6 +759,7 @@ get_header();
             </div>
         </div>
         <?php endif; ?>
+
     </article>
 
     <?php endwhile; ?>
@@ -469,46 +768,179 @@ get_header();
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    // Tabs del bloque de torneo
-    document.querySelectorAll('.players-tabs').forEach(function (tabGroup) {
-        var tabs = tabGroup.querySelectorAll('.players-tab');
-        var scope = tabGroup.closest('.stats-card') || document;
+    var teamComparisonData = <?php echo wp_json_encode($comparison_data); ?>;
+    var comparisonTeamA = document.getElementById('comparison-team-a');
+    var comparisonTeamB = document.getElementById('comparison-team-b');
+
+    function getComparisonValue(teamId, group, metric) {
+        if (!teamComparisonData[teamId] || !teamComparisonData[teamId][group]) {
+            return '0';
+        }
+
+        return teamComparisonData[teamId][group][metric] !== undefined
+            ? String(teamComparisonData[teamId][group][metric])
+            : '0';
+    }
+
+    function getComparisonNumber(value) {
+        var numeric = parseFloat(String(value).replace(/,/g, ''));
+        return isNaN(numeric) ? 0 : numeric;
+    }
+
+    function setComparisonCellState(cell, state) {
+        cell.classList.remove('is-better', 'is-worse', 'is-even');
+        if (state) {
+            cell.classList.add(state);
+        }
+    }
+
+    function updateTeamComparison() {
+        if (!comparisonTeamA || !comparisonTeamB) {
+            return;
+        }
+
+        var teamA = comparisonTeamA.value;
+        var teamB = comparisonTeamB.value;
+        var nameA = teamComparisonData[teamA] ? teamComparisonData[teamA].name : '';
+        var nameB = teamComparisonData[teamB] ? teamComparisonData[teamB].name : '';
+
+        document.querySelectorAll('.team-comparison-table').forEach(function (table) {
+            var group = table.getAttribute('data-comparison-group');
+            var headingA = table.querySelector('[data-side-heading="a"]');
+            var headingB = table.querySelector('[data-side-heading="b"]');
+
+            if (headingA) { headingA.textContent = nameA; }
+            if (headingB) { headingB.textContent = nameB; }
+
+            table.querySelectorAll('tbody tr[data-metric]').forEach(function (row) {
+                var metric = row.getAttribute('data-metric');
+                var higherIsBetter = row.getAttribute('data-higher') === '1';
+                var valueA = getComparisonValue(teamA, group, metric);
+                var valueB = getComparisonValue(teamB, group, metric);
+                var numberA = getComparisonNumber(valueA);
+                var numberB = getComparisonNumber(valueB);
+                var cellA = row.querySelector('[data-side="a"]');
+                var cellB = row.querySelector('[data-side="b"]');
+                var winnerCell = row.querySelector('[data-side="winner"]');
+                var stateA = 'is-even';
+                var stateB = 'is-even';
+                var winner = 'Empate';
+
+                if (teamA === teamB) {
+                    winner = 'Mismo equipo';
+                } else if (numberA !== numberB) {
+                    var teamAWins = higherIsBetter ? numberA > numberB : numberA < numberB;
+                    stateA = teamAWins ? 'is-better' : 'is-worse';
+                    stateB = teamAWins ? 'is-worse' : 'is-better';
+                    winner = teamAWins ? nameA : nameB;
+                }
+
+                if (cellA) {
+                    cellA.textContent = valueA;
+                    setComparisonCellState(cellA, stateA);
+                }
+                if (cellB) {
+                    cellB.textContent = valueB;
+                    setComparisonCellState(cellB, stateB);
+                }
+                if (winnerCell) {
+                    winnerCell.textContent = winner;
+                    setComparisonCellState(winnerCell, winner === 'Empate' || winner === 'Mismo equipo' ? 'is-even' : 'is-better');
+                }
+            });
+        });
+    }
+
+    if (comparisonTeamA && comparisonTeamB) {
+        comparisonTeamA.addEventListener('change', updateTeamComparison);
+        comparisonTeamB.addEventListener('change', updateTeamComparison);
+        updateTeamComparison();
+    }
+
+    document.querySelectorAll('.team-comparison-tabs').forEach(function (tabGroup) {
+        var tabs = tabGroup.querySelectorAll('[data-comparison-tab]');
+        var scope = tabGroup.closest('.team-comparison');
 
         tabs.forEach(function (tab) {
             tab.addEventListener('click', function () {
-                var name = this.getAttribute('data-tab');
-                tabs.forEach(function (t) { t.classList.remove('active'); });
-                scope.querySelectorAll('.players-tab-content').forEach(function (c) { c.classList.remove('active'); });
+                var target = this.getAttribute('data-comparison-tab');
+                tabs.forEach(function (item) { item.classList.remove('active'); });
+                scope.querySelectorAll('.team-comparison-tab-content').forEach(function (content) {
+                    content.classList.remove('active');
+                });
                 this.classList.add('active');
-                var content = scope.querySelector('#' + name + '-stats');
-                if (content) { content.classList.add('active'); }
+                var panel = scope.querySelector('#' + target + '-panel');
+                if (panel) {
+                    panel.classList.add('active');
+                }
             });
         });
     });
 
-    // Orden por columnas (igual que en la seccion de jugadores)
-    document.querySelectorAll('.sortable-table').forEach(function (table) {
+    document.querySelectorAll('.tournament-stats-card .players-tabs').forEach(function (tabGroup) {
+        var tabs = tabGroup.querySelectorAll('.players-tab');
+        var scope = tabGroup.closest('.tournament-stats-card');
+
+        tabs.forEach(function (tab) {
+            tab.addEventListener('click', function () {
+                var name = this.getAttribute('data-tab');
+                tabs.forEach(function (item) { item.classList.remove('active'); });
+                scope.querySelectorAll('.players-tab-content').forEach(function (content) {
+                    content.classList.remove('active');
+                });
+                this.classList.add('active');
+                var content = scope.querySelector('#' + name + '-stats');
+                if (content) {
+                    content.classList.add('active');
+                }
+            });
+        });
+    });
+
+    document.querySelectorAll('.tournament-stats-card .sortable-table').forEach(function (table) {
         var headers = table.querySelectorAll('th.sortable');
-        var dir = 'desc';
-        var lastCol = null;
+        var direction = 'desc';
+        var lastColumn = null;
+
         headers.forEach(function (header) {
             header.style.cursor = 'pointer';
             header.addEventListener('click', function () {
-                var idx = Array.prototype.indexOf.call(this.parentNode.children, this);
-                if (lastCol === idx) { dir = dir === 'asc' ? 'desc' : 'asc'; } else { dir = 'desc'; lastCol = idx; }
-                headers.forEach(function (h) { var a = h.querySelector('.sort-arrow'); if (a) a.textContent = '↕'; });
-                var arrow = this.querySelector('.sort-arrow'); if (arrow) arrow.textContent = dir === 'asc' ? '↑' : '↓';
+                var index = Array.prototype.indexOf.call(this.parentNode.children, this);
+                direction = lastColumn === index && direction === 'desc' ? 'asc' : 'desc';
+                lastColumn = index;
+
+                headers.forEach(function (item) {
+                    var arrow = item.querySelector('.sort-arrow');
+                    if (arrow) {
+                        arrow.textContent = '\u2195';
+                    }
+                });
+
+                var activeArrow = this.querySelector('.sort-arrow');
+                if (activeArrow) {
+                    activeArrow.textContent = direction === 'asc' ? '\u2191' : '\u2193';
+                }
+
                 var tbody = table.querySelector('tbody');
                 var rows = Array.prototype.slice.call(tbody.querySelectorAll('tr'));
-                rows.sort(function (a, b) {
-                    var av = a.children[idx].getAttribute('data-value');
-                    var bv = b.children[idx].getAttribute('data-value');
-                    if (av !== null && bv !== null && !isNaN(av) && !isNaN(bv)) { av = parseFloat(av); bv = parseFloat(bv); }
-                    else { av = (av || '').toLowerCase(); bv = (bv || '').toLowerCase(); }
-                    if (dir === 'asc') { return av > bv ? 1 : (av < bv ? -1 : 0); }
-                    return av < bv ? 1 : (av > bv ? -1 : 0);
+                rows.sort(function (rowA, rowB) {
+                    var valueA = rowA.children[index].getAttribute('data-value') || rowA.children[index].textContent.trim();
+                    var valueB = rowB.children[index].getAttribute('data-value') || rowB.children[index].textContent.trim();
+                    var numberA = parseFloat(valueA);
+                    var numberB = parseFloat(valueB);
+
+                    if (!isNaN(numberA) && !isNaN(numberB)) {
+                        return direction === 'asc' ? numberA - numberB : numberB - numberA;
+                    }
+
+                    return direction === 'asc'
+                        ? valueA.localeCompare(valueB, undefined, { numeric: true, sensitivity: 'base' })
+                        : valueB.localeCompare(valueA, undefined, { numeric: true, sensitivity: 'base' });
                 });
-                rows.forEach(function (r) { tbody.appendChild(r); });
+
+                rows.forEach(function (row) {
+                    tbody.appendChild(row);
+                });
             });
         });
     });

@@ -53,29 +53,71 @@
         });
 
         // Table sorting
-        $('.stats-table th').on('click', function() {
-            var table = $(this).parents('table').eq(0);
-            var rows = table.find('tr:gt(0)').toArray().sort(comparer($(this).index()));
-            this.asc = !this.asc;
-            if (!this.asc) {
-                rows = rows.reverse();
-            }
-            for (var i = 0; i < rows.length; i++) {
-                table.append(rows[i]);
-            }
+        $('.stats-table').each(function() {
+            var table = $(this);
+            table.find('th').addClass('sortable-header').attr('tabindex', '0');
         });
 
-        function comparer(index) {
-            return function(a, b) {
-                var valA = getCellValue(a, index);
-                var valB = getCellValue(b, index);
-                return $.isNumeric(valA) && $.isNumeric(valB) ? 
-                    valA - valB : valA.toString().localeCompare(valB);
-            };
+        $('.stats-table').on('click keydown', 'th', function(event) {
+            if (event.type === 'keydown' && event.key !== 'Enter' && event.key !== ' ') {
+                return;
+            }
+
+            event.preventDefault();
+
+            var header = $(this);
+            var table = header.closest('table');
+            var tbody = table.find('tbody').first();
+            var columnIndex = header.index();
+            var direction = header.hasClass('sorted-asc') ? 'desc' : 'asc';
+            var rows = tbody.find('tr').toArray();
+
+            table.find('th')
+                .removeClass('sorted-asc sorted-desc')
+                .attr('aria-sort', 'none');
+
+            header
+                .addClass(direction === 'asc' ? 'sorted-asc' : 'sorted-desc')
+                .attr('aria-sort', direction === 'asc' ? 'ascending' : 'descending');
+
+            rows.sort(function(rowA, rowB) {
+                var valueA = getCellSortValue(rowA, columnIndex);
+                var valueB = getCellSortValue(rowB, columnIndex);
+                var result = compareSortValues(valueA, valueB);
+
+                return direction === 'asc' ? result : result * -1;
+            });
+
+            tbody.append(rows);
+        });
+
+        function compareSortValues(valueA, valueB) {
+            var numberA = parseSortNumber(valueA);
+            var numberB = parseSortNumber(valueB);
+
+            if (!isNaN(numberA) && !isNaN(numberB)) {
+                return numberA - numberB;
+            }
+
+            return valueA.toString().localeCompare(valueB.toString(), undefined, {
+                numeric: true,
+                sensitivity: 'base'
+            });
         }
 
-        function getCellValue(row, index) {
-            return $(row).children('td').eq(index).text();
+        function parseSortNumber(value) {
+            if (typeof value !== 'string') {
+                return NaN;
+            }
+
+            return parseFloat(value.replace(/,/g, ''));
+        }
+
+        function getCellSortValue(row, index) {
+            var cell = $(row).children('td').eq(index);
+            var value = cell.attr('data-value');
+
+            return typeof value !== 'undefined' ? value.trim() : cell.text().trim();
         }
     });
 
